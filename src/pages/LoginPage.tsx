@@ -1,8 +1,11 @@
 import { signInErrorMessage } from '@/lib/sign-in-errors';
 import { useState, FormEvent, useEffect } from 'react';
+import AntonMark from '@/components/shared/AntonMark';
 import { useAuthStore, type AuthUser } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoSignupProblem, demoSignupErrorMessage } from '@/lib/demo-config';
+import { DEMO_TERMS_TEXT_VERSION } from '@/lib/demo-legal';
+import { demoModelFacts } from '@/lib/demo-model-names';
 import { safeStorage } from '@/lib/safe-storage';
 import DemoBanner from '@/components/shared/DemoBanner';
 import { Eye, EyeOff, ArrowRight, Send, Building2, UserPlus } from 'lucide-react';
@@ -29,6 +32,17 @@ const IMAGE_CAPTIONS = [
   'Expert analysis, in your hands.',
   'Precision at your desk.',
 ];
+
+/**
+ * A refused demo sign-up. A 400 without a field list is one of the server's
+ * own sentences about the two ticks or a changed terms version, written for
+ * the visitor; anything else is read as before.
+ */
+function demoSignupRefusal(status: number, body: unknown): string {
+  const b = (body && typeof body === 'object' ? body : {}) as { error?: unknown; details?: unknown };
+  if (status === 400 && !b.details && typeof b.error === 'string' && b.error.length < 200) return b.error;
+  return demoSignupErrorMessage(status, body);
+}
 
 export default function LoginPage({ onEnterWithoutLogin }: Props) {
   const { login } = useAuthStore();
@@ -71,18 +85,44 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   const [suUsername, setSuUsername] = useState('');
   const [suPassword, setSuPassword] = useState('');
   const [suCode, setSuCode] = useState('');
-  const [suAgreed, setSuAgreed] = useState(false);
+  // The two ticks the demo terms ask for (privacy review G7). Sign-up sends
+  // both and the terms version this page shows; the server stores them.
+  const [suOver18, setSuOver18] = useState(false);
+  const [suAcceptTerms, setSuAcceptTerms] = useState(false);
   const [suError, setSuError] = useState('');
   const [suSubmitting, setSuSubmitting] = useState(false);
   const showSignup = demo.demoMode && demo.signupOpen && view === 'signup';
+
+  // A group sign-up link (/#signup=<invite code>, from Settings > Team) opens
+  // the sign-up form with the code filled in. The code is in the fragment,
+  // which never reaches the server; it is cleared from the address bar here.
+  // Also when the link is pasted into a tab already on this page: only the
+  // fragment changes, so the page does not load again.
+  useEffect(() => {
+    const openFromLink = () => {
+      const match = /(?:^#|&)signup=([^&]+)/.exec(window.location.hash);
+      if (!match) return;
+      let code = match[1];
+      try { code = decodeURIComponent(code); } catch { /* keep as typed */ }
+      setSuCode(code.slice(0, 200));
+      setView('signup');
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    };
+    openFromLink();
+    window.addEventListener('hashchange', openFromLink);
+    return () => window.removeEventListener('hashchange', openFromLink);
+  }, []);
 
   async function handleSignup(e: FormEvent) {
     e.preventDefault();
     setSuError('');
     const problem = demoSignupProblem(
-      { username: suUsername, password: suPassword, code: suCode, agreed: suAgreed },
+      { username: suUsername, password: suPassword, code: suCode, agreed: true },
       demo.signupCodeRequired,
-    );
+      demo.signupWithEmail,
+    )
+      ?? (suOver18 ? null : 'Please confirm that you are 18 or over.')
+      ?? (suAcceptTerms ? null : 'Please accept the demo terms and confirm that you have read the privacy notice.');
     if (problem) { setSuError(problem); return; }
     setSuSubmitting(true);
     try {
@@ -90,14 +130,17 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: suUsername.trim(),
+          ...(demo.signupWithEmail ? { email: suUsername.trim() } : { username: suUsername.trim() }),
           password: suPassword,
           ...(demo.signupCodeRequired ? { code: suCode.trim() } : {}),
+          over18: suOver18,
+          acceptTerms: suAcceptTerms,
+          termsVersion: DEMO_TERMS_TEXT_VERSION,
         }),
       });
       const data = await res.json().catch(() => ({})) as { user?: AuthUser; token?: string };
       if (!res.ok || !data.user || !data.token) {
-        setSuError(demoSignupErrorMessage(res.status, data));
+        setSuError(demoSignupRefusal(res.status, data));
         return;
       }
       // Signed straight in, exactly as a password sign-in leaves it.
@@ -238,15 +281,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
             {/* ── Logo + name ── */}
             <div className="flex flex-col items-center mb-8">
-              {/* "A" badge */}
-              <div
-                className="w-[72px] h-[72px] rounded-2xl bg-[#0D7D6C] flex items-center justify-center mb-5"
+              {/* The chevron mark */}
+              <AntonMark
+                size={72}
+                className="mb-5 rounded-2xl"
                 style={{ boxShadow: '0 8px 32px rgba(13,125,108,0.35)' }}
-              >
-                <span className="text-[40px] font-black text-white leading-none select-none">
-                  A
-                </span>
-              </div>
+              />
               <h1 className="text-[40px] font-bold text-gray-900 tracking-tight leading-none">
                 Anton
               </h1>
@@ -306,22 +346,68 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
               {showSignup && (
                 <form onSubmit={handleSignup} className="space-y-4" aria-label="Create a demo account">
+                  {/* What the visitor is told before any data is collected (Art. 13; privacy review G10). */}
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-snug text-gray-800">
+                    <p className="font-semibold">Before you start, please read this:</p>
+                    <ul className="mt-2 list-disc space-y-1.5 pl-5">
+                      {demo.signupWithEmail ? (
+                        <li>
+                          You need only your email address{demo.signupCodeRequired ? ', the invite code (a sign-up link fills it in)' : ''} and
+                          a password. Your email address is your username: you sign in with it. We don&apos;t send you any email.
+                        </li>
+                      ) : (
+                        <li>
+                          You need only {demo.signupCodeRequired ? 'an invite code, a username and a password' : 'a username and a password'}.
+                          Don&apos;t use your real name as your username. We don&apos;t ask for your email address.
+                        </li>
+                      )}
+                      <li>You must be 18 or over.</li>
+                      <li>
+                        Don&apos;t enter real personal data, about you or anyone else. That means no real names, no personal
+                        identity numbers (personnummer), and no health, money, job or client details. Use made-up or public
+                        information.
+                      </li>
+                      <li>
+                        What you type or upload in a module is sent to OpenRouter, Inc. (USA). It is answered by the AI model
+                        you choose ({demoModelFacts(demo).DEFAULT_MODEL || 'the default one'} unless you pick another), which Inceptron AB runs in the EU/EEA. OpenRouter also runs its own misuse checks and
+                        anonymous statistics on requests.
+                      </li>
+                      <li>The answers are generated by AI. They can be wrong, and they are not professional advice.</li>
+                      <li>
+                        Your account stops working {demo.retentionDays} days after you sign up. It is then deleted with
+                        everything in it, normally within a day. Backup copies are overwritten within 7 more days.
+                      </li>
+                      <li>
+                        We record when you accepted the terms, which version you accepted, and your confirmation that you are
+                        18 or over.
+                      </li>
+                    </ul>
+                  </div>
+                  {/* Art. 21(4): the right to object, presented apart from the rest. */}
+                  <p className="rounded-xl border border-gray-300 bg-white p-4 text-sm leading-snug text-gray-800">
+                    <strong>Your right to object:</strong> you can object at any time to our use of your data for security,
+                    cost control, statistics, backups, handling information about other people that you enter, and the
+                    checks OpenRouter runs. These rely on our legitimate interests
+                    (<a href={`${demo.privacyPath}#section-5`} target="_blank" rel="noopener noreferrer" className="text-[#0D7D6C] underline">privacy notice, section 5</a>).
+                  </p>
                   <div>
                     <label htmlFor="su-username" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                      Username
+                      {demo.signupWithEmail ? 'Email address' : 'Username'}
                     </label>
                     <input
                       id="su-username"
-                      type="text"
-                      autoComplete="username"
+                      type={demo.signupWithEmail ? 'email' : 'text'}
+                      autoComplete={demo.signupWithEmail ? 'email' : 'username'}
                       value={suUsername}
                       onChange={(e) => setSuUsername(e.target.value)}
                       required
                       disabled={suSubmitting}
-                      placeholder="3–50 letters, numbers, _ or -"
+                      aria-describedby="su-username-help"
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
                     />
-                    <p className="mt-1 text-xs text-gray-500">Not your real name — no email address is needed.</p>
+                    <p id="su-username-help" className="mt-1 text-xs text-gray-500">
+                      {demo.signupWithEmail ? 'You sign in with this address.' : '3–50 letters, numbers, _ or -. Not your real name.'}
+                    </p>
                   </div>
                   <div>
                     <label htmlFor="su-password" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
@@ -336,9 +422,10 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                       required
                       minLength={12}
                       disabled={suSubmitting}
-                      placeholder="At least 12 characters"
+                      aria-describedby="su-password-help"
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
                     />
+                    <p id="su-password-help" className="mt-1 text-xs text-gray-500">At least 12 characters.</p>
                   </div>
                   {demo.signupCodeRequired && (
                     <div>
@@ -353,23 +440,38 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                         onChange={(e) => setSuCode(e.target.value)}
                         required
                         disabled={suSubmitting}
-                        placeholder="The code you were given"
+                        aria-describedby="su-code-help"
                         className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
                       />
+                      <p id="su-code-help" className="mt-1 text-xs text-gray-500">The code you were given.</p>
                     </div>
                   )}
+                  {/* The links open in a new tab, so what is typed here is kept. */}
                   <label className="flex items-start gap-2.5 text-sm leading-snug text-gray-700">
                     <input
+                      id="su-over18"
                       type="checkbox"
-                      checked={suAgreed}
-                      onChange={(e) => setSuAgreed(e.target.checked)}
+                      checked={suOver18}
+                      onChange={(e) => setSuOver18(e.target.checked)}
+                      disabled={suSubmitting}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D7D6C]"
+                    />
+                    <span>I am 18 or over.</span>
+                  </label>
+                  <label className="flex items-start gap-2.5 text-sm leading-snug text-gray-700">
+                    <input
+                      id="su-accept-terms"
+                      type="checkbox"
+                      checked={suAcceptTerms}
+                      onChange={(e) => setSuAcceptTerms(e.target.checked)}
                       disabled={suSubmitting}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D7D6C]"
                     />
                     <span>
-                      I will not enter personal or client data. I understand my account and everything in it is
-                      deleted after {demo.retentionDays} days, and I have read the{' '}
-                      <a href={demo.privacyPath} className="text-[#0D7D6C] underline">privacy notice</a>.
+                      I accept the{' '}
+                      <a href={demo.termsPath} target="_blank" rel="noopener noreferrer" className="text-[#0D7D6C] underline">demo terms</a>
+                      {' '}and have read the{' '}
+                      <a href={demo.privacyPath} target="_blank" rel="noopener noreferrer" className="text-[#0D7D6C] underline">privacy notice</a>.
                     </span>
                   </label>
                   {suError && (
@@ -379,7 +481,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   )}
                   <button
                     type="submit"
-                    disabled={suSubmitting || !suUsername || !suPassword || !suAgreed}
+                    disabled={suSubmitting || !suUsername || !suPassword || !suOver18 || !suAcceptTerms}
                     className="w-full flex items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {suSubmitting ? <span>Creating your account…</span> : (
@@ -401,7 +503,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     htmlFor="username"
                     className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400"
                   >
-                    Username
+                    Username or email
                   </label>
                   <input
                     id="username"
@@ -411,7 +513,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     disabled={isSubmitting}
-                    placeholder="Enter your username"
+                    placeholder="Your username, or the email you were invited with"
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                   />
                 </div>
@@ -619,14 +721,19 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
         {/* Footer */}
         <div className="px-10 pb-7 text-center">
-          {demo.demoMode && (
-            <p className="mb-2 text-sm">
+          {/* A demo names who runs it (DEMO_OPERATOR_NAME, the controller) and links its notice and terms. */}
+          {demo.demoMode ? (
+            <p className="text-sm text-gray-500">
+              {demo.operatorName && <>Operated by {demo.operatorName} · </>}
               <a href={demo.privacyPath} className="text-gray-500 underline hover:text-[#0D7D6C]">Privacy notice</a>
+              {' · '}
+              <a href={demo.termsPath} className="text-gray-500 underline hover:text-[#0D7D6C]">Demo terms</a>
+            </p>
+          ) : (
+            <p className="text-[11px] text-gray-300">
+              Created by Daniel Bardun &amp; FutureChain &mdash; Enhanced by You
             </p>
           )}
-          <p className="text-[11px] text-gray-300">
-            Created by Daniel Bardun &amp; FutureChain &mdash; Enhanced by You
-          </p>
         </div>
       </div>
     </div>

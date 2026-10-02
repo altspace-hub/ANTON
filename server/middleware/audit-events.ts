@@ -6,7 +6,8 @@
  * deleted, a policy changed, an export taken. This middleware writes one
  * `audit_events` row per mutating /api request — POST / PUT / PATCH / DELETE —
  * with method, concrete path, path pattern, status, duration, the caller's id
- * and role, the request id when the client sent one, and the origin address.
+ * and role, the request id when the client sent one, and the origin address
+ * (req.ip, which honours TRUST_PROXY).
  * Never the body: bodies carry documents, prompts and credentials.
  *
  * Excluded: the streaming chat endpoint (/api/claude/message — audited by the
@@ -130,9 +131,14 @@ function requestId(req: Request, res: Response): string | null {
   return typeof fromRes === 'string' && fromRes.length > 0 ? fromRes.slice(0, 128) : null;
 }
 
+/**
+ * The address Express resolved: req.ip honours TRUST_PROXY (index.ts), so
+ * behind the trusted proxy it is the address that proxy saw. The first
+ * X-Forwarded-For entry was read here before, and a client sets that one
+ * itself — any visitor could write any address into the trail (privacy
+ * review H5/F9, 2026-09-26).
+ */
 function clientIp(req: Request): string | null {
-  const forwarded = headerString(req.headers['x-forwarded-for']);
-  if (forwarded) return forwarded.split(',')[0].trim().slice(0, 64);
   const ip = req.ip || req.socket?.remoteAddress;
   return ip ? String(ip).slice(0, 64) : null;
 }

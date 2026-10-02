@@ -12,7 +12,12 @@
  *     instance through the same server;
  *   - background work that spends or learns: Markets, the missions runner, the
  *     memory sweep and radar automation are forced off, whatever else is set;
- *   - sign-up: who may create an account, how long it lives, its budget;
+ *   - sign-up: who may create an account, how long it lives, its budget, and
+ *     the version of the demo terms it must accept (DEMO_TERMS_VERSION);
+ *   - the modules kept off the demo (DEMO_HIDDEN_AREAS / DEMO_HIDDEN_MODULES,
+ *     built-in lists when unset; demoModuleHidden), which the run route and
+ *     the module listings apply;
+ *   - the OpenRouter providers a request may go to (DEMO_ALLOWED_PROVIDERS);
  *   - the public /api/config fields the web client reads.
  *
  * Nothing here touches the database. The sign-up route is in routes/auth.ts
@@ -21,6 +26,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import rateLimit from 'express-rate-limit';
 import { parseSpendCap, invalidSpendCapMessage, SPEND_CAP_VARS } from '../services/llm-spend-cap-env.js';
+import { ENGAGEMENT_WORK_ROUTES } from '../services/engagement-demo-routes.js';
 
 type Env = Record<string, string | undefined>;
 
@@ -40,6 +46,24 @@ export function demoModeStartupProblem(env: Env = process.env): string | null {
   for (const name of SPEND_CAP_VARS) {
     if (parseSpendCap(env[name]).invalid) return `[demo] FATAL: ${invalidSpendCapMessage(name)}.`;
   }
+  // The `user` id sent to OpenRouter with every call is an HMAC of the
+  // visitor's account id (openaiCompatibleAdapter.ts). On a demo it has its
+  // own key: outside demo mode it falls back on JWT_SECRET, which signs every
+  // session (privacy review M3 / D11). Names only, never a value.
+  const hashSecret = (env.LLM_USER_HASH_SECRET ?? '').trim();
+  const generate = 'Generate one with: openssl rand -hex 32';
+  if (!hashSecret) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is not set. It keys the pseudonymous id sent to OpenRouter and must differ from JWT_SECRET. ${generate}`;
+  }
+  if (hashSecret === (env.JWT_SECRET ?? '').trim()) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is the same as JWT_SECRET. Give it its own value. ${generate}`;
+  }
+  if (/^<.*>$/.test(hashSecret)) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is still the <...> placeholder from .env.demo.example. ${generate}`;
+  }
+  if (hashSecret.length < 32) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is shorter than 32 characters. ${generate}`;
+  }
   return null;
 }
 
@@ -49,8 +73,16 @@ export function demoModeWarnings(env: Env = process.env): string[] {
   const warnings: string[] = [];
   if (env.ANTHROPIC_API_KEY) warnings.push('ANTHROPIC_API_KEY is set: visitors\' runs can reach Claude on that key. The showcase runs on OpenRouter only.');
   if (String(env.SDK_ENGINE_ENABLED ?? '').toLowerCase() === 'true') warnings.push('SDK_ENGINE_ENABLED=true: the subscription engine (this machine\'s Claude login) is on for a public server.');
-  if (!env.DEMO_SIGNUP_CODE && String(env.DEMO_SIGNUP_OPEN ?? '').toLowerCase() === 'true') warnings.push('DEMO_SIGNUP_OPEN=true with no DEMO_SIGNUP_CODE: anyone on the internet can make an account.');
+  if (!env.DEMO_SIGNUP_CODE && String(env.DEMO_SIGNUP_OPEN ?? '').toLowerCase() === 'true') warnings.push('DEMO_SIGNUP_OPEN=true with no DEMO_SIGNUP_CODE: anyone on the internet can make an account, and the privacy notice and the demo terms, which say sign-up needs an invite code, are then untrue.');
   if (demoOfferedModels(env).length === 0) warnings.push('DEMO_OFFERED_MODELS is empty: the model picker has nothing to offer visitors.');
+  // The scorer reads the first 3,000 characters of every answer; on a demo it
+  // must go where the answers go (the privacy notice names the endpoint).
+  const scorer = qualityScorerModelEnv(env);
+  if (scorer && demoQualityScoreOn(env) && !scorer.startsWith('compat:')) {
+    warnings.push('QUALITY_SCORER_MODEL is not a compat: model: every answer would be scored outside the OpenRouter endpoint the privacy notice names.');
+  } else if (scorer && demoQualityScoreOn(env) && demoOfferedModels(env).length > 0 && !demoOfferedModels(env).includes(scorer)) {
+    warnings.push('QUALITY_SCORER_MODEL is not one of DEMO_OFFERED_MODELS: answers would be scored by a model (and possibly an endpoint) the privacy notice does not name.');
+  }
   if (parseSpendCap(env.LLM_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_DAILY_SPEND_CAP_USD is not set (or 0): nothing in ANTON caps a day\'s model spend (the OpenRouter key limit still does).');
   if (parseSpendCap(env.LLM_USER_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_USER_DAILY_SPEND_CAP_USD is not set (or 0): one visitor can use the whole day\'s budget.');
   for (const key of ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'MISTRAL_API_KEY', 'AZURE_OPENAI_API_KEY'] as const) {
@@ -59,6 +91,20 @@ export function demoModeWarnings(env: Env = process.env): string[] {
   if (String(env.CODEX_ENGINE_ENABLED ?? '').toLowerCase() === 'true') warnings.push('CODEX_ENGINE_ENABLED=true: the ChatGPT subscription engine is on for a public server.');
   for (const name of unknownPillarNames(env)) warnings.push(`DEMO_ENABLED_PILLARS names "${name}", which is not a pillar — ignored.`);
   for (const entry of invalidExtraRoutes(env)) warnings.push(`DEMO_EXTRA_ROUTES entry "${entry}" is not a /path (optionally METHOD:/path) — ignored.`);
+  if (!demoOperatorName(env)) warnings.push('DEMO_OPERATOR_NAME is not set: the pages cannot say who operates the demo, which the law requires before it opens to the public.');
+  if (demoHiddenAreas(env).length === 0 && demoHiddenModules(env).length === 0) {
+    warnings.push('DEMO_HIDDEN_AREAS and DEMO_HIDDEN_MODULES are both "none": visitors can run the health, HR, credit, CV and investigation modules, which invite data the demo must not receive.');
+  } else {
+    // An explicit list replaces the built-in one; the privacy notice promises
+    // every recommended module is off the demo.
+    for (const [name, effective, recommended] of [
+      ['DEMO_HIDDEN_AREAS', demoHiddenAreas(env), DEFAULT_DEMO_HIDDEN_AREAS],
+      ['DEMO_HIDDEN_MODULES', demoHiddenModules(env), DEFAULT_DEMO_HIDDEN_MODULES],
+    ] as const) {
+      const left = recommended.filter((id) => !effective.includes(id));
+      if (left.length > 0) warnings.push(`${name} leaves out ${left.join(', ')}: the privacy notice says the demo does not offer them.`);
+    }
+  }
   return warnings;
 }
 
@@ -124,26 +170,67 @@ function unknownPillarNames(env: Env): string[] {
   return listEnv(env.DEMO_ENABLED_PILLARS).filter((s) => !isPillar(s.toLowerCase()));
 }
 
-/** DEMO_OFFERED_MODELS: the full model ids the picker offers visitors. */
 /**
  * The model calls a demo makes after each answer, besides the answer itself:
  * 'all' (quality score, structured extraction, session conclusion — what every
- * other install does), 'conclusion' (the default: only the session conclusion,
- * which the page shows) or 'none'. A live run on 2026-09-25 showed why: the
- * three calls fire together right after the answer, each can cost more than the
+ * other install does), 'scored' (the session conclusion and the quality score,
+ * which the page shows as the Trust Score under the answer; no structured
+ * extraction), 'conclusion' (the default: only the session conclusion, which
+ * the page shows) or 'none'. A live run on 2026-09-25 showed why: the three
+ * calls fire together right after the answer, each can cost more than the
  * answer, and on a provider pin with no fallback all three were refused 429.
- * The Transform panel the extraction feeds is not open to visitors anyway.
- * Outside demo mode this is always 'all'.
+ * The Transform panel extracts on demand when a visitor asks for a transform,
+ * so the after-answer extraction serves nobody on a demo. Outside demo mode
+ * this is always 'all'.
  */
-export type DemoPostAnswerCalls = 'all' | 'conclusion' | 'none';
+export type DemoPostAnswerCalls = 'all' | 'scored' | 'conclusion' | 'none';
 export function demoPostAnswerCalls(env: Env = process.env): DemoPostAnswerCalls {
   if (!isDemoMode(env)) return 'all';
   const v = String(env.DEMO_POST_ANSWER_CALLS ?? '').trim().toLowerCase();
-  return v === 'all' || v === 'none' ? v : 'conclusion';
+  return v === 'all' || v === 'scored' || v === 'none' ? v : 'conclusion';
 }
 
+/** Whether an answer is followed by the quality score (the Trust Score): 'all' or 'scored', and always outside demo mode. */
+export function demoQualityScoreOn(env: Env = process.env): boolean {
+  const v = demoPostAnswerCalls(env);
+  return v === 'all' || v === 'scored';
+}
+
+/** Whether an answer is followed by the structured extraction: 'all' only, and always outside demo mode. */
+export function demoStructuredExtractionOn(env: Env = process.env): boolean {
+  return demoPostAnswerCalls(env) === 'all';
+}
+
+/**
+ * QUALITY_SCORER_MODEL: the full model id that rates answers (e.g.
+ * compat:openrouter:deepseek/deepseek-v4-flash-0731), so a second model checks
+ * the first. Null when unset — the routed utility model scores, as before.
+ * Read here without a database; services/quality-ratchet.ts resolves the
+ * fallback.
+ */
+export function qualityScorerModelEnv(env: Env = process.env): string | null {
+  const v = (env.QUALITY_SCORER_MODEL ?? '').trim();
+  return v ? v.slice(0, 200) : null;
+}
+
+/** DEMO_OFFERED_MODELS: the full model ids the picker offers visitors. */
 export function demoOfferedModels(env: Env = process.env): string[] {
   return [...new Set(listEnv(env.DEMO_OFFERED_MODELS))];
+}
+
+/**
+ * DEMO_ALLOWED_PROVIDERS: the OpenRouter providers a demo's requests may go
+ * to (comma-separated, lower-cased), default "inceptron". Every entry of the
+ * endpoint's provider.only must be one of them, or the call is refused before
+ * anything is sent (assertDemoPrivacyPin in services/compat-endpoint.ts): the
+ * privacy notice names the provider, and its transfer assessment covers that
+ * one only. An endpoint saved from an older preset (["inceptron","nextbit"])
+ * would otherwise pass.
+ */
+export const DEFAULT_DEMO_ALLOWED_PROVIDERS: readonly string[] = ['inceptron'];
+export function demoAllowedProviders(env: Env = process.env): string[] {
+  const named = [...new Set(listEnv(env.DEMO_ALLOWED_PROVIDERS).map((s) => s.toLowerCase()))];
+  return named.length > 0 ? named : [...DEFAULT_DEMO_ALLOWED_PROVIDERS];
 }
 
 /** How long a demo account lives. DEMO_ACCOUNT_TTL_DAYS, 1–365, default 30. */
@@ -186,9 +273,19 @@ export function demoUserUploadQuota(env: Env = process.env): UploadQuota {
   };
 }
 
-/** Uploads, exports and version saves per account per 10 minutes. DEMO_USER_WRITES_PER_10_MIN, default 30. */
+/** Uploads, exports, version saves and answer-tool calls per account per 10 minutes. DEMO_USER_WRITES_PER_10_MIN, default 30. */
 export function demoUserWritesPer10Min(env: Env = process.env): number {
   return intEnv(env.DEMO_USER_WRITES_PER_10_MIN, 30, 1, 100_000);
+}
+
+/**
+ * Small edits per account per 10 minutes: an engagement's scope items,
+ * workstreams, team, client intelligence and every PATCH or DELETE.
+ * DEMO_USER_EDITS_PER_10_MIN, default 300 — a walkthrough adds and edits
+ * dozens of rows, which the write limit of 30 would refuse.
+ */
+export function demoUserEditsPer10Min(env: Env = process.env): number {
+  return intEnv(env.DEMO_USER_EDITS_PER_10_MIN, 300, 1, 100_000);
 }
 
 export interface DemoSignupPolicy {
@@ -208,45 +305,209 @@ export function demoSignupPolicy(env: Env = process.env): DemoSignupPolicy {
   return { open: String(env.DEMO_SIGNUP_OPEN ?? '').trim().toLowerCase() === 'true', code: null };
 }
 
+/**
+ * DEMO_SIGNUP_WITH_EMAIL=true: sign-up asks for an email address, which
+ * becomes the username (as for an invited account), instead of a made-up
+ * username. For a showcase among colleagues, where the operator wants to
+ * know who signed up; the address is not verified (no mail is sent).
+ */
+export function demoSignupWithEmail(env: Env = process.env): boolean {
+  return String(env.DEMO_SIGNUP_WITH_EMAIL ?? '').trim().toLowerCase() === 'true';
+}
+
+/**
+ * The version of the demo terms (the /terms page) a visitor accepts at
+ * sign-up. POST /api/auth/demo-signup refuses any other version and stores
+ * this one with the time of acceptance (migration 291). Change it whenever
+ * the terms text changes: a browser still showing the old terms is then
+ * refused and asked to reload.
+ */
+export const DEMO_TERMS_VERSION = '2026-10-03';
+
+/**
+ * DEMO_OPERATOR_NAME: the legal name of whoever runs the demo, for the
+ * "Operated by …" line (lag 2002:562 8 §). Empty when unset — the page then
+ * shows no such line.
+ */
+export function demoOperatorName(env: Env = process.env): string {
+  return (env.DEMO_OPERATOR_NAME ?? '').trim().slice(0, 200);
+}
+
 export interface DemoPublicConfig {
   demoMode: true;
   offeredModels: string[];
   enabledPillars: DemoPillar[];
   signupOpen: boolean;
   signupCodeRequired: boolean;
+  /** Sign-up asks for an email address instead of a username (DEMO_SIGNUP_WITH_EMAIL). */
+  signupWithEmail: boolean;
   retentionDays: number;
   privacyPath: '/privacy';
-  /** False unless DEMO_POST_ANSWER_CALLS=all: no quality score is made after an answer. */
+  /** The demo terms page; sign-up sends termsVersion back. */
+  termsPath: '/terms';
+  termsVersion: string;
+  /** DEMO_OPERATOR_NAME, or '' when unset. */
+  operatorName: string;
+  /** True when DEMO_POST_ANSWER_CALLS is 'scored' or 'all': a quality score (the Trust Score) follows each answer. */
   answersScored: boolean;
+  /**
+   * The full id of the model that makes that score (QUALITY_SCORER_MODEL, else
+   * the routed utility model) when answersScored, else null. The privacy
+   * notice names it.
+   */
+  scorerModel: string | null;
+  /**
+   * The area and module ids kept off the demo for visitors (demoHiddenAreas /
+   * demoHiddenModules: the effective lists, the built-in ones when the .env
+   * sets none). The web client leaves them out of its catalogue; the server
+   * refuses a run of one and leaves them out of its listings either way.
+   */
+  hiddenAreas: string[];
+  hiddenModules: string[];
 }
 
-/** The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code. */
-export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { demoMode: false } {
+/**
+ * The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code.
+ * `scorerModel` is the scorer the server resolved (index.ts passes it: with
+ * QUALITY_SCORER_MODEL unset it is the routed utility model, which needs the
+ * database); without it the env value stands, or null.
+ */
+export function demoPublicConfig(
+  env: Env = process.env,
+  opts: { scorerModel?: string | null } = {},
+): DemoPublicConfig | { demoMode: false } {
   if (!isDemoMode(env)) return { demoMode: false };
   const signup = demoSignupPolicy(env);
+  const answersScored = demoQualityScoreOn(env);
   return {
     demoMode: true,
     offeredModels: demoOfferedModels(env),
     enabledPillars: demoEnabledPillars(env),
     signupOpen: signup.open,
     signupCodeRequired: signup.code !== null,
+    signupWithEmail: demoSignupWithEmail(env),
     retentionDays: demoAccountTtlDays(env),
     privacyPath: '/privacy',
-    answersScored: demoPostAnswerCalls(env) === 'all',
+    termsPath: '/terms',
+    termsVersion: DEMO_TERMS_VERSION,
+    operatorName: demoOperatorName(env),
+    answersScored,
+    scorerModel: answersScored ? (opts.scorerModel || qualityScorerModelEnv(env)) : null,
+    hiddenAreas: demoHiddenAreas(env),
+    hiddenModules: demoHiddenModules(env),
   };
+}
+
+// ── Hidden modules ────────────────────────────────────────────────────────────
+
+/**
+ * The areas and modules a demo keeps from visitors when the .env names none:
+ * the ones the privacy notice says the demo does not offer (health, HR,
+ * workers' rights, criminal law and investigations, credit risk, CV writing).
+ * They invite health, employment, credit or criminal-offence data. The
+ * notice's claim must hold without configuration, so an unset list means
+ * these; "none" turns a list off. .env.demo.example repeats them, and a test
+ * keeps the two equal. Module ids are bare (the folder name under
+ * server/areas/<area>/modules/), as a run sends them.
+ */
+export const DEFAULT_DEMO_HIDDEN_AREAS: readonly string[] = ['healthcare', 'community-health', 'hr', 'workers-rights'];
+export const DEFAULT_DEMO_HIDDEN_MODULES: readonly string[] = [
+  // Credit risk and credit scoring
+  'credit-risk', 'fintech-credit-risk-assessment', 'microfinance-credit-scoring', 'credit-score-builder',
+  // CV writing
+  'cv-writer',
+  // Employment and social-protection (benefits, disability) questions
+  'employment-rights', 'social-protection-navigator',
+  // HR talent modules (candidate assessment and recruitment). Their prompts
+  // live in server/prompts, not under server/areas/hr, so the hr area alone
+  // does not reach them on the server.
+  'talent-discovery', 'talent-ad-generator', 'talent-ad-generation', 'talent-assessment', 'talent-aspiration',
+  // Criminal law and investigations: court cases, alerts, suspicious-activity
+  // reports, screening hits and sanctions cases are about named people
+  'court-process-demystifier', 'alert-investigation', 'investigation-support', 'ivts-detection-investigation',
+  'blockchain-investigation', 'investigative-research', 'sar-quality-check', 'daily-screening-review',
+  'sanctions-advisory',
+];
+
+/**
+ * One hidden list from the .env: unset or blank → the built-in list; "none"
+ * (any case) → no list; otherwise the ids given, trimmed, lower-cased and
+ * without repeats. A value with no id in it (",") counts as blank.
+ */
+function hiddenList(value: string | undefined, builtIn: readonly string[]): string[] {
+  const raw = (value ?? '').trim();
+  if (raw.toLowerCase() === 'none') return [];
+  const named = [...new Set(listEnv(raw).map((s) => s.toLowerCase()))];
+  return named.length > 0 ? named : [...builtIn];
+}
+
+/**
+ * The area ids kept off the demo: DEMO_HIDDEN_AREAS (comma-separated, e.g.
+ * healthcare,hr), DEFAULT_DEMO_HIDDEN_AREAS when unset, none for "none".
+ * Empty outside demo mode, where nothing is hidden.
+ */
+export function demoHiddenAreas(env: Env = process.env): string[] {
+  if (!isDemoMode(env)) return [];
+  return hiddenList(env.DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_AREAS);
+}
+
+/**
+ * The module ids kept off the demo: DEMO_HIDDEN_MODULES (comma-separated, e.g.
+ * credit-risk,cv-writer), DEFAULT_DEMO_HIDDEN_MODULES when unset, none for
+ * "none". Empty outside demo mode, where nothing is hidden.
+ */
+export function demoHiddenModules(env: Env = process.env): string[] {
+  if (!isDemoMode(env)) return [];
+  return hiddenList(env.DEMO_HIDDEN_MODULES, DEFAULT_DEMO_HIDDEN_MODULES);
+}
+
+/**
+ * Whether a module is kept off the demo: its id is in DEMO_HIDDEN_MODULES or
+ * its area's id is in DEMO_HIDDEN_AREAS. Always false outside demo mode.
+ *
+ * It does not look at the caller. Apply it to non-admins only — the run route
+ * refuses a hidden module (claude.ts) and the module listing leaves hidden
+ * ones out (modules.ts); an admin, as everywhere on the demo, sees everything.
+ * These modules invite health, employment, credit or criminal-offence data,
+ * which the demo must not receive (privacy review H3, 2026-09-26).
+ */
+export function demoModuleHidden(
+  moduleId: string | null | undefined,
+  areaId: string | null | undefined,
+  env: Env = process.env,
+): boolean {
+  if (!isDemoMode(env)) return false;
+  const mod = (moduleId ?? '').trim().toLowerCase();
+  const area = (areaId ?? '').trim().toLowerCase();
+  return (mod !== '' && demoHiddenModules(env).includes(mod))
+    || (area !== '' && demoHiddenAreas(env).includes(area));
 }
 
 // ── The route allowlist ───────────────────────────────────────────────────────
 
 /**
  * What the Work page needs, read off its API calls (ModulePage and the
- * shell around it: layout, header, sidebar, stores). Paths are under /api.
- * `:x` is one path segment; a trailing `/*` also matches everything below.
- * Anything not here answers 404 to a non-admin. Deliberately left out, for
- * DEMO_EXTRA_ROUTES to add when the owner wants them: the Transform panel
- * (/renderers), rerun, deliberation, explain-for, citation checks, reviews,
- * collections and RAG, EUR-Lex, evidence packs, exchange, projects, public
- * share links, custom-module and profile writes, and the custom model slots
+ * shell around it: layout, header, sidebar, stores), the Work tools opened
+ * to visitors on 2026-10-01 (My Work, the answer tools: Explain for,
+ * citation check, Review, Rerun with another model, Transform; Find the
+ * right module, the AI Council and Build Module), and the features opened on
+ * 2026-10-02: Engagement Tasks, Projects, the Knowledge Base, the Task Agent,
+ * Discover, and read-only Orchestration, Intelligence and Horizon Radar, plus
+ * the unsigned .anton download of a module the visitor built (Exchange).
+ * Paths are under /api. `:x` is one path segment; a trailing `/*` also
+ * matches everything below. Every entry is exact: a prefix would also open
+ * its sibling routes (POST /reviews/orchestrate, POST /modules/community, the
+ * rest of /ai-assist, the mission routes of the Task Agent, radar triage,
+ * project members and invitations, an engagement's host-folder index).
+ * Each opened route that holds a person's rows checks the owner in SQL itself,
+ * so another visitor's row answers 404; the shared reads (the radar feed, the
+ * organisation context, shared knowledge) change nothing. Anything not here
+ * answers 404 to a non-admin. Deliberately
+ * left out, for DEMO_EXTRA_ROUTES to add when the owner wants them:
+ * deliberation, indexed local folders (/rag, /folders), EUR-Lex, evidence
+ * packs, Exchange imports and signed exports, community sharing of a module,
+ * project sharing (members, invitations), Coding, the App Gateway, public
+ * share links, profile writes, and the custom model slots
  * (GET /settings/custom-models can carry a per-slot key).
  */
 export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]> = [
@@ -306,7 +567,10 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/embeddings/feedback'],
   ['POST', '/embeddings/feedback/bulk'],
   ['GET', '/oversight/modules'],
-  ['GET,POST', '/oversight/reviews'],
+  // Read only: the sign-off form asks for the reviewer's name, and visitors
+  // are told never to give a real one (privacy review H1). The page hides the
+  // form for them; an admin can still sign off.
+  ['GET', '/oversight/reviews'],
   ['GET', '/oversight/sessions/:x/review'],
   ['GET', '/versions/diff'],
   ['GET,POST', '/versions/output/:x'],
@@ -315,6 +579,122 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/export'],
   ['POST', '/export/with-template'],
   ['POST', '/export/trust-certificate'],
+  // My Work: the caller's own sessions, engagements and runs (the route scopes them)
+  ['GET', '/work-timeline'],
+  // The answer tools. Each makes a model call; index.ts puts them behind the
+  // demo write limiter and the model-call limiter.
+  ['POST', '/claude/explain-for'],
+  ['POST', '/claude/verify-citations'],
+  ['GET', '/reviews/modes'],
+  ['POST', '/reviews'],
+  ['POST', '/rerun'],
+  ['GET', '/rerun/quality/:x'],
+  // The Transform panel (TransformPanel.tsx; the routes check the session is the caller's)
+  ['GET', '/renderers/applicable'],
+  ['POST', '/renderers/run'],
+  ['GET', '/renderers/artifacts/:x'],
+  ['GET', '/sessions/:x/artifacts'],
+  // Home: Find the right module (hidden modules are left out for visitors)
+  ['POST', '/modules/smart-search'],
+  // The AI Council's dissent ledger (members and chair run through /claude/message;
+  // the route reads only the caller's own council session)
+  ['POST', '/council/:x/dissent-ledger'],
+  // Build Module: the caller's own custom modules, the guided builder and its
+  // test run, and the module's saved versions. Sharing with the community
+  // (POST /modules/community) stays closed.
+  ['POST', '/custom-modules'],
+  ['PATCH,DELETE', '/custom-modules/:x'],
+  ['POST', '/custom-modules/guide-message'],
+  ['POST', '/custom-modules/guide-generate'],
+  ['POST', '/custom-modules/test-run'],
+  ['POST', '/ai-assist/module-prompt'],
+  ['POST', '/ai-assist/module-inputs'],
+  ['POST', '/versions/module/:x'],
+  // Exchange: the .anton download of the caller's own built module, always
+  // unsigned for a visitor (routes/exchange.ts; a built-in module or someone
+  // else's answers 404). Import, validate, the bundle exports and the signing
+  // identity stay closed.
+  ['POST', '/exchange/export/:x'],
+
+  // ── Opened 2026-10-02 ──
+  // Engagement Tasks (services/engagement-demo-routes.ts holds the list; a
+  // test keeps the two equal). Closed: the host-folder index (rag-directory),
+  // linking a project, and the web-search benchmark.
+  ...ENGAGEMENT_WORK_ROUTES,
+  // Projects: the caller's own (membership decides; a visitor cannot share
+  // one: members and invitations stay closed), their files and notes, filing
+  // a session under one, and the AI Scaffold button.
+  ['GET,POST', '/projects'],
+  ['GET,PATCH,DELETE', '/projects/:x'],
+  ['GET', '/projects/:x/stats'],
+  ['GET,POST', '/projects/:x/files'],
+  ['GET', '/projects/:x/files/:x/download'],
+  ['DELETE', '/projects/:x/files/:x'],
+  ['GET,POST', '/projects/:x/notes'],
+  ['DELETE', '/projects/:x/notes/:x'],
+  ['PATCH', '/sessions/:x/project'],
+  ['POST', '/ai-assist/project-scaffold'],
+  // The Knowledge Base: the caller's own collections and documents (a
+  // visitor's are searched by keyword only, never embedded). Collection
+  // edits, queries, re-indexing and maintenance stay closed.
+  ['GET,POST', '/collections'],
+  ['DELETE', '/collections/:x'],
+  ['GET', '/collections/:x/documents'],
+  ['POST', '/documents/upload'],
+  ['GET', '/documents/collection/:x'],
+  ['DELETE', '/documents/:x'],
+  // The ANTON Task Agent: the caller's own tasks. Closed: running a task as
+  // a mission (the missions runner is off on a demo), completing it with a
+  // client-supplied score, PATCH, the backfill and the webhook intake.
+  ['GET', '/task-agent/capabilities'],
+  ['GET', '/task-agent/stats'],
+  ['GET,POST', '/task-agent/tasks'],
+  ['GET,DELETE', '/task-agent/tasks/:x'],
+  ['POST', '/task-agent/tasks/:x/message'],
+  ['POST', '/task-agent/tasks/:x/select-approach'],
+  ['POST', '/task-agent/tasks/:x/intake-ready'],
+  ['POST', '/task-agent/tasks/:x/execute-step'],
+  ['GET', '/task-agent/tasks/:x/execute-step/stream'],
+  ['POST', '/task-agent/tasks/:x/upload'],
+  ['DELETE', '/task-agent/tasks/:x/upload/:x'],
+  ['PUT', '/task-agent/tasks/:x/knowledge-packs'],
+  // Discover: the caller's own interviews. Closed: writing interview state
+  // directly (PUT), status changes, the follow-up list and single packs.
+  ['GET,POST', '/discovery/sessions'],
+  ['GET,DELETE', '/discovery/sessions/:x'],
+  ['GET', '/discovery/sessions/:x/start'],
+  ['POST', '/discovery/sessions/:x/respond'],
+  ['GET', '/discovery/sessions/:x/insights'],
+  ['POST', '/discovery/sessions/:x/generate'],
+  ['GET', '/discovery/sessions/:x/output'],
+  ['POST', '/discovery/sessions/:x/export'],
+  ['PATCH', '/discovery/sessions/:x/upgrade'],
+  ['POST', '/discovery/sessions/:x/pack'],
+  ['POST', '/discovery/sessions/:x/followup'],
+  ['GET', '/discovery/packs'],
+  // Orchestration, read only: the organisation context the operator set, the
+  // caller's own insights and continuity profiles.
+  ['GET', '/org-context'],
+  ['GET', '/insights'],
+  ['GET', '/insights/unread-count'],
+  ['GET', '/continuity/profiles'],
+  // Intelligence, read only: the caller's own and shared knowledge. Patterns,
+  // the A/B and memory switches and the Intelligence Brief stay closed.
+  ['GET', '/intelligence/summary'],
+  ['GET', '/intelligence/distribution'],
+  ['GET', '/intelligence/top-entities'],
+  ['GET', '/intelligence/insights'],
+  ['GET', '/intelligence/export'],
+  ['GET', '/intelligence/temporal/atoms-per-day'],
+  ['GET', '/intelligence/temporal/entity-activity'],
+  ['GET', '/intelligence/temporal/quality-trend'],
+  ['GET', '/knowledge-graph/entities'],
+  // Horizon Radar, read only: the shared feed. Triage, sources, scans and
+  // settings stay with admins.
+  ['GET', '/radar/summary'],
+  ['GET', '/radar/items'],
+  ['GET', '/radar/sources'],
+  ['GET', '/radar/scan-status'],
 ];
 
 /** The API prefixes an enabled pillar adds. Work's are WORK_ROUTES. */
@@ -445,10 +825,12 @@ export function createDemoSignupLimiter(): RequestHandler {
 
 /**
  * Per-account limit on the routes that store bytes (uploads, exports, version
- * saves), for index.ts to mount after the auth middleware. Counts only a
- * non-admin in demo mode; everyone else passes untouched. The general
- * per-user limiter allows 1,200 requests a minute, which is a disk-filling
- * rate for 10 MB uploads.
+ * saves) and on the answer tools opened to visitors (explain, review, rerun,
+ * transform, the module builder: each a model call, most also a stored row or
+ * file), for index.ts to mount after the auth middleware. One count covers
+ * them all. Counts only a non-admin in demo mode; everyone else passes
+ * untouched. The general per-user limiter allows 1,200 requests a minute,
+ * which is a disk-filling rate for 10 MB uploads.
  */
 export function createDemoWriteLimiter(): RequestHandler {
   return rateLimit({
@@ -457,7 +839,26 @@ export function createDemoWriteLimiter(): RequestHandler {
     validate: false,
     skip: (req: Request) => !isDemoMode() || !req.user || req.user.role === 'admin',
     keyGenerator: (req: Request) => `demo-write:${req.user?.id ?? 'anonymous'}`,
-    message: { error: 'Too many uploads or exports from this demo account. Try again in a few minutes.' },
+    message: { error: 'Too many uploads, exports or AI requests from this demo account. Try again in a few minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+}
+
+/**
+ * Per-account limit on small edits (DEMO_USER_EDITS_PER_10_MIN): the engagement
+ * writes that store a row but no file and call no model. A count of its own,
+ * so editing an engagement does not use up the uploads and AI requests.
+ * Counts only a non-admin in demo mode.
+ */
+export function createDemoEditLimiter(): RequestHandler {
+  return rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: () => demoUserEditsPer10Min(),
+    validate: false,
+    skip: (req: Request) => !isDemoMode() || !req.user || req.user.role === 'admin',
+    keyGenerator: (req: Request) => `demo-edit:${req.user?.id ?? 'anonymous'}`,
+    message: { error: 'Too many changes from this demo account in a short time. Try again in a few minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
   });

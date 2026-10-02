@@ -68,6 +68,9 @@ import { capabilityModelId } from '../services/engine-model-id.js';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import { anthropicEffort } from '../services/thinking-map.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
+import { isDemoMode, demoOfferedModels } from '../middleware/demo-mode.js';
+import { checkBudgetBeforeApiCall, chargeMonthlyUsage } from '../services/budget-manager.js';
+import { COMPAT_WORK_RUN_MAX_TOKENS } from '../services/adapters/openaiCompatibleAdapter.js';
 import type { ThinkingLevel as LadderThinkingLevel } from '../../src/lib/types.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -160,7 +163,24 @@ export interface ReplayResponseBody {
 
 export type ReplayOutcome =
   | { ok: true; status: 200; body: ReplayResponseBody }
-  | { ok: false; status: 400 | 404 | 409 | 502; error: string };
+  | { ok: false; status: 400 | 403 | 404 | 409 | 502; error: string; code?: string };
+
+/** The refusal a demo visitor gets for a model the demo does not offer (the Work route's words). */
+export const MODEL_NOT_OFFERED = {
+  error: 'This model is not offered in this demo. Pick one of the models in the model menu.',
+  code: 'MODEL_NOT_OFFERED',
+} as const;
+
+/**
+ * The models a caller may rerun on: on a demo, a visitor (a non-admin) only
+ * those DEMO_OFFERED_MODELS lists (with no list, only compat: models, as the
+ * Work route decides); null — no restriction — for everyone else.
+ */
+export function rerunAllowedModels(role: string | undefined): ((model: string) => boolean) | null {
+  if (!isDemoMode() || role === 'admin') return null;
+  const offered = demoOfferedModels();
+  return (model: string) => (offered.length > 0 ? offered.includes(model) : model.startsWith('compat:'));
+}
 
 export const REPLAY_NOTE =
   'Same prompt, same history, same model: an identical output is still not guaranteed — sampling can differ even with identical inputs. The output hash reports whether it did.';
@@ -637,7 +657,13 @@ export function rebuildReplayMessages(
  */
 export async function replayRun(
   db: DatabaseAdapter,
-  input: { sessionId: string; messageId?: string | null; newModelId?: string | null },
+  input: {
+    sessionId: string;
+    messageId?: string | null;
+    newModelId?: string | null;
+    /** When set, the model the replay would dispatch must pass it (a demo visitor: rerunAllowedModels). */
+    modelAllowed?: ((model: string) => boolean) | null;
+  },
 ): Promise<ReplayOutcome> {
   const { sessionId } = input;
   const session = await db.get<SessionRow>('SELECT id, module_id, config FROM sessions WHERE id = ?', sessionId);
@@ -699,6 +725,12 @@ export async function replayRun(
   }
   const modelRequested = resolvedModel.dispatch;
 
+  // A demo visitor replays only on an offered model — the one named, or the
+  // original's when none is: the offered list can have changed since.
+  if (input.modelAllowed && !input.modelAllowed(modelRequested)) {
+    return { ok: false, status: 403, ...MODEL_NOT_OFFERED };
+  }
+
   // Pre-flight: an id the router cannot dispatch fails closed before any call.
   const availability = modelAvailability(modelRequested, db);
   if (!availability.available) {
@@ -729,6 +761,10 @@ export async function replayRun(
   const isUnpriced = isSdk || isCodex || isOllama || modelRequested.startsWith('azure:') || modelRequested.startsWith('compat:');
   const modelConfig = isUnpriced ? undefined : await getModelConfig(modelRequested, db);
   const hasKnownPricing = !!modelConfig;
+  // A compat model has no registry entry; the Work run asked for
+  // COMPAT_WORK_RUN_MAX_TOKENS (the adapter holds it to the endpoint's own
+  // limit), and the router's 8,192 default cut long answers short.
+  const maxTokens = modelConfig?.maxOutputTokens ?? (modelRequested.startsWith('compat:') ? COMPAT_WORK_RUN_MAX_TOKENS : undefined);
 
   const requestParams = {
     mode: 'replay' as const,
@@ -739,7 +775,7 @@ export async function replayRun(
     originalEffort,
     thinkingParamsResolved: resolvedModel.thinkingResolves,
     tools: webUsed ? ['web_search'] : [],
-    maxTokens: modelConfig?.maxOutputTokens ?? null,
+    maxTokens: maxTokens ?? null,
     messages: messages.length,
     historyDefinition: 'every non-rerun turn before the user message, in created_at order',
     promptSha256: record.prompt_sha256,
@@ -758,7 +794,7 @@ export async function replayRun(
       messages,
       thinkingLevel,
       ...(tools ? { tools } : {}),
-      ...(modelConfig?.maxOutputTokens ? { maxTokens: modelConfig.maxOutputTokens } : {}),
+      ...(maxTokens ? { maxTokens } : {}),
       db,
     });
   } catch (err) {
@@ -930,6 +966,22 @@ export async function describeReplayability(
 export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Router {
   const router = Router();
 
+  /**
+   * Why a replay may not run on the caller's monthly token budget, or null.
+   * A small estimate: the check stops a caller already at the limit, and the
+   * replay's real tokens are charged once it answers. A budget that cannot be
+   * read does not block.
+   */
+  async function replayBudgetRefusal(userId: string | undefined): Promise<string | null> {
+    if (!userId || userId === 'solo') return null;
+    try {
+      const check = await checkBudgetBeforeApiCall(db, userId, 4_000);
+      return check.allowed ? null : (check.reason ?? 'Monthly budget exceeded');
+    } catch {
+      return null;
+    }
+  }
+
   // POST /api/rerun — re-execute an assistant message: recompose (default,
   // another model through the live pipeline) or replay (verbatim).
   router.post('/rerun', async (req: Request, res: Response) => {
@@ -951,6 +1003,14 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
       if (mode === 'recompose' && !modelGiven) {
         return res.status(400).json({ error: 'newModelId is required' });
       }
+      // Demo mode: a visitor reruns only on a model the demo offers, in both
+      // modes. A recompose is checked again by the Work route it dispatches
+      // into (with the caller's role); a replay calls the model itself, so
+      // replayRun checks the model it would dispatch.
+      const modelAllowed = rerunAllowedModels((req as Request & { user?: { role?: string } }).user?.role);
+      if (modelAllowed && modelGiven && !modelAllowed(newModelId as string)) {
+        return res.status(403).json(MODEL_NOT_OFFERED);
+      }
 
       // SECURITY (2026-07-27 survey): this loaded any session by id, then reran it and
       // DELETED its messages — so on a shared instance one user could destroy another's
@@ -964,12 +1024,19 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
 
       // ── Replay: the stored record, verbatim ────────────────────────────────
       if (mode === 'replay') {
+        // The monthly token budget, as the Work route checks it before a run
+        // (a recompose passes through that check; a replay calls the model here).
+        const caller = (req as Request & { user?: { id?: string } }).user;
+        const refusal = await replayBudgetRefusal(caller?.id);
+        if (refusal) return res.status(429).json({ error: 'Budget limit exceeded', reason: refusal });
         const outcome = await replayRun(db, {
           sessionId,
           messageId: typeof messageId === 'string' ? messageId : null,
           newModelId: modelGiven ? (newModelId as string) : null,
+          modelAllowed,
         });
-        return res.status(outcome.status).json(outcome.ok ? outcome.body : { error: outcome.error });
+        if (outcome.ok) await chargeMonthlyUsage(db, caller, outcome.body.usage.inputTokens, outcome.body.usage.outputTokens);
+        return res.status(outcome.status).json(outcome.ok ? outcome.body : { error: outcome.error, ...(outcome.code ? { code: outcome.code } : {}) });
       }
 
       // ── Recompose: today's behaviour ──────────────────────────────────────

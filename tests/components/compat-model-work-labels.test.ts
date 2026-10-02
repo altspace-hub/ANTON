@@ -221,10 +221,18 @@ describe('OutputToolbar: the Trust Score names no model', () => {
   });
 
   it('while no score is in, the quality check is reviewing — no model named', async () => {
-    await render(OutputToolbar as ComponentType<object>, props(GLM));
+    // An answer long enough to be scored (over 200 characters).
+    await render(OutputToolbar as ComponentType<object>, { ...props(GLM), outputContent: 'A long answer. '.repeat(20) });
     await click(button('Trust Score'));
     expect(text()).toContain('The quality check is reviewing the output.');
     expect(text()).not.toContain('Haiku');
+  });
+
+  it('an answer of 200 characters or fewer is said not to be scored, instead of waiting for a score', async () => {
+    await render(OutputToolbar as ComponentType<object>, props(GLM));
+    await click(button('Trust Score'));
+    expect(text()).toContain('Not scored: answers of 200 characters or fewer get no Trust Score.');
+    expect(text()).not.toContain('Scoring in progress');
   });
 });
 

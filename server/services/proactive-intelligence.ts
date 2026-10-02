@@ -7,6 +7,14 @@
 
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { atomOwnerSql, INSTANCE_WIDE_SEARCH, type SearchScope } from './hybrid-search.js';
+
+/**
+ * An owner condition for one insight row, as ownerFilter (middleware/ownership.ts)
+ * builds it: ` AND user_id = ?` for a team-mode non-admin, empty for solo and
+ * admins. Applied inside the UPDATE, so a colleague's insight is never touched.
+ */
+export interface InsightOwnerScope { sql: string; params: string[] }
 
 
 export interface ProactiveInsight {
@@ -166,44 +174,54 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
   /**
    * Mark insight as read.
    */
-  async function markRead(insightId: string): Promise<void> {
-    await db.run(`
-      UPDATE proactive_insights SET read = 1, read_at = NOW() WHERE id = ?
-    `, insightId);
+  async function markRead(insightId: string, scope: InsightOwnerScope): Promise<boolean> {
+    const r = await db.run(`
+      UPDATE proactive_insights SET read = 1, read_at = NOW() WHERE id = ?${scope.sql}
+    `, [insightId, ...scope.params]);
+    return r.changes > 0;
   }
 
   /**
    * Dismiss an insight.
    */
-  async function dismissInsight(insightId: string, actionTaken?: string): Promise<void> {
-    await db.run(`
+  async function dismissInsight(insightId: string, actionTaken: string | undefined, scope: InsightOwnerScope): Promise<boolean> {
+    const r = await db.run(`
       UPDATE proactive_insights
       SET dismissed = 1, dismissed_at = NOW(), action_taken = ?
-      WHERE id = ?
-    `, actionTaken ?? null, insightId);
+      WHERE id = ?${scope.sql}
+    `, [actionTaken ?? null, insightId, ...scope.params]);
+    return r.changes > 0;
   }
 
   /**
    * Analyse recent knowledge atoms and session patterns to generate new insights.
    * This is the core "proactive" engine — runs periodically in the background.
    */
-  async function runInsightGeneration(userId: string): Promise<{ generated: number }> {
+  async function runInsightGeneration(userId: string, atomScope: SearchScope = INSTANCE_WIDE_SEARCH): Promise<{ generated: number }> {
     let generated = 0;
 
-    // Pattern 1: Conflicting knowledge atoms across sessions
+    // Pattern 1: Conflicting knowledge atoms across sessions. Both atoms are
+    // quoted into the caller's insight, so both must be atoms the caller may
+    // read (atomOwnerSql: own + shared for a team-mode non-admin). Until
+    // 2026-10-02 this read every user's atoms.
+    const own1 = atomOwnerSql(atomScope, 'ka1.owner_user_id');
+    const own2 = atomOwnerSql(atomScope, 'ka2.owner_user_id');
+    // knowledge_atoms has no source_session_id: the run an atom came from is
+    // source_execution_id (a Work run's session id). Naming the missing column
+    // made this route fail on PostgreSQL.
     const conflicts = await db.all(`
       SELECT ka1.id as atom1_id, ka2.id as atom2_id,
              ka1.content as content1, ka2.content as content2,
-             ka1.source_session_id as session1_id, ka2.source_session_id as session2_id
+             ka1.source_execution_id as session1_id, ka2.source_execution_id as session2_id
       FROM knowledge_atoms ka1
       JOIN knowledge_atoms ka2 ON ka1.category = ka2.category
         AND ka1.id < ka2.id
-        AND ka1.source_session_id != ka2.source_session_id
+        AND ka1.source_execution_id != ka2.source_execution_id
       WHERE ka1.is_active = 1 AND ka2.is_active = 1
         AND ka1.atom_type = 'conclusion' AND ka2.atom_type = 'conclusion'
-        AND ka1.created_at >= NOW() - INTERVAL '14 days'
+        AND ka1.created_at >= NOW() - INTERVAL '14 days'${own1.sql}${own2.sql}
       LIMIT 5
-    `) as Array<{
+    `, [...own1.params, ...own2.params]) as Array<{
       atom1_id: string; atom2_id: string;
       content1: string; content2: string;
       session1_id: string; session2_id: string;
@@ -233,33 +251,36 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
       }
     }
 
-    // Pattern 2: Session gap detection — areas with no recent activity
-    const areaActivity = await db.all(`
-      SELECT area_id, MAX(updated_at) as last_active, COUNT(*) as session_count
+    // Pattern 2: Session gap detection — modules with no recent activity.
+    // sessions has no area_id column (naming it made this route fail on
+    // PostgreSQL); a session records its module. "No recent activity" is the
+    // newest session being older than 14 days, not 3 old sessions among new ones.
+    const moduleActivity = await db.all(`
+      SELECT module_id, MAX(updated_at) as last_active, COUNT(*) as session_count
       FROM sessions
-      WHERE user_id = ? AND area_id IS NOT NULL
-        AND updated_at < NOW() - INTERVAL '14 days'
-      GROUP BY area_id
-      HAVING COUNT(*) >= 3
+      WHERE user_id = ? AND module_id IS NOT NULL
+      GROUP BY module_id
+      HAVING COUNT(*) >= 3 AND MAX(updated_at) < NOW() - INTERVAL '14 days'
       LIMIT 3
-    `, userId) as Array<{ area_id: string; last_active: string; session_count: number }>;
+    `, userId) as Array<{ module_id: string; last_active: string | Date; session_count: number | string }>;
 
-    for (const area of areaActivity) {
+    for (const mod of moduleActivity) {
       const existing = await db.get(`
         SELECT id FROM proactive_insights
         WHERE user_id = ? AND insight_type = 'gap'
-          AND area_id = ? AND dismissed = 0
+          AND module_id = ? AND dismissed = 0
           AND created_at > NOW() - INTERVAL '7 days'
-      `, userId, area.area_id) as { id: string } | undefined;
+      `, userId, mod.module_id) as { id: string } | undefined;
 
       if (!existing) {
-        const daysSince = Math.floor((Date.now() - new Date(area.last_active).getTime()) / (1000 * 60 * 60 * 24));
+        const daysSince = Math.floor((Date.now() - new Date(mod.last_active).getTime()) / (1000 * 60 * 60 * 24));
+        const count = Number(mod.session_count);
         await createInsight({
           insight_type: 'gap',
-          title: `No activity in ${area.area_id} for ${daysSince} days`,
-          body: `You have ${area.session_count} sessions in the ${area.area_id} area, but no activity in ${daysSince} days. Consider reviewing whether ongoing commitments in this area need attention.`,
+          title: `No activity in ${mod.module_id} for ${daysSince} days`,
+          body: `You have ${count} sessions in the ${mod.module_id} module, but no activity in ${daysSince} days. Consider reviewing whether ongoing commitments there need attention.`,
           severity: daysSince > 30 ? 'high' : 'medium',
-          area_id: area.area_id,
+          module_id: mod.module_id,
           user_id: userId,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         });

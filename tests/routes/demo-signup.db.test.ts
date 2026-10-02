@@ -32,6 +32,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 import type { DatabaseAdapter } from '../../server/db/database.js';
+import { DEMO_TERMS_VERSION } from '../../server/middleware/demo-mode.js';
 
 const H = vi.hoisted(() => {
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-demo-signup-0123456789abcdef';
@@ -53,6 +54,7 @@ const TAG = H.tag;
 const CODE = `invite-${TAG}`;
 const PASSWORD = 'a-long-enough-pass';
 const MIGRATION = path.resolve(__dirname, '../../server/db/migrations-pg/289_demo_accounts.sql');
+const MIGRATION_TERMS = path.resolve(__dirname, '../../server/db/migrations-pg/291_demo_terms_acceptance.sql');
 const ORDINARY = `ord_${TAG}`;
 const GOOGLE_EMAIL = `g_${TAG}@example.test`;
 const GITHUB_EMAIL = `gh_${TAG}@example.test`;
@@ -85,6 +87,7 @@ d('demo sign-up and sign-in (routes/auth.ts)', () => {
     const { PostgresAdapter } = await import('../../server/db/adapters/postgresql-adapter.js');
     db = new PostgresAdapter({ connectionString: DATABASE_URL!, maxConnections: 3 });
     await db.exec(fs.readFileSync(MIGRATION, 'utf8'));
+    await db.exec(fs.readFileSync(MIGRATION_TERMS, 'utf8'));
     await db.run(
       `INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, 'analyst')`,
       `u-${ORDINARY}`, ORDINARY, await bcrypt.hash(PASSWORD, 4),
@@ -139,11 +142,13 @@ d('demo sign-up and sign-in (routes/auth.ts)', () => {
     await new Promise<void>((resolve) => { server?.close(() => resolve()); });
   });
 
+  // Every sign-up here ticks both boxes of the current terms (migration 291);
+  // demo-signup-terms.db.test.ts covers the refusals.
   const signup = (body: Record<string, unknown>, ip = nextIp()) =>
     fetch(`${base}/api/auth/demo-signup`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_VERSION, ...body }),
     });
   const login = (username: string, password = PASSWORD) =>
     fetch(`${base}/api/auth/login`, {

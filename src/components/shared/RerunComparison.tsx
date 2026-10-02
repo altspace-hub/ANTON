@@ -5,7 +5,8 @@
  * - Both sides rendered as markdown, paragraph by paragraph.
  * - Paragraph-level diff highlight computed client-side: paragraph split +
  *   LCS over normalized paragraphs (no heavy diff dependency).
- * - Per side: model, cost, tokens, quality score (polled — scoring is async).
+ * - Per side: model, cost, tokens, quality score (polled — scoring is async;
+ *   "not scored" at once on a demo that makes no score).
  * - Recompose: source-drift banner when the pinned source manifests differ.
  * - Replay: an equality strip — model, prompt hash (always identical: the
  *   stored prompt was sent byte-for-byte) and output hash — with the one
@@ -17,6 +18,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X, AlertTriangle, ShieldCheck, Loader2, GitCompare, Equal, Shuffle, Fingerprint } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { modelLabel } from '@/lib/model-labels';
 import type { RerunResponse, RerunSide, RerunSourceDriftEntry } from '@/lib/types';
 
 // ── Data shapes (mirror POST /api/rerun response) ────────────────────────────
@@ -86,12 +89,13 @@ export function computeParagraphDiff(aText: string, bText: string): { a: string[
 
 interface QualityScore { overall: number }
 
-function useQualityScore(messageId: string | undefined): { score: QualityScore | null; loading: boolean } {
+/** `scored` false: the server makes no quality score (a demo without DEMO_POST_ANSWER_CALLS scored/all), so nothing is polled. */
+function useQualityScore(messageId: string | undefined, scored: boolean): { score: QualityScore | null; loading: boolean } {
   const [score, setScore] = useState<QualityScore | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!messageId) return;
+    if (!messageId || !scored) { setScore(null); setLoading(false); return; }
     let cancelled = false;
     setScore(null);
     setLoading(true);
@@ -117,7 +121,7 @@ function useQualityScore(messageId: string | undefined): { score: QualityScore |
     };
     void tryFetch(1);
     return () => { cancelled = true; };
-  }, [messageId]);
+  }, [messageId, scored]);
 
   return { score, loading };
 }
@@ -136,7 +140,7 @@ function SideHeader({ label, side, quality, qualityLoading, accent }: {
     <div className="sticky top-0 z-10 border-b border-border bg-adv-card px-4 py-3">
       <div className="flex items-center justify-between gap-2">
         <span className={`text-xs font-semibold uppercase tracking-wide ${accentText}`}>{label}</span>
-        <span className="truncate text-xs font-medium text-adv-off-white" title={side.modelId ?? ''}>{side.modelId ?? 'unknown model'}</span>
+        <span className="truncate text-xs font-medium text-adv-off-white" title={side.modelId ?? ''}>{modelLabel(side.modelId)}</span>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-adv-gray">
         <span>{side.cost !== null && side.cost !== undefined ? `$${Number(side.cost).toFixed(4)}` : 'cost n/a'}</span>
@@ -197,8 +201,10 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
     () => computeParagraphDiff(data.original.content, data.rerun.content),
     [data.original.content, data.rerun.content],
   );
-  const originalQuality = useQualityScore(data.original.messageId);
-  const rerunQuality = useQualityScore(data.rerun.messageId);
+  const demoConfig = useDemoStore((s) => s.config);
+  const scored = !demoConfig.demoMode || demoConfig.answersScored;
+  const originalQuality = useQualityScore(data.original.messageId, scored);
+  const rerunQuality = useQualityScore(data.rerun.messageId, scored);
 
   const isReplay = data.mode === 'replay';
   const changedSources = (data.sourceDrift ?? []).filter((d) => d.changed);
@@ -212,7 +218,7 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
             <GitCompare className="h-4 w-4 text-adv-teal" />
             <span className="text-sm font-semibold text-adv-off-white">{isReplay ? 'Verbatim replay' : 'Model comparison'}</span>
             <span className="rounded-full bg-adv-teal/10 px-2 py-0.5 text-[11px] font-medium text-adv-teal">
-              {isReplay ? `Replay of ${data.original.modelId ?? 'original'} output` : `Rerun of ${data.original.modelId ?? 'original'} output`}
+              {isReplay ? `Replay of ${data.original.modelId ? modelLabel(data.original.modelId) : 'original'} output` : `Rerun of ${data.original.modelId ? modelLabel(data.original.modelId) : 'original'} output`}
             </span>
           </div>
           <button

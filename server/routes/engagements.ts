@@ -5,23 +5,19 @@
  * iterations, client intelligence, and changelog.
  */
 
-import { safeError } from '../lib/error-response.js';
+import { publicErrorMessage } from '../lib/error-response.js';
 import { resolveProjectAccess } from '../services/project-context.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { randomUUID } from 'crypto';
-import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
 import { checkFolderPath } from '../lib/folder-guard.js';
 import { scopesToOwner } from '../middleware/ownership.js';
-import { getRoutedUtilityModel } from '../services/utility-model.js';
-import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
-import { getEffectiveDefaultModel } from '../services/default-model-store.js';
-import { resolveEngagementModelChoice } from '../services/engagement-exec-model.js';
+import { streamChat, callChat } from '../services/provider-router.js';
 import { bridgeIterationToSession } from '../services/engagement-session-bridge.js';
 import { runAgentic, type AgentToolDefinition } from '../services/sdk-agentic-runner.js';
 import { writeRunArtifactV2, buildAgenticRunArtifactInput } from '../services/run-artifact-writer.js';
@@ -30,22 +26,13 @@ import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { getModuleSystemPrompt } from '../services/module-loader.js';
 import { findCandidateModules } from '../services/module-recommendation.js';
 import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import {
+  isDemoVisitor, engagementExecModel, engagementUtilityModel, modelSearchesWeb, webSearchRefusal,
+  isEngagementCallRefusal, estimateTokens, engagementBudgetRefusal, budgetRefusalBody, chargeEngagementCall,
+} from '../services/engagement-run-policy.js';
+import { engagementUploadMiddleware, renameUploadRecord, engagementUploadDir } from '../services/engagement-uploads.js';
+import { extractJsonReply, isJsonObject } from '../services/coding-workspace.js';
 import { z } from 'zod';
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-
-const engagementStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
-  },
-});
-
-const upload = multer({
-  storage: engagementStorage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-});
 
 // Lazy read — module-scope snapshot would evaluate before index.ts resolves DEPLOYMENT_MODE.
 const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
@@ -53,34 +40,164 @@ const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
 function getUserId(req: Request): string { return (req as unknown as { user?: { id?: string } }).user?.id ?? 'solo'; }
 function getUserRole(req: Request): string { return (req as unknown as { user?: { role?: string } }).user?.role ?? 'admin'; }
 
-async function canView(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
+/**
+ * Team-mode access to one engagement, decided in SQL before the row is
+ * loaded: its owner, or a member of the project it is linked to (any role to
+ * view; any role but 'viewer' to edit). Solo mode and admins see everything.
+ * Every refusal answers like a missing engagement — 404, never 403, so an id
+ * is not an oracle for another person's engagements (CLAUDE.md, Security 8).
+ */
+async function canAccess(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string, mode: 'view' | 'edit'): Promise<boolean> {
   if (!IS_TEAM() || userRole === 'admin') return true;
-  const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
-  if (!e) return false;
-  if (e.user_id === userId) return true;
-  if (e.project_id) {
-    const mem = await db.get('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', e.project_id, userId);
-    if (mem) return true;
-  }
-  return false;
+  const memberRole = mode === 'edit' ? " AND pm.role <> 'viewer'" : '';
+  const row = await db.get(
+    `SELECT 1 AS ok FROM engagements e
+      WHERE e.id = ?
+        AND (e.user_id = ?
+             OR (e.project_id IS NOT NULL AND EXISTS (
+                   SELECT 1 FROM project_members pm WHERE pm.project_id = e.project_id AND pm.user_id = ?${memberRole})))`,
+    engagementId, userId, userId,
+  );
+  return !!row;
 }
 
-async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
-  if (!IS_TEAM() || userRole === 'admin') return true;
-  const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
-  if (!e) return false;
-  if (e.user_id === userId) return true;
-  if (e.project_id) {
-    const mem = await db.get(
-      `SELECT role FROM project_members WHERE project_id = ? AND user_id = ?`
-    , e.project_id, userId) as { role: string } | undefined;
-    if (mem && mem.role !== 'viewer') return true;
+const canView = (db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> =>
+  canAccess(db, engagementId, userId, userRole, 'view');
+const canEdit = (db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> =>
+  canAccess(db, engagementId, userId, userRole, 'edit');
+
+/** The answer for an engagement (or a row of one) the caller cannot see — the same as for one that does not exist. */
+const NOT_FOUND = { error: 'Not found' } as const;
+
+/** Only an http(s) URL is kept on a resource: anything else (javascript:, data:) would be a link in someone's browser. */
+function httpUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const u = new URL(value.trim());
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.toString().slice(0, 2000) : null;
+  } catch {
+    return null;
   }
-  return false;
+}
+
+/** Sends a model-call refusal (EngagementCallRefusal) as JSON; false when err is something else. */
+function sendRefusal(res: Response, err: unknown): boolean {
+  if (!isEngagementCallRefusal(err)) return false;
+  res.status(err.status).json({ error: err.publicMessage, code: err.code });
+  return true;
+}
+
+/**
+ * The largest JSON write a demo visitor may send to an engagement route. The
+ * app parses JSON bodies up to 50 MB, and every engagement field is free text
+ * stored as sent: without a cap one visitor could fill the disk the showcase
+ * shares, as uploads could before their quota. The largest real write — a
+ * council review saved on an iteration, a client profile — is tens of KB.
+ */
+export const DEMO_VISITOR_JSON_LIMIT_BYTES = 256 * 1024;
+
+/**
+ * The most rows of each kind a demo visitor keeps in one engagement
+ * (2026-10-02). Each write is small and limited per 10 minutes, but nothing
+ * else bounded how many a visitor could pile into one engagement — and every
+ * engagement step puts them all into its prompts. Generous for a real
+ * engagement; everyone else is unlimited.
+ */
+export const DEMO_VISITOR_ROW_CAPS = { scopeItems: 200, workstreams: 50, teamMembers: 50, resources: 100 } as const;
+type CappedRows = keyof typeof DEMO_VISITOR_ROW_CAPS;
+
+/** Where each capped kind is stored (fixed names, never from input), and the sentence a refusal says. */
+const CAPPED_ROWS: Readonly<Record<CappedRows, { table: string; refusal: string }>> = {
+  scopeItems: {
+    table: 'engagement_scope_items',
+    refusal: `This demo keeps up to ${DEMO_VISITOR_ROW_CAPS.scopeItems} scope items in one engagement, and this engagement has reached that.`,
+  },
+  workstreams: {
+    table: 'engagement_workstreams',
+    refusal: `This demo keeps up to ${DEMO_VISITOR_ROW_CAPS.workstreams} workstreams in one engagement. Delete one to add another.`,
+  },
+  teamMembers: {
+    table: 'engagement_stakeholders',
+    refusal: `This demo keeps up to ${DEMO_VISITOR_ROW_CAPS.teamMembers} team members and client contacts in one engagement. Remove one to add another.`,
+  },
+  resources: {
+    table: 'engagement_resources',
+    refusal: `This demo keeps up to ${DEMO_VISITOR_ROW_CAPS.resources} resources (files, links and notes) in one engagement. Remove one to add another.`,
+  },
+};
+
+/** How many rows of this kind a demo visitor's model step may add at most; unlimited for everyone else. */
+function rowLimitFor(req: Request, kind: CappedRows): number {
+  return isDemoVisitor(req) ? DEMO_VISITOR_ROW_CAPS[kind] : Infinity;
+}
+
+const INTAKE_OPEN = /<intake_update\s*>/i;
+const INTAKE_CLOSE = /<\/intake_update\s*>/i;
+
+/**
+ * The <intake_update> block of an intake reply, and the reply without it.
+ * GLM, DeepSeek and Kimi fence the JSON (```json) or put a sentence inside
+ * the tags, which a strict JSON.parse refused, so nothing the consultant
+ * confirmed was saved (2026-10-02). The JSON is read whatever surrounds it;
+ * a block cut off before its closing tag (the reply ran out of tokens, or
+ * the tag was left off) is read to the end of the text. Every block, closed
+ * or not, is taken out of the visible text — the reader and the stored
+ * conversation never see it, even when it could not be read.
+ */
+export function readIntakeUpdate(text: string): { update: Record<string, unknown> | null; visible: string } {
+  const blocks: string[] = [];
+  let visible = '';
+  let rest = text ?? '';
+  for (;;) {
+    const open = INTAKE_OPEN.exec(rest);
+    if (!open) { visible += rest; break; }
+    visible += rest.slice(0, open.index);
+    const after = rest.slice(open.index + open[0].length);
+    const close = INTAKE_CLOSE.exec(after);
+    if (!close) { blocks.push(after); break; }
+    blocks.push(after.slice(0, close.index));
+    rest = after.slice(close.index + close[0].length);
+  }
+  for (const block of blocks) {
+    const reply = extractJsonReply(block, isJsonObject);
+    if (reply && isJsonObject(reply.value)) return { update: reply.value, visible: visible.trim() };
+  }
+  return { update: null, visible: visible.trim() };
+}
+
+/** The sentence for a quality-gate check whose reply had no readable result. */
+export const UNREADABLE_CHECK_MESSAGE = "The reviewer's answer could not be read — re-run this check.";
+
+/** A scored check's reply (8A/8B/8C): a JSON object with a score from 0 to 100, or null. */
+export function readScoredCheck(raw: string): Record<string, unknown> | null {
+  const scored = (v: unknown): v is Record<string, unknown> =>
+    isJsonObject(v) && typeof v.score === 'number' && Number.isFinite(v.score) && v.score >= 0 && v.score <= 100;
+  const reply = extractJsonReply(raw ?? '', scored);
+  return reply && scored(reply.value) ? reply.value : null;
+}
+
+/** An expert lens's reply (8F): a JSON object with a verdict, or null. */
+export function readLensReview(raw: string): Record<string, unknown> | null {
+  const review = (v: unknown): v is Record<string, unknown> => isJsonObject(v) && typeof v.verdict === 'string' && v.verdict.trim() !== '';
+  const reply = extractJsonReply(raw ?? '', review);
+  return reply && review(reply.value) ? reply.value : null;
 }
 
 export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
+
+  router.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || !isDemoVisitor(req)) { next(); return; }
+    // Files go through the upload quota (engagement-uploads.ts), not this cap.
+    if (/multipart\/form-data/i.test(String(req.headers['content-type'] ?? ''))) { next(); return; }
+    const declared = Number(req.headers['content-length']) || 0;
+    const parsed = req.body && typeof req.body === 'object' ? Buffer.byteLength(JSON.stringify(req.body)) : 0;
+    if (Math.max(declared, parsed) > DEMO_VISITOR_JSON_LIMIT_BYTES) {
+      res.status(413).json({ error: 'That is more text than this demo stores in one change. Shorten it and try again.', code: 'DEMO_WRITE_TOO_LARGE' });
+      return;
+    }
+    next();
+  });
 
   // ── Team-mode authorization gate ──────────────────────────────────────────────
   // Every route addressed to a specific engagement carries it as :id. Enforcing
@@ -88,7 +205,14 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   // #6: ~33 of 37 routes skipped canView/canEdit, allowing cross-tenant read/write/
   // execute by UUID in team mode). No-op in solo mode / for admins: canView/canEdit
   // short-circuit to true, so the default local-first deployment is unaffected.
-  // Safe methods need view access; any mutation needs edit access.
+  // Safe methods need view access; any mutation needs edit access. A refusal
+  // is a 404, the answer for an engagement that does not exist (2026-10-02:
+  // it was a 403, which told a caller the id belonged to someone).
+  //
+  // Every id below the engagement — a document, scope item, resource,
+  // workstream, iteration, team member, benchmark, and a workstream_id or
+  // iteration_id in a body — is looked up together with this engagement's id,
+  // so an id from another engagement is treated as absent.
   router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
     try {
       const userId = getUserId(req);
@@ -97,12 +221,81 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const ok = safe
         ? await canView(db, String(id), userId, userRole)
         : await canEdit(db, String(id), userId, userRole);
-      if (!ok) { res.status(403).json({ error: 'Forbidden' }); return; }
+      if (!ok) { res.status(404).json(NOT_FOUND); return; }
       next();
     } catch (err) {
       next(err);
     }
   });
+
+  /** A workstream id from a body, when it is one of this engagement's; null/undefined pass through as "none". */
+  async function ownWorkstream(engagementId: string, workstreamId: unknown): Promise<{ ok: true; id: string | null } | { ok: false }> {
+    if (workstreamId === undefined || workstreamId === null || workstreamId === '') return { ok: true, id: null };
+    if (typeof workstreamId !== 'string') return { ok: false };
+    const row = await db.get('SELECT id FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', workstreamId, engagementId) as { id: string } | undefined;
+    return row ? { ok: true, id: row.id } : { ok: false };
+  }
+
+  /**
+   * How many more rows of this kind the caller may add to the engagement:
+   * what is left under DEMO_VISITOR_ROW_CAPS for a demo visitor (every row
+   * counts, a scope item marked removed too: it is still stored), unlimited
+   * for everyone else.
+   */
+  async function rowRoom(req: Request, engagementId: string, kind: CappedRows): Promise<number> {
+    if (!isDemoVisitor(req)) return Infinity;
+    const row = await db.get(`SELECT COUNT(*) AS n FROM ${CAPPED_ROWS[kind].table} WHERE engagement_id = ?`, engagementId) as { n: number | string } | undefined;
+    return Math.max(0, DEMO_VISITOR_ROW_CAPS[kind] - Number(row?.n ?? 0));
+  }
+
+  /** Refuses a demo visitor's new row when the engagement already holds the cap of that kind; false when it may be added. */
+  async function refuseOverCap(req: Request, res: Response, engagementId: string, kind: CappedRows): Promise<boolean> {
+    if (await rowRoom(req, engagementId, kind) > 0) return false;
+    res.status(409).json({ error: CAPPED_ROWS[kind].refusal, code: 'DEMO_ROW_LIMIT' });
+    return true;
+  }
+
+  /**
+   * The model a call of this engagement runs on, or null after answering the
+   * refusal (a demo visitor's model the demo does not offer). Also checks the
+   * caller's monthly token budget for about `estimatedTokens`.
+   */
+  async function modelForCall(
+    req: Request, res: Response, kind: 'utility' | 'exec',
+    engagement: Record<string, unknown> | undefined, estimatedTokens: number,
+  ): Promise<string | null> {
+    let model: string;
+    try {
+      model = kind === 'exec' ? engagementExecModel(req, engagement ?? {}) : await engagementUtilityModel(db, req);
+    } catch (err) {
+      if (sendRefusal(res, err)) return null;
+      throw err;
+    }
+    const overBudget = await engagementBudgetRefusal(db, req, estimatedTokens);
+    if (overBudget) { res.status(429).json(budgetRefusalBody(overBudget)); return null; }
+    return model;
+  }
+
+  /**
+   * A document or resource row as a demo visitor gets it: file_path is the
+   * stored file's name, not the server's path (the page only tests whether
+   * there is one). Everyone else gets the row as stored.
+   */
+  function rowForCaller<T>(req: Request, row: T): T {
+    if (!isDemoVisitor(req) || !row || typeof row !== 'object') return row;
+    const r = row as Record<string, unknown>;
+    return (typeof r.file_path === 'string' && r.file_path ? { ...r, file_path: path.basename(r.file_path) } : row) as T;
+  }
+
+  const uploadFile = engagementUploadMiddleware(db);
+
+  /** Takes back an upload the route then refuses: its record and its file. */
+  async function discardUpload(file: { filename: string; path: string }): Promise<void> {
+    await db.run('DELETE FROM file_uploads WHERE id = ?', file.filename).catch(() => undefined);
+    // multer wrote it under the upload folder; nothing outside it is removed.
+    const stored = path.resolve(file.path);
+    if (stored.startsWith(path.resolve(engagementUploadDir()) + path.sep)) await fs.remove(stored).catch(() => undefined);
+  }
 
   // ── Helper ──────────────────────────────────────────────────────────────────
 
@@ -162,7 +355,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       `);
       res.json(engagements);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -179,7 +372,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       logChange(id, 'setup', 'engagement_created', `Engagement "${title}" created`);
       res.json(engagement);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -187,15 +380,23 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   // NOTE: This route must be defined BEFORE /:id routes to avoid conflict
   router.get('/peer-library', async (req: Request, res: Response) => {
     try {
+      // An owner's opt-in (enable_as_benchmark) shares an engagement with the
+      // rest of a firm's instance. On a public demo the other accounts are
+      // strangers: a visitor's library holds only engagements they can open
+      // themselves (2026-10-02).
+      const ownOnly = isDemoVisitor(req) && IS_TEAM();
+      const userId = getUserId(req);
       const completed = await db.all(`
         SELECT e.id, e.title, e.your_organisation, e.domain_areas, e.updated_at,
           qg.overall_score, qg.scope_completeness, qg.status as qg_status
         FROM engagements e
         LEFT JOIN engagement_quality_gates qg ON qg.engagement_id = e.id
         WHERE e.status IN ('review', 'completed') AND e.enable_as_benchmark = 1
+        ${ownOnly ? `AND (e.user_id = ? OR (e.project_id IS NOT NULL AND EXISTS (
+              SELECT 1 FROM project_members pm WHERE pm.project_id = e.project_id AND pm.user_id = ?)))` : ''}
         ORDER BY e.updated_at DESC
         LIMIT 50
-      `) as Array<Record<string, unknown>>;
+      `, ownOnly ? [userId, userId] : []) as Array<Record<string, unknown>>;
 
       // Anonymise: replace real title/client names with "Peer Institution A", "B", etc.
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -209,19 +410,19 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       }));
       res.json(anonymised);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // GET /api/engagements/:id — get engagement with all related data
   router.get('/:id', async (req: Request, res: Response) => {
     try {
-      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
-      if (!engagement) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!await canView(db, String(req.params.id), userId, userRole))
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(404).json(NOT_FOUND);
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
+      if (!engagement) return res.status(404).json(NOT_FOUND);
       // Sub-collections for one engagement. LIMIT 500 protects against runaway
       // growth (e.g. a long-running engagement that accumulates thousands of
       // resources). Real engagements are nowhere near 500 per table; if one
@@ -239,9 +440,15 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
       // Wave 3: an execution in progress (or just finished) that the page can re-attach to.
       const run_job = getStepJobSummary(`engagement-run:${String(req.params.id)}`);
-      res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate, run_job });
+      res.json({
+        ...engagement,
+        documents: documents.map((d) => rowForCaller(req, d)),
+        scope_items, workstreams,
+        resources: resources.map((r) => rowForCaller(req, r)),
+        deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate, run_job,
+      });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -251,12 +458,25 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const { status, your_organisation, client_name, domain_areas, engagement_brief, quality_blueprint,
         thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model,
         workstream_plan_confirmed, enable_as_benchmark } = req.body;
-      const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
-      if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!await canEdit(db, String(req.params.id), userId, userRole))
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(404).json(NOT_FOUND);
+      const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
+      if (!existing) return res.status(404).json(NOT_FOUND);
+      // A demo visitor pins only a model the demo offers ("Auto" — null or
+      // empty — is always allowed; the run then uses the demo's default).
+      if (exec_model !== undefined && isDemoVisitor(req)) {
+        const pinned = typeof exec_model === 'string' ? exec_model.trim() : '';
+        if (pinned) {
+          try {
+            engagementExecModel(req, { exec_model: pinned, thinking_level: existing.thinking_level });
+          } catch (err) {
+            if (sendRefusal(res, err)) return;
+            throw err;
+          }
+        }
+      }
       const updates: string[] = ['updated_at = NOW()'];
       const values: unknown[] = [];
       if (status !== undefined) { updates.push('status = ?'); values.push(status); }
@@ -286,7 +506,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -296,11 +516,11 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!await canEdit(db, String(req.params.id), userId, userRole))
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(404).json(NOT_FOUND);
       await db.run("UPDATE engagements SET status = 'archived', updated_at = NOW() WHERE id = ?", String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -311,7 +531,8 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const userRole = getUserRole(req);
       // Only engagement owner or admin can link/unlink
       const existing = await db.get('SELECT user_id FROM engagements WHERE id = ?', String(req.params.id)) as { user_id: string } | undefined;
-      if (!existing) return res.status(404).json({ error: 'Not found' });
+      if (!existing) return res.status(404).json(NOT_FOUND);
+      // A project member who may edit sees the engagement, so naming the owner rule is no disclosure.
       if (IS_TEAM() && userRole !== 'admin' && existing.user_id !== userId)
         return res.status(403).json({ error: 'Only the engagement owner can link to a project' });
       const { project_id } = req.body as { project_id: string | null };
@@ -328,26 +549,33 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // ── Document upload + extraction ────────────────────────────────────────────
 
   // POST /api/engagements/:id/documents — upload engagement letter, project plan, or good example
-  router.post('/:id/documents', upload.single('file'), async (req: Request, res: Response) => {
+  // The file goes through engagementUploadMiddleware: UPLOAD_DIR, a
+  // file_uploads row naming the uploader (the demo quota and the demo
+  // account deletion read it), and on a demo the visitor's upload quota.
+  router.post('/:id/documents', uploadFile, async (req: Request, res: Response) => {
     try {
       const { document_type = 'engagement_letter' } = req.body;
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+      if (!['engagement_letter', 'project_plan', 'good_example'].includes(String(document_type))) {
+        await discardUpload(req.file);
+        return res.status(400).json({ error: 'Unknown document type. Use engagement_letter, project_plan or good_example.' });
+      }
       const id = randomUUID();
       await db.run(`INSERT INTO engagement_documents (id, engagement_id, document_type, file_path, file_name)
         VALUES (?, ?, ?, ?, ?)`, id, String(req.params.id), document_type, req.file.path, req.file.originalname);
       await db.run("UPDATE engagements SET updated_at = NOW() WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'document_uploaded', `Uploaded ${document_type}: ${req.file.originalname}`);
       const doc = await db.get('SELECT * FROM engagement_documents WHERE id = ?', id);
-      res.json(doc);
+      res.json(rowForCaller(req, doc));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -362,8 +590,10 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
         const ext = path.extname(String(doc.file_name));
         if (ext) {
           const newPath = filePath + ext;
-          try { await fs.rename(filePath, newPath); filePath = newPath;
-            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ?', newPath, String(req.params.docId));
+          try { await fs.rename(filePath, newPath);
+            await renameUploadRecord(db, filePath, newPath);
+            filePath = newPath;
+            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ? AND engagement_id = ?', newPath, String(req.params.docId), String(req.params.id));
           } catch { /* keep original path */ }
         }
       }
@@ -376,6 +606,9 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       }
 
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
+      // What is sent: the extraction prompt carries up to 40,000 characters of the document.
+      const extractModel = await modelForCall(req, res, 'utility', engagement, estimateTokens(fileContent.slice(0, 40000)) + 1500);
+      if (!extractModel) return;
 
       // Build extraction prompt based on document type
       let extractionPrompt = '';
@@ -455,11 +688,13 @@ Return ONLY valid JSON, no explanation.`;
       // Call Claude for extraction
       try {
         const result = await callChat({
-          model: await getRoutedUtilityModel(db),
+          model: extractModel,
           system: 'You are a document extraction assistant. Return only valid JSON.',
           messages: [{ role: 'user', content: extractionPrompt }],
           maxTokens: 4096,
+          db,
         });
+        await chargeEngagementCall(db, req, result);
         const rawText = result.text;
         let extracted: unknown = {};
         try {
@@ -480,8 +715,9 @@ Return ONLY valid JSON, no explanation.`;
 
           // Existence check only — LIMIT 1 (we just test length === 0).
           const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = ? LIMIT 1', String(req.params.id)) as unknown[];
+          // A demo visitor's letter adds no more rows than the visitor could by hand (DEMO_VISITOR_ROW_CAPS).
           if (existing.length === 0 && Array.isArray(ex.scope_items)) {
-            const scopeItems = ex.scope_items as Array<Record<string, unknown>>;
+            const scopeItems = (ex.scope_items as Array<Record<string, unknown>>).slice(0, rowLimitFor(req, 'scopeItems'));
             await Promise.all(scopeItems.map((si, idx) =>
               db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)`,
@@ -494,7 +730,7 @@ Return ONLY valid JSON, no explanation.`;
           if (Array.isArray(ex.workstreams)) {
             const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = ? LIMIT 1', String(req.params.id)) as unknown[];
             if (existingWs.length === 0) {
-              const workstreams = ex.workstreams as Array<Record<string, unknown>>;
+              const workstreams = (ex.workstreams as Array<Record<string, unknown>>).slice(0, rowLimitFor(req, 'workstreams'));
               await Promise.all(workstreams.map((ws, idx) =>
                 db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, timeline_start, timeline_end, sort_order)
                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -539,6 +775,7 @@ Return ONLY valid JSON, no explanation.`;
             const contacts = Array.isArray(parties.contacts) ? parties.contacts as Array<Record<string, unknown>> : [];
             await Promise.all(contacts
               .filter((c) => c.name)
+              .slice(0, rowLimitFor(req, 'teamMembers'))
               .map((c) => db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, stakeholder_type, expertise_areas)
                 VALUES (?, ?, ?, ?, ?, 'client_contact', '[]')`,
                 randomUUID(), String(req.params.id), String(c.name), String(c.role || ''), String(c.organisation || '')
@@ -564,10 +801,10 @@ Return ONLY valid JSON, no explanation.`;
         logChange(String(req.params.id), 'setup', 'document_extracted', `Extracted ${doc.document_type}: ${doc.file_name}`);
         res.json({ ok: true, extracted });
       } catch (claudeErr) {
-        res.status(500).json({ error: `Extraction failed: ${safeError(claudeErr)}` });
+        res.status(500).json({ error: `Extraction failed: ${publicErrorMessage(claudeErr)}` });
       }
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -577,13 +814,14 @@ Return ONLY valid JSON, no explanation.`;
     try {
       const { title, description, category, methodology = [], sort_order = 0 } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
+      if (await refuseOverCap(req, res, String(req.params.id), 'scopeItems')) return;
       const id = randomUUID();
       await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'added')`, id, String(req.params.id), title, description || null, category || null, JSON.stringify(methodology), sort_order);
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_added', `Added scope item: ${title}`);
       res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -591,7 +829,10 @@ Return ONLY valid JSON, no explanation.`;
     try {
       const { title, description, category, status, methodology, workstream_id } = req.body;
       const existing = await db.get('SELECT * FROM engagement_scope_items WHERE id = ? AND engagement_id = ?', String(req.params.itemId), String(req.params.id));
-      if (!existing) return res.status(404).json({ error: 'Not found' });
+      if (!existing) return res.status(404).json(NOT_FOUND);
+      if (workstream_id !== undefined && !(await ownWorkstream(String(req.params.id), workstream_id)).ok) {
+        return res.status(404).json({ error: 'Workstream not found' });
+      }
       const updates: string[] = [];
       const values: unknown[] = [];
       if (title !== undefined) { updates.push('title = ?'); values.push(title); }
@@ -599,38 +840,56 @@ Return ONLY valid JSON, no explanation.`;
       if (category !== undefined) { updates.push('category = ?'); values.push(category); }
       if (status !== undefined) { updates.push('status = ?'); values.push(status); }
       if (methodology !== undefined) { updates.push('methodology = ?'); values.push(JSON.stringify(methodology)); }
-      if (workstream_id !== undefined) { updates.push('workstream_id = ?'); values.push(workstream_id); }
+      if (workstream_id !== undefined) { updates.push('workstream_id = ?'); values.push(workstream_id || null); }
       if (updates.length === 0) return res.json(existing);
-      values.push(String(req.params.itemId));
-      await db.run(`UPDATE engagement_scope_items SET ${updates.join(', ')} WHERE id = ?`, ...values);
+      values.push(String(req.params.itemId), String(req.params.id));
+      await db.run(`UPDATE engagement_scope_items SET ${updates.join(', ')} WHERE id = ? AND engagement_id = ?`, ...values);
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_modified', `Modified scope item`);
-      res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', String(req.params.itemId)));
+      res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ? AND engagement_id = ?', String(req.params.itemId), String(req.params.id)));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // ── Resources ───────────────────────────────────────────────────────────────
 
-  router.post('/:id/resources', upload.single('file'), async (req: Request, res: Response) => {
+  router.post('/:id/resources', uploadFile, async (req: Request, res: Response) => {
     try {
-      const { category = 'documents', title, url, workstream_id, text_content } = req.body;
+      const { category = 'documents', title, url: rawUrl, workstream_id, text_content } = req.body;
       // The column's CHECK list; an unknown category used to surface as a 500
       // from the database rather than a 400 naming the allowed values.
       const RESOURCE_CATEGORIES = ['documents', 'meetings', 'regulations', 'data', 'code', 'good_example', 'other'];
       if (!RESOURCE_CATEGORIES.includes(String(category))) {
+        if (req.file) await discardUpload(req.file);
         return res.status(400).json({ error: `Unknown resource category "${String(category)}". Use one of: ${RESOURCE_CATEGORIES.join(', ')}.` });
       }
-      const resourceTitle = title || req.file?.originalname || url || 'Untitled';
+      // A link is shown as one on the page (to the owner, project members and
+      // admins): only http(s), never javascript: or data:.
+      const url = rawUrl === undefined || rawUrl === null || rawUrl === '' ? null : httpUrl(rawUrl);
+      if (rawUrl && !url) {
+        if (req.file) await discardUpload(req.file);
+        return res.status(400).json({ error: 'The link must be an http:// or https:// address.' });
+      }
+      const ws = await ownWorkstream(String(req.params.id), workstream_id);
+      if (!ws.ok) {
+        if (req.file) await discardUpload(req.file);
+        return res.status(404).json({ error: 'Workstream not found' });
+      }
+      // A text note stores up to 50,000 characters: a demo visitor's count is capped too.
+      if (await rowRoom(req, String(req.params.id), 'resources') <= 0) {
+        if (req.file) await discardUpload(req.file);
+        return res.status(409).json({ error: CAPPED_ROWS.resources.refusal, code: 'DEMO_ROW_LIMIT' });
+      }
+      const resourceTitle = String(title || req.file?.originalname || url || 'Untitled').slice(0, 300);
       const id = randomUUID();
 
       // text_content: inline text note — store directly as extracted_content, no file/url needed
       const isTextNote = !!text_content && !req.file && !url;
 
       await db.run(`INSERT INTO engagement_resources (id, engagement_id, workstream_id, category, title, file_path, url, status, extracted_content)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        id, String(req.params.id), workstream_id || null, category, resourceTitle,
-        req.file ? req.file.path : null, url || null,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id, String(req.params.id), ws.id, category, resourceTitle,
+        req.file ? req.file.path : null, url,
         isTextNote ? 'reviewed' : 'uploaded',
         isTextNote ? String(text_content).slice(0, 50000) : null
       );
@@ -644,33 +903,41 @@ Return ONLY valid JSON, no explanation.`;
           await db.run("UPDATE engagement_resources SET extracted_content = ?, status = 'reviewed' WHERE id = ?", (extracted ?? '').slice(0, 50000), id);
         } catch { /* non-fatal */ }
       }
-      res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', id));
+      res.json(rowForCaller(req, await db.get('SELECT * FROM engagement_resources WHERE id = ?', id)));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   router.patch('/:id/resources/:resId', async (req: Request, res: Response) => {
     try {
       const { status, relevance_tags } = req.body;
+      const engagementId = String(req.params.id);
+      const resId = String(req.params.resId);
+      // The resource must be this engagement's: another one's id is absent here.
+      const existing = await db.get('SELECT id FROM engagement_resources WHERE id = ? AND engagement_id = ?', resId, engagementId);
+      if (!existing) return res.status(404).json(NOT_FOUND);
       const updates: string[] = [];
       const values: unknown[] = [];
       if (status !== undefined) { updates.push('status = ?'); values.push(status); }
       if (relevance_tags !== undefined) { updates.push('relevance_tags = ?'); values.push(JSON.stringify(relevance_tags)); }
       if (updates.length) {
-        values.push(String(req.params.resId));
-        await db.run(`UPDATE engagement_resources SET ${updates.join(', ')} WHERE id = ?`, ...values);
+        values.push(resId, engagementId);
+        await db.run(`UPDATE engagement_resources SET ${updates.join(', ')} WHERE id = ? AND engagement_id = ?`, ...values);
       }
-      res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', String(req.params.resId)));
+      res.json(rowForCaller(req, await db.get('SELECT * FROM engagement_resources WHERE id = ? AND engagement_id = ?', resId, engagementId)));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // PATCH resource category status
   router.patch('/:id/resource-categories', async (req: Request, res: Response) => {
     try {
-      const { category, workstream_id, status, notes } = req.body;
+      const { category, status, notes } = req.body;
+      const ws = await ownWorkstream(String(req.params.id), req.body?.workstream_id);
+      if (!ws.ok) return res.status(404).json({ error: 'Workstream not found' });
+      const workstream_id = ws.id;
       const existing = await db.get('SELECT * FROM engagement_resource_categories WHERE engagement_id = ? AND category = ?', String(req.params.id), category);
       if (existing) {
         await db.run("UPDATE engagement_resource_categories SET status = ?, notes = ?, updated_at = NOW() WHERE engagement_id = ? AND category = ?", status, notes || null, String(req.params.id), category);
@@ -681,7 +948,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'category_status_changed', `Category ${category} status: ${status}`);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -690,8 +957,15 @@ Return ONLY valid JSON, no explanation.`;
   // at execution time. Designed for large document sets (20+ files) that would
   // exceed the context window if injected in full.
 
+  // A folder on the server is never a demo visitor's knowledge source: the
+  // three routes answer 404, as if they did not exist (demo-mode.ts leaves
+  // them off WORK_ROUTES too; this holds even when DEMO_EXTRA_ROUTES opens
+  // /engagements wholesale).
+  const VISITOR_NOT_AVAILABLE = { error: 'Not available in this demo' } as const;
+
   // POST /:id/rag-directory — set folder path and trigger BM25 indexing
   router.post('/:id/rag-directory', async (req: Request, res: Response) => {
+    if (isDemoVisitor(req)) { res.status(404).json(VISITOR_NOT_AVAILABLE); return; }
     try {
       const { folderPath } = req.body as { folderPath: string };
       if (!folderPath || typeof folderPath !== 'string') {
@@ -710,23 +984,25 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_set', `RAG directory: ${normalised}`);
       res.json({ ok: true, folderPath: normalised, ...result });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // DELETE /:id/rag-directory — remove RAG directory from this engagement
   router.delete('/:id/rag-directory', async (req: Request, res: Response) => {
+    if (isDemoVisitor(req)) { res.status(404).json(VISITOR_NOT_AVAILABLE); return; }
     try {
       await db.run(`UPDATE engagements SET rag_directory_path = NULL, updated_at = NOW() WHERE id = ?`, String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_removed', 'RAG directory removed');
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // POST /:id/rag-directory/reindex — re-run BM25 indexing on the configured folder
   router.post('/:id/rag-directory/reindex', async (req: Request, res: Response) => {
+    if (isDemoVisitor(req)) { res.status(404).json(VISITOR_NOT_AVAILABLE); return; }
     try {
       const engagement = await db.get('SELECT rag_directory_path FROM engagements WHERE id = ?', String(req.params.id)) as { rag_directory_path: string | null } | undefined;
       if (!engagement?.rag_directory_path) {
@@ -736,7 +1012,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_reindexed', `Re-indexed: ${engagement.rag_directory_path}`);
       res.json({ ok: true, ...result });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -780,7 +1056,7 @@ Return ONLY valid JSON, no explanation.`;
       logChange(String(req.params.id), 'client_intelligence', 'intelligence_updated', 'Client intelligence updated');
       res.json(await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -797,9 +1073,9 @@ Return ONLY valid JSON, no explanation.`;
   router.post('/:id/intake/turn', async (req: Request, res: Response) => {
     const engagementId = String(req.params.id);
     try {
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(404).json(NOT_FOUND);
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', engagementId) as Record<string, unknown> | undefined;
-      if (!engagement) return res.status(404).json({ error: 'Not found' });
-      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+      if (!engagement) return res.status(404).json(NOT_FOUND);
 
       const message = typeof req.body?.message === 'string' ? req.body.message.trim().slice(0, 4000) : '';
       const parseArr = (v: unknown): unknown[] => { try { const p = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(p) ? p : []; } catch { return []; } };
@@ -823,8 +1099,24 @@ Return ONLY valid JSON, no explanation.`;
         .map(([k, v]) => `- ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
       const unknownFields = ['client_name', 'division_department', 'region_jurisdiction', 'products_in_scope', 'regulatory_supervisors', 'recent_regulatory_history', 'business_model_description', 'organisational_context', 'engagement_trigger', 'client_maturity_signal', 'sensitivities', 'peer_comparators', 'scale_indicators', 'technology_landscape']
         .filter((k) => !known.some((line) => line.startsWith(`- ${k}:`)));
-      const researchAllowed = Number(intel?.online_research_authorised ?? 0) === 1;
+      const researchAuthorised = Number(intel?.online_research_authorised ?? 0) === 1;
       const briefText = typeof engagement.engagement_brief === 'string' ? engagement.engagement_brief : JSON.stringify(engagement.engagement_brief ?? {});
+
+      let model: string;
+      try {
+        model = engagementExecModel(req, engagement, 'think');
+      } catch (err) {
+        if (sendRefusal(res, err)) return;
+        throw err;
+      }
+      // Research is authorised, but only a model that searches can do it. On
+      // any other (an OpenRouter compat: model drops the tool) the interview
+      // asks instead of searching, the prompt says so — never "I looked the
+      // client up" — and the page is told why (2026-10-02).
+      const researchAllowed = researchAuthorised && modelSearchesWeb(model);
+      const researchNotice = researchAuthorised && !researchAllowed
+        ? `Online research is authorised for this client, but the model "${model}" cannot search the web, so ANTON asked you instead of looking the client up.`
+        : null;
 
       const systemPrompt = `You are ANTON, a senior consultant running client intake for a professional engagement. You interview the consultant who owns the engagement so that the scope and the client profile are complete before any work starts. Ask, do not lecture.
 
@@ -846,7 +1138,11 @@ BOUNDARIES: ${boundaries.map((b) => `${String(b.boundary_type)}: ${String(b.desc
 CLIENT INTELLIGENCE — known:
 ${known.join('\n') || '- nothing recorded yet'}
 CLIENT INTELLIGENCE — still unknown: ${unknownFields.join(', ') || 'nothing'}
-${researchAllowed ? '\nOnline research is AUTHORISED for this client: use the web_search tool to look up supervisors, recent enforcement or regulatory history, products and scale before asking the consultant, and say what you found and where.' : '\nOnline research is NOT authorised: do not search; ask the consultant.'}
+${researchAllowed
+  ? '\nOnline research is AUTHORISED for this client: use the web_search tool to look up supervisors, recent enforcement or regulatory history, products and scale before asking the consultant, and say what you found and where.'
+  : researchAuthorised
+    ? '\nYou cannot search the web in this conversation. Do not claim to have searched, looked anything up online or found anything about the client; ask the consultant.'
+    : '\nOnline research is NOT authorised: do not search; ask the consultant.'}
 
 HOW TO RUN THE INTAKE
 - Each turn: first confirm what you have learned (one or two lines), then ask the 2-3 most valuable remaining questions — about the scope where it is thin or ambiguous, and about the unknown client-intelligence fields that change how the work should be done (supervisors, engagement trigger, products in scope, sensitivities, maturity signal). Never ask for what is already known or what the letter answers.
@@ -858,20 +1154,18 @@ HOW TO RUN THE INTAKE
 </intake_update>
   Only include values the consultant has confirmed or explicitly asked you to record — never proposals. Field names: client_name, division_department, region_jurisdiction, business_model_description, organisational_context, engagement_trigger, client_maturity_signal, sensitivities (strings); products_in_scope, regulatory_supervisors, recent_regulatory_history, peer_comparators (arrays of strings); scale_indicators, technology_landscape (objects). Set "done": true when scope and client profile are complete enough to start work.`;
 
-      const model = mapModelToProvider(resolveEngagementModelChoice(
-        engagement.exec_model as string | null | undefined,
-        'think',
-        getEffectiveDefaultModel() ?? null,
-      ));
+      const messages = conversation.length > 0
+        ? conversation.map((t) => ({ role: t.role, content: t.content }))
+        : [{ role: 'user', content: 'Start the intake. Confirm what the letter already tells you, then ask your first questions.' }];
+
+      const overBudget = await engagementBudgetRefusal(db, req, estimateTokens(systemPrompt, ...messages.map((m) => m.content)));
+      if (overBudget) return res.status(429).json(budgetRefusalBody(overBudget));
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('X-Accel-Buffering', 'no');
-
-      const messages = conversation.length > 0
-        ? conversation.map((t) => ({ role: t.role, content: t.content }))
-        : [{ role: 'user', content: 'Start the intake. Confirm what the letter already tells you, then ask your first questions.' }];
+      if (researchNotice) res.write(`data: ${JSON.stringify({ type: 'notice', code: 'WEB_SEARCH_UNAVAILABLE', message: researchNotice })}\n\n`);
 
       let text = '';
       try {
@@ -882,20 +1176,24 @@ HOW TO RUN THE INTAKE
           maxTokens: 4000,
           thinkingLevel: 'think',
           tools: researchAllowed ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined,
+          db,
         }, res);
+        await chargeEngagementCall(db, req, result);
         text = result.text;
       } catch (err) {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(err) })}\n\n`);
         res.end();
         return;
       }
 
-      // Apply the confirmed values.
+      // Apply the confirmed values. The block is read tolerantly (readIntakeUpdate):
+      // fenced, wrapped in a sentence, or cut off before its closing tag.
       const applied = { client_intelligence: 0, scope_items: 0, boundaries: 0, done: false };
-      const block = text.match(/<intake_update>([\s\S]*?)<\/intake_update>/i);
-      if (block) {
+      const intake = readIntakeUpdate(text);
+      if (!intake.update && INTAKE_OPEN.test(text)) console.warn('[engagements] intake update block unreadable');
+      if (intake.update) {
         try {
-          const upd = JSON.parse(block[1].trim()) as {
+          const upd = intake.update as {
             client_intelligence?: Record<string, unknown>;
             scope_items?: Array<{ title?: string; description?: string; category?: string }>;
             boundaries?: Array<{ type?: string; description?: string }>;
@@ -941,9 +1239,13 @@ HOW TO RUN THE INTAKE
             }
           }
 
-          // Scope items: add what is new by title.
+          // Scope items: add what is new by title — for a demo visitor, no
+          // more than the engagement has room for (DEMO_VISITOR_ROW_CAPS).
           const haveTitles = new Set(scopeItems.map((s) => String(s.title).trim().toLowerCase()));
-          for (const item of Array.isArray(upd.scope_items) ? upd.scope_items : []) {
+          const proposedScope = Array.isArray(upd.scope_items) ? upd.scope_items : [];
+          const scopeRoom = proposedScope.length > 0 ? await rowRoom(req, engagementId, 'scopeItems') : 0;
+          for (const item of proposedScope) {
+            if (applied.scope_items >= scopeRoom) break;
             const title = typeof item?.title === 'string' ? item.title.trim().slice(0, 300) : '';
             if (!title || haveTitles.has(title.toLowerCase())) continue;
             await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
@@ -969,21 +1271,20 @@ HOW TO RUN THE INTAKE
         }
       }
 
-      const visible = text.replace(/<intake_update>[\s\S]*?<\/intake_update>/i, '').trim();
-      conversation.push({ role: 'assistant', content: visible });
+      conversation.push({ role: 'assistant', content: intake.visible });
       await db.run('UPDATE engagements SET intake_conversation = ?, updated_at = NOW() WHERE id = ?', JSON.stringify(conversation.slice(-40)), engagementId);
       if (applied.client_intelligence || applied.scope_items || applied.boundaries) {
         logChange(engagementId, 'client_intelligence', 'intake_applied', `Intake conversation recorded ${applied.client_intelligence} client field(s), ${applied.scope_items} scope item(s), ${applied.boundaries} boundary(ies)`);
       }
-      res.write(`data: ${JSON.stringify({ type: 'intake_update', applied })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'intake_update', applied, ...(researchNotice ? { notice: researchNotice } : {}) })}\n\n`);
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
     } catch (e) {
       if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(e) })}\n\n`);
         res.end();
       } else {
-        res.status(500).json({ error: safeError(e) });
+        res.status(500).json({ error: publicErrorMessage(e) });
       }
     }
   });
@@ -994,19 +1295,23 @@ HOW TO RUN THE INTAKE
     try {
       const { title, description, expert_panel = [], thinking_level, timeline_start, timeline_end, sort_order = 0 } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
+      if (await refuseOverCap(req, res, String(req.params.id), 'workstreams')) return;
       const id = randomUUID();
       await db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, expert_panel, thinking_level, timeline_start, timeline_end, sort_order)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, String(req.params.id), title, description || null, JSON.stringify(expert_panel), thinking_level || null, timeline_start || null, timeline_end || null, sort_order);
       logChange(String(req.params.id), 'workstream_planning', 'workstream_added', `Added workstream: ${title}`);
       res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   router.patch('/:id/workstreams/:wsId', async (req: Request, res: Response) => {
     try {
       const { title, description, execution_status, expert_panel, thinking_level, timeline_start, timeline_end } = req.body;
+      const engagementId = String(req.params.id);
+      const wsId = String(req.params.wsId);
+      if (!(await ownWorkstream(engagementId, wsId)).ok) return res.status(404).json({ error: 'Workstream not found' });
       const updates: string[] = [];
       const values: unknown[] = [];
       if (title !== undefined) { updates.push('title = ?'); values.push(title); }
@@ -1016,10 +1321,10 @@ HOW TO RUN THE INTAKE
       if (thinking_level !== undefined) { updates.push('thinking_level = ?'); values.push(thinking_level); }
       if (timeline_start !== undefined) { updates.push('timeline_start = ?'); values.push(timeline_start); }
       if (timeline_end !== undefined) { updates.push('timeline_end = ?'); values.push(timeline_end); }
-      if (updates.length) { values.push(String(req.params.wsId)); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`, ...values); }
-      res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', String(req.params.wsId)));
+      if (updates.length) { values.push(wsId, engagementId); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ? AND engagement_id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', wsId, engagementId));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1030,18 +1335,22 @@ HOW TO RUN THE INTAKE
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!await canEdit(db, String(req.params.id), userId, userRole))
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(404).json(NOT_FOUND);
       const engagementId = String(req.params.id);
       const wsId = String(req.params.wsId);
       // Detach before delete — scope items and resources may point at the workstream.
       await db.run('UPDATE engagement_scope_items SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
       await db.run('UPDATE engagement_resources SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      // Iterations and category statuses point at it too (no ON DELETE): an
+      // executed workstream could not be removed.
+      await db.run('UPDATE engagement_iterations SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      await db.run('UPDATE engagement_resource_categories SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
       const result = await db.run('DELETE FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', wsId, engagementId);
       if (!result.changes) return res.status(404).json({ error: 'Workstream not found' });
       logChange(engagementId, 'workstream_planning', 'workstream_removed', `Removed workstream ${wsId}`);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1049,11 +1358,22 @@ HOW TO RUN THE INTAKE
 
   router.post('/:id/execute', async (req: Request, res: Response) => {
     try {
-      const { workstream_id } = req.body;
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Engagement not found' });
 
-      const workstream = workstream_id ? await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', workstream_id) as Record<string, unknown> : null;
+      // A run already going for this engagement: attach to it, whatever was sent.
+      const running = getStepJob(`engagement-run:${String(req.params.id)}`);
+      if (running && running.status === 'running') { attachToStepJob(running, res); return; }
+
+      // The workstream must be this engagement's: another engagement's id
+      // would put its title and description in this prompt (and mark it).
+      const ws = await ownWorkstream(String(req.params.id), req.body?.workstream_id);
+      if (!ws.ok) return res.status(404).json({ error: 'Workstream not found' });
+      const workstream_id = ws.id;
+      const workstream = workstream_id ? await db.get('SELECT * FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', workstream_id, String(req.params.id)) as Record<string, unknown> : null;
+      // A demo visitor's run never reads a folder on the server: no RAG
+      // directory and no indexed knowledge base (shared, owner-less indexes).
+      const visitor = isDemoVisitor(req);
       const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != ? LIMIT 500', String(req.params.id), 'removed') as Array<Record<string, unknown>>;
       const resources = await db.all('SELECT id, category, title, extracted_content, url FROM engagement_resources WHERE engagement_id = ? AND status NOT IN (?, ?) LIMIT 500', String(req.params.id), 'not_available', 'coming_later') as Array<Record<string, unknown>>;
       const client_intel = await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
@@ -1095,7 +1415,7 @@ ${deliveryTeam.map(m => {
       // that (shared, owner-less) folder index — every user's uploads — into
       // its runs. Re-check it for scoped callers; POST /:id/rag-directory
       // already refuses new ones through indexFolder.
-      if (ragDirPath && (!scopesToOwner(req) || checkFolderPath(ragDirPath).ok)) {
+      if (ragDirPath && !visitor && (!scopesToOwner(req) || checkFolderPath(ragDirPath).ok)) {
         try {
           const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
           const ragChunks = await retrieveChunks(db, scopeQuery || String(engagement.engagement_brief || ''), [ragDirPath], 15, 0.05);
@@ -1129,8 +1449,29 @@ Use these benchmarks to position the client relative to industry peers where rel
       try { knowledgeConfig = JSON.parse(String(engagement.knowledge_config || '{}')); } catch { /**/ }
 
       let knowledgeContext = '';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tools: any[] = [];
+      const tools: Array<{ type: string; name?: string; [key: string]: unknown }> = [];
+
+      // 4.4: model resolution — per-engagement choice (Expert Config) >
+      // product default (default-model-store) > legacy thinking-level
+      // mapping — then through the standard provider routing. A demo visitor
+      // runs only the demo's models (engagement-run-policy.ts). Resolved
+      // before the run starts, so a refusal is an answer, not a stream frame.
+      const thinkingLevel = String(engagement.thinking_level || 'think_hard');
+      const isQuick = thinkingLevel === 'quick';
+      let execModel: string;
+      try {
+        execModel = engagementExecModel(req, engagement, thinkingLevel);
+      } catch (err) {
+        if (sendRefusal(res, err)) return;
+        throw err;
+      }
+      // Web search on a model that cannot search would be a deliverable
+      // without sources that does not say so: refused, with what to change.
+      if (knowledgeConfig.webSearchEnabled && !modelSearchesWeb(execModel)) {
+        const refusal = webSearchRefusal(execModel, 'This engagement',
+          'Switch web search off under Resource Collection → Knowledge Sources and run again, or choose a model that can search in Expert Configuration.');
+        return res.status(refusal.status).json({ error: refusal.publicMessage, code: refusal.code });
+      }
 
       // Web search
       if (knowledgeConfig.webSearchEnabled) {
@@ -1168,7 +1509,7 @@ Use these benchmarks to position the client relative to industry peers where rel
       }
 
       // Indexed KB (Mode 5a) — semantic search using scope as query
-      if (knowledgeConfig.indexedKBEnabled) {
+      if (knowledgeConfig.indexedKBEnabled && !visitor) {
         try {
           const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
           const kbChunks = await retrieveChunks(db, scopeQuery || String(engagement.title), [], 15, 0.05);
@@ -1205,34 +1546,31 @@ EXECUTION INSTRUCTIONS:
 
 Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.${knowledgeContext}`;
 
-      // Wave 3 (2026-09-08): the execution is a job that outlives this
-      // request — a reloaded page re-attaches (GET /:id/execute/stream) and a
-      // second Execute attaches instead of starting a second run. Inside the
-      // job, `res` is the job's sink; the body below is unchanged.
-      const { job } = startStepJob(`engagement-run:${String(req.params.id)}`, { engagement_id: String(req.params.id), workstream_id: workstream_id || null }, async (sink) => {
-      const res = sink as unknown as Response;
-      // Stream the response
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-
-      // 4.4: model resolution — per-engagement choice (Expert Config) >
-      // product default (default-model-store) > legacy thinking-level
-      // mapping — then through the standard provider routing.
-      const thinkingLevel = String(engagement.thinking_level || 'think_hard');
-      const isQuick = thinkingLevel === 'quick';
-      const execModel = mapModelToProvider(resolveEngagementModelChoice(
-        engagement.exec_model as string | null | undefined,
-        thinkingLevel,
-        getEffectiveDefaultModel() ?? null,
-      ));
-
       // Plan First mode: prepend planning instructions
       const planFirstInstr = thinkingLevel === 'plan_first'
         ? '\n\nBEFORE WRITING: Create an explicit plan (sections, order, depth, assumptions, gaps). Present your plan first as a brief outline, then execute it systematically.\n'
         : '';
 
       const userTurnContent = `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}`;
+
+      // The monthly token budget covers what is sent, checked before the run starts.
+      const overBudget = await engagementBudgetRefusal(db, req, estimateTokens(systemPrompt, planFirstInstr, userTurnContent));
+      if (overBudget) return res.status(429).json(budgetRefusalBody(overBudget));
+
+      // Wave 3 (2026-09-08): the execution is a job that outlives this
+      // request — a reloaded page re-attaches (GET /:id/execute/stream) and a
+      // second Execute attaches instead of starting a second run. Inside the
+      // job, `res` is the job's sink; the body below is unchanged.
+      const { job } = startStepJob(`engagement-run:${String(req.params.id)}`, { engagement_id: String(req.params.id), workstream_id: workstream_id || null }, async (sink) => {
+      const res = sink as unknown as Response;
+      // What a failure says on a visitor's stream is the public sentence (a
+      // spend cap, a refused model), never a provider's detail or an endpoint
+      // URL: the registry broadcasts the thrown message as it is.
+      try {
+      // Stream the response
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
       // ── Wave 3: on the subscription engine the run reads for itself ─────
       // The one-shot prompt carried the first ten resources at 5,000
@@ -1317,6 +1655,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
                 const prompt = await getModuleSystemPrompt(args.module_id);
                 if (!prompt) return `No expert module with id "${args.module_id}".`;
                 const answer = await callChat({ model: execModel, system: prompt, messages: [{ role: 'user', content: args.question }], maxTokens: 4000, thinkingLevel: 'think' });
+                await chargeEngagementCall(db, req, answer);
                 return answer.text || '(the specialist returned nothing)';
               }
               const found = await findCandidateModules(String(args.topic ?? ''), 8);
@@ -1341,6 +1680,7 @@ You have tools: list_resources / read_resource (the collected material in full),
         };
         const run = await runAgentic(agenticConfig, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
         agenticRun = { config: agenticConfig, result: run };
+        await chargeEngagementCall(db, req, run.usage);
         if (!run.ok) {
           // Wave 5: a failed run is still a run — its record goes out before the error does.
           void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
@@ -1362,7 +1702,9 @@ You have tools: list_resources / read_resource (the collected material in full),
           messages: [{ role: 'user', content: userTurnContent }],
           thinkingLevel: isQuick ? undefined : thinkingLevel,
           tools: tools.length > 0 ? tools : undefined,
+          db,
         }, res);
+        await chargeEngagementCall(db, req, streamResult);
       }
 
       const fullContent = streamResult.text;
@@ -1377,7 +1719,7 @@ You have tools: list_resources / read_resource (the collected material in full),
       );
       await db.run("UPDATE engagements SET status = 'review', updated_at = NOW() WHERE id = ?", String(req.params.id));
       if (workstream_id) {
-        await db.run("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ?", workstream_id);
+        await db.run("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ? AND engagement_id = ?", workstream_id, String(req.params.id));
       }
       logChange(String(req.params.id), 'execution', 'iteration_created', `Iteration ${iterationNumber + 1} created for ${workstream ? workstream.title : 'engagement'}`);
 
@@ -1429,14 +1771,19 @@ You have tools: list_resources / read_resource (the collected material in full),
 
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId, sessionId: bridgedSessionId })}\n\n`);
       res.end();
+      } catch (jobErr) {
+        // An admin keeps the engine's own words (the run's diagnosis).
+        if (!visitor) throw jobErr;
+        throw new Error(publicErrorMessage(jobErr));
+      }
       });
       attachToStepJob(job, res);
     } catch (e) {
       if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(e) })}\n\n`);
         res.end();
       } else {
-        res.status(500).json({ error: safeError(e) });
+        res.status(500).json({ error: publicErrorMessage(e) });
       }
     }
   });
@@ -1444,9 +1791,9 @@ You have tools: list_resources / read_resource (the collected material in full),
   // ── GET /api/engagements/:id/execute/stream — re-attach to a run (Wave 3) ──
   router.get('/:id/execute/stream', async (req: Request, res: Response) => {
     const engagementId = String(req.params.id);
+    if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(404).json(NOT_FOUND);
     const engagement = await db.get('SELECT id FROM engagements WHERE id = ?', engagementId);
-    if (!engagement) return res.status(404).json({ error: 'Not found' });
-    if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+    if (!engagement) return res.status(404).json(NOT_FOUND);
     const job = getStepJob(`engagement-run:${engagementId}`);
     if (!job) return res.status(404).json({ error: 'No execution in progress for this engagement' });
     attachToStepJob(job, res);
@@ -1459,23 +1806,28 @@ You have tools: list_resources / read_resource (the collected material in full),
       const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC LIMIT 500', String(req.params.id));
       res.json(iterations);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   router.patch('/:id/iterations/:itId', async (req: Request, res: Response) => {
     try {
       const { status, gap_analysis, quality_scores, expert_reviews } = req.body;
+      const engagementId = String(req.params.id);
+      const itId = String(req.params.itId);
+      // The iteration must be this engagement's: another one's id is absent here.
+      const existing = await db.get('SELECT id FROM engagement_iterations WHERE id = ? AND engagement_id = ?', itId, engagementId);
+      if (!existing) return res.status(404).json(NOT_FOUND);
       const updates: string[] = [];
       const values: unknown[] = [];
       if (status !== undefined) { updates.push('status = ?'); values.push(status); }
       if (gap_analysis !== undefined) { updates.push('gap_analysis = ?'); values.push(JSON.stringify(gap_analysis)); }
       if (quality_scores !== undefined) { updates.push('quality_scores = ?'); values.push(JSON.stringify(quality_scores)); }
       if (expert_reviews !== undefined) { updates.push('expert_reviews = ?'); values.push(JSON.stringify(expert_reviews)); }
-      if (updates.length) { values.push(String(req.params.itId)); await db.run(`UPDATE engagement_iterations SET ${updates.join(', ')} WHERE id = ?`, ...values); }
-      res.json(await db.get('SELECT * FROM engagement_iterations WHERE id = ?', String(req.params.itId)));
+      if (updates.length) { values.push(itId, engagementId); await db.run(`UPDATE engagement_iterations SET ${updates.join(', ')} WHERE id = ? AND engagement_id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?', itId, engagementId));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1485,7 +1837,9 @@ You have tools: list_resources / read_resource (the collected material in full),
       const iteration = await db.get('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?', String(req.params.itId), String(req.params.id)) as Record<string, unknown> | undefined;
       if (!iteration) return res.status(404).json({ error: 'Iteration not found' });
 
-      const { lens = 'scope', custom_instruction = '' } = req.body as { lens?: string; custom_instruction?: string };
+      const body = req.body as { lens?: unknown; custom_instruction?: unknown };
+      const lens = typeof body.lens === 'string' && /^[a-z_]{1,40}$/.test(body.lens) ? body.lens : 'scope';
+      const custom_instruction = typeof body.custom_instruction === 'string' ? body.custom_instruction.slice(0, 4000) : '';
 
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
       const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Record<string, unknown>[];
@@ -1581,12 +1935,16 @@ Return a JSON object with this exact structure:
 
 Return ONLY valid JSON, no markdown fences, no explanation.`;
 
+      const gapModel = await modelForCall(req, res, 'utility', engagement, estimateTokens(gapPrompt));
+      if (!gapModel) return;
       const gapResult = await callChat({
-        model: await getRoutedUtilityModel(db),
+        model: gapModel,
         system: 'You are a senior FCP consulting reviewer. Return only valid JSON.',
         messages: [{ role: 'user', content: gapPrompt }],
         maxTokens: 3000,
+        db,
       });
+      await chargeEngagementCall(db, req, gapResult);
 
       const rawText = gapResult.text || '{}';
       let result: { gaps: unknown[]; overall_assessment: string; confidence: string; lens_used: string } = {
@@ -1600,7 +1958,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       await db.run('UPDATE engagement_iterations SET gap_analysis = ? WHERE id = ?', JSON.stringify(result), String(req.params.itId));
       res.json(result);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1612,7 +1970,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       const members = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC LIMIT 500', String(req.params.id));
       res.json(members);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1621,6 +1979,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
     try {
       const { name, role, organisation, contact_info, stakeholder_type = 'client_contact', expertise_areas = [], notes } = req.body;
       if (!name) return res.status(400).json({ error: 'name required' });
+      if (await refuseOverCap(req, res, String(req.params.id), 'teamMembers')) return;
       const id = randomUUID();
       await db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, contact_info, stakeholder_type, expertise_areas, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
@@ -1630,7 +1989,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       logChange(String(req.params.id), 'team', 'member_added', `Added ${stakeholder_type}: ${name}`);
       res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1638,6 +1997,11 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
   router.patch('/:id/team/:memberId', async (req: Request, res: Response) => {
     try {
       const { name, role, organisation, contact_info, stakeholder_type, expertise_areas, notes } = req.body;
+      const engagementId = String(req.params.id);
+      const memberId = String(req.params.memberId);
+      // The member must be on this engagement: another one's id is absent here.
+      const existing = await db.get('SELECT id FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?', memberId, engagementId);
+      if (!existing) return res.status(404).json(NOT_FOUND);
       const updates: string[] = [];
       const values: unknown[] = [];
       if (name !== undefined) { updates.push('name = ?'); values.push(name); }
@@ -1647,22 +2011,23 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       if (stakeholder_type !== undefined) { updates.push('stakeholder_type = ?'); values.push(stakeholder_type); }
       if (expertise_areas !== undefined) { updates.push('expertise_areas = ?'); values.push(JSON.stringify(expertise_areas)); }
       if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-      if (updates.length) { values.push(String(req.params.memberId)); await db.run(`UPDATE engagement_stakeholders SET ${updates.join(', ')} WHERE id = ?`, ...values); }
-      res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', String(req.params.memberId)));
+      if (updates.length) { values.push(memberId, engagementId); await db.run(`UPDATE engagement_stakeholders SET ${updates.join(', ')} WHERE id = ? AND engagement_id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?', memberId, engagementId));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // DELETE /api/engagements/:id/team/:memberId — remove team member
   router.delete('/:id/team/:memberId', async (req: Request, res: Response) => {
     try {
-      const member = await db.get('SELECT name FROM engagement_stakeholders WHERE id = ?', String(req.params.memberId)) as { name: string } | undefined;
+      // Read with the engagement's id: another engagement's member name must not land in this changelog.
+      const member = await db.get('SELECT name FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?', String(req.params.memberId), String(req.params.id)) as { name: string } | undefined;
       await db.run('DELETE FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?', String(req.params.memberId), String(req.params.id));
       if (member) logChange(String(req.params.id), 'team', 'member_removed', `Removed: ${member.name}`);
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1680,8 +2045,10 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
         const ext = path.extname(String(doc.file_name));
         if (ext) {
           const newPath = teamFilePath + ext;
-          try { await fs.rename(teamFilePath, newPath); teamFilePath = newPath;
-            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ?', newPath, String(doc.id));
+          try { await fs.rename(teamFilePath, newPath);
+            await renameUploadRecord(db, teamFilePath, newPath);
+            teamFilePath = newPath;
+            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ? AND engagement_id = ?', newPath, String(doc.id), String(req.params.id));
           } catch { /* keep original */ }
         }
       }
@@ -1693,8 +2060,11 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
         fileContent = String(doc.extracted_content || '');
       }
 
+      const teamModel = await modelForCall(req, res, 'utility', undefined, estimateTokens(fileContent.slice(0, 30000)) + 500);
+      if (!teamModel) return;
       const teamResult = await callChat({
-        model: await getRoutedUtilityModel(db),
+        model: teamModel,
+        db,
         system: 'You are a document extraction assistant. Return only valid JSON.',
         messages: [{
           role: 'user',
@@ -1726,6 +2096,7 @@ Return ONLY valid JSON.`,
         }],
         maxTokens: 2048,
       });
+      await chargeEngagementCall(db, req, teamResult);
       const rawText = teamResult.text || '{}';
       let extracted: { delivery_team?: Array<Record<string, unknown>>; client_contacts?: Array<Record<string, unknown>>; suggested_expertise?: Array<Record<string, unknown>> } = {};
       try {
@@ -1734,7 +2105,7 @@ Return ONLY valid JSON.`,
       } catch { /**/ }
       res.json(extracted);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1743,14 +2114,25 @@ Return ONLY valid JSON.`,
   // POST /api/engagements/:id/peer-benchmarks/web-search — Claude web search benchmark
   router.post('/:id/peer-benchmarks/web-search', async (req: Request, res: Response) => {
     try {
-      const { query } = req.body;
+      const query = typeof req.body?.query === 'string' ? req.body.query.trim().slice(0, 500) : '';
       if (!query) return res.status(400).json({ error: 'query required' });
 
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
-      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!engagement) return res.status(404).json(NOT_FOUND);
+
+      const benchmarkModel = await modelForCall(req, res, 'utility', engagement, estimateTokens(query) + 1000);
+      if (!benchmarkModel) return;
+      // The whole step is a web search. On a model that cannot search the
+      // answer would be invented benchmarks presented as research: refused.
+      if (!modelSearchesWeb(benchmarkModel)) {
+        const refusal = webSearchRefusal(benchmarkModel, 'A web-search benchmark',
+          'Use the Internal Library tab instead, or set a utility model that can search the web in Settings.');
+        return res.status(refusal.status).json({ error: refusal.publicMessage, code: refusal.code });
+      }
 
       const benchmarkResult = await callChat({
-        model: await getRoutedUtilityModel(db),
+        model: benchmarkModel,
+        db,
         system: 'You are a financial crime compliance analyst conducting peer benchmarking research. Return only valid JSON.',
         messages: [{
           role: 'user',
@@ -1779,6 +2161,7 @@ Return ONLY valid JSON.`,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       });
 
+      await chargeEngagementCall(db, req, benchmarkResult);
       const rawText = benchmarkResult.text || '{}';
       let extracted: Record<string, unknown> = {};
       try {
@@ -1801,18 +2184,24 @@ Return ONLY valid JSON.`,
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Web search benchmark: ${query}`);
       res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
   // POST /api/engagements/:id/peer-benchmarks/from-internal/:sourceId — use internal engagement as benchmark
   router.post('/:id/peer-benchmarks/from-internal/:sourceId', async (req: Request, res: Response) => {
     try {
-      const sourceEng = await db.get('SELECT * FROM engagements WHERE id = ? AND enable_as_benchmark = 1', String(req.params.sourceId)) as Record<string, unknown> | undefined;
+      const sourceId = String(req.params.sourceId);
+      // On a public demo the source must be one the visitor can open: another
+      // visitor's opt-in does not reach strangers (the peer library lists the
+      // same set). Elsewhere an owner's enable_as_benchmark shares it.
+      if (isDemoVisitor(req) && !await canView(db, sourceId, getUserId(req), getUserRole(req))) {
+        return res.status(404).json({ error: 'Source engagement not available as benchmark' });
+      }
+      const sourceEng = await db.get('SELECT * FROM engagements WHERE id = ? AND enable_as_benchmark = 1', sourceId) as Record<string, unknown> | undefined;
       if (!sourceEng) return res.status(404).json({ error: 'Source engagement not available as benchmark' });
 
-      const sourceQG = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.sourceId)) as Record<string, unknown> | undefined;
-      const sourceIterations = await db.get("SELECT output_content FROM engagement_iterations WHERE engagement_id = ? AND status = 'approved' ORDER BY iteration_number DESC LIMIT 1", String(req.params.sourceId)) as Record<string, unknown> | undefined;
+      const sourceQG = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', sourceId) as Record<string, unknown> | undefined;
 
       // Count existing benchmarks to assign letter label
       const existingCount = (await db.get('SELECT COUNT(*) as n FROM engagement_peer_benchmarks WHERE engagement_id = ?', String(req.params.id)) as { n: number }).n;
@@ -1847,7 +2236,7 @@ Return ONLY valid JSON.`,
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Internal benchmark added: ${label}`);
       res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1856,7 +2245,7 @@ Return ONLY valid JSON.`,
     try {
       res.json(await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id)));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1866,7 +2255,7 @@ Return ONLY valid JSON.`,
       await db.run('DELETE FROM engagement_peer_benchmarks WHERE id = ? AND engagement_id = ?', String(req.params.benchmarkId), String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -1880,14 +2269,20 @@ Return ONLY valid JSON.`,
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
-      // Get the iteration to review (latest approved or specified)
+      // Get the iteration to review (latest approved or specified). A named
+      // one must be this engagement's: an id from another engagement — someone
+      // else's deliverable — is absent here, never reviewed (2026-10-02).
       const iteration = iteration_id
-        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
+        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?', String(iteration_id), String(req.params.id)) as Record<string, unknown>
         // The approved iteration is the one to review; a later draft must not
         // silently displace it just because its number is higher.
         : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
-      if (!iteration) return res.status(400).json({ error: 'No iteration found to review' });
+      if (!iteration) {
+        return iteration_id
+          ? res.status(404).json({ error: 'Iteration not found' })
+          : res.status(400).json({ error: 'No iteration found to review' });
+      }
 
       const scope_items = await db.all("SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed' LIMIT 500", String(req.params.id)) as Array<Record<string, unknown>>;
       const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Array<Record<string, unknown>>;
@@ -1902,11 +2297,17 @@ Return ONLY valid JSON.`,
       const blueprintStr = JSON.stringify(qualityBlueprint, null, 2);
       const peersStr = peer_benchmarks.map(pb => `${pb.anonymized_label}: ${JSON.stringify(pb.maturity_data)}`).join('\n');
 
+      // The gate is up to eight calls: the budget must cover what they send
+      // (each carries a slice of the deliverable), checked before the first.
+      const gateInput = estimateTokens(outputContent.slice(0, 8000)) * 2 + estimateTokens(outputContent.slice(0, 6000))
+        + estimateTokens(outputContent.slice(0, 10000)) + estimateTokens(outputContent.slice(0, 5000)) * 4 + 2000;
+      const gateModel = await modelForCall(req, res, 'utility', engagement, gateInput);
+      if (!gateModel) return;
+      const qgModel: string = gateModel;
+
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
-
-      const qgModel = await getRoutedUtilityModel(db);
 
       // Persist as we go (Wave 2, 2026-09-08). The gate used to be eight
       // serial engine calls with one INSERT at the very end: a check that
@@ -1940,34 +2341,49 @@ Return ONLY valid JSON.`,
         try { await db.run(`UPDATE engagement_quality_gates SET ${column} = ? WHERE id = ?`, stored, qgId); } catch { /* the frame already reached the page */ }
       }
 
-      async function runCheck(checkId: string, label: string, prompt: string): Promise<Record<string, unknown>> {
+      /**
+       * One scored check (8A/8B/8C). The reply is read whatever surrounds
+       * the JSON (readScoredCheck). A reply with no readable score — cut off
+       * at the token limit, or prose — is a failed check, never a pass: it
+       * used to be stored as { raw }, left out of failedChecks and of the
+       * score, so a truncated scope check dropped out and the gate could
+       * say release-ready (2026-10-02).
+       */
+      async function runCheck(checkId: string, label: string, prompt: string, maxTokens = 1024): Promise<Record<string, unknown>> {
         send({ type: 'check_start', check: checkId, label });
         try {
           const r = await callChat({
             model: qgModel,
             system: 'You are a quality assessment assistant. Return only valid JSON.',
             messages: [{ role: 'user', content: prompt }],
-            maxTokens: 1024,
+            maxTokens,
+            jsonMode: true,
+            db,
           });
-          const raw = r.text || '{}';
-          let parsed: Record<string, unknown> = {};
-          try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
+          await chargeEngagementCall(db, req, r);
+          const parsed = readScoredCheck(r.text || '');
+          if (!parsed) {
+            failedChecks.push(checkId);
+            send({ type: 'check_error', check: checkId, label, error: UNREADABLE_CHECK_MESSAGE });
+            return { error: UNREADABLE_CHECK_MESSAGE };
+          }
           send({ type: 'check_done', check: checkId, label, result: parsed });
           return parsed;
         } catch (err) {
           failedChecks.push(checkId);
-          const message = safeError(err);
+          const message = publicErrorMessage(err);
           send({ type: 'check_error', check: checkId, label, error: message });
           return { error: message };
         }
       }
 
-      // 8A: Scope Completeness
+      // 8A: Scope Completeness. Its reply lists every scope item by title
+      // (up to 500 of them), so it gets room that 1,024 tokens did not give.
       await persist('scope_completeness', await runCheck('8A', 'Scope Completeness', `
 Assess whether the following deliverable addresses all confirmed scope items.
 Scope items:\n${scopeSummary}
 Deliverable:\n${outputContent.slice(0, 8000)}
-Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`));
+Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`, 4096));
 
       // 8B: Blueprint Alignment
       if (Object.keys(qualityBlueprint).length > 0) {
@@ -2005,13 +2421,15 @@ ${peer_benchmarks.length > 0 ? `\nPeer context available: ${peersStr.slice(0, 10
 
 Write 3-4 paragraphs: context, key findings, main recommendations, and next steps. Start with the most important message.` }],
           maxTokens: 1500,
+          db,
         });
+        await chargeEngagementCall(db, req, execSummaryResult);
         await persist('executive_summary', execSummaryResult.text);
         send({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } });
       } catch (err) {
         failedChecks.push('8E');
         await persist('executive_summary', '');
-        send({ type: 'check_error', check: '8E', label: 'Executive Summary', error: safeError(err) });
+        send({ type: 'check_error', check: '8E', label: 'Executive Summary', error: publicErrorMessage(err) });
       }
 
       // 8F: Expert Panel Review (4 lenses) — two at a time: the subscription
@@ -2036,15 +2454,26 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
               model: qgModel,
               system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
               messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
-              maxTokens: 600,
+              maxTokens: 1200,
+              jsonMode: true,
+              db,
             });
-            const raw = r.text || '{}';
-            try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
-            send({ type: 'check_done', check: checkId, label, result: expertResults[lens.id] });
+            await chargeEngagementCall(db, req, r);
+            // Read like the scored checks: a review with no readable verdict
+            // is a lens that did not run, not an empty card on a passed gate.
+            const review = readLensReview(r.text || '');
+            if (review) {
+              expertResults[lens.id] = review;
+              send({ type: 'check_done', check: checkId, label, result: review });
+            } else {
+              failedChecks.push(checkId);
+              expertResults[lens.id] = { error: UNREADABLE_CHECK_MESSAGE };
+              send({ type: 'check_error', check: checkId, label, error: UNREADABLE_CHECK_MESSAGE });
+            }
           } catch (err) {
             failedChecks.push(checkId);
-            expertResults[lens.id] = { error: safeError(err) };
-            send({ type: 'check_error', check: checkId, label, error: safeError(err) });
+            expertResults[lens.id] = { error: publicErrorMessage(err) };
+            send({ type: 'check_error', check: checkId, label, error: publicErrorMessage(err) });
           }
           await persist('expert_reviews', expertResults);
         }
@@ -2058,8 +2487,14 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       if (typeof (results['blueprint_alignment'] as Record<string, unknown>)?.score === 'number') scores.push((results['blueprint_alignment'] as Record<string, unknown>).score as number);
       if (typeof (results['cross_consistency'] as Record<string, unknown>)?.score === 'number') scores.push((results['cross_consistency'] as Record<string, unknown>).score as number);
       const overallScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-      const missing = (results['scope_completeness'] as Record<string, unknown>)?.missing as string[] || [];
-      const conflicts = (results['cross_consistency'] as Record<string, unknown>)?.conflicts as string[] || [];
+      // Lists only: a model that answers "missing": "none" must not crash the gate.
+      const itemText = (x: unknown): string => (typeof x === 'string' ? x
+        : isJsonObject(x) && typeof x.description === 'string' ? x.description
+          : isJsonObject(x) && typeof x.title === 'string' ? x.title
+            : x === null || x === undefined ? '' : typeof x === 'object' ? JSON.stringify(x) : String(x)).trim();
+      const listOf = (v: unknown): string[] => (Array.isArray(v) ? v.map(itemText).filter(Boolean) : []);
+      const missing = listOf((results['scope_completeness'] as Record<string, unknown>)?.missing);
+      const conflicts = listOf((results['cross_consistency'] as Record<string, unknown>)?.conflicts);
       const blockers = [...missing.map(m => `Missing scope: ${m}`), ...conflicts];
       const releaseReady = overallScore !== null && overallScore >= 80 && blockers.length === 0 && failedChecks.length === 0;
       const gateStatus = failedChecks.length > 0 ? 'partial' : 'completed';
@@ -2083,9 +2518,9 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         try { await db.run("UPDATE engagement_quality_gates SET status = 'failed' WHERE id = ? AND status = 'running'", qgId); } catch { /* best effort */ }
       }
       if (!res.headersSent) {
-        res.status(500).json({ error: safeError(e) });
+        res.status(500).json({ error: publicErrorMessage(e) });
       } else {
-        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(e) })}\n\n`);
         res.end();
       }
     }
@@ -2103,7 +2538,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
     try {
       const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
-      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(404).json(NOT_FOUND);
 
       const iteration = await db.get('SELECT id FROM engagement_iterations WHERE engagement_id = ? LIMIT 1', engagementId);
       if (!iteration) return res.status(409).json({ error: 'Nothing has been executed yet — run the engagement before marking it complete.' });
@@ -2130,7 +2565,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         : `Engagement marked complete without a release-ready quality gate (forced by the user)`);
       res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -2140,13 +2575,13 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
     try {
       const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
-      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(404).json(NOT_FOUND);
       if (engagement.status !== 'completed') return res.status(409).json({ error: 'Only a completed engagement can be reopened.' });
       await db.run("UPDATE engagements SET status = 'review', completed_at = NULL, updated_at = NOW() WHERE id = ?", engagementId);
       logChange(engagementId, 'review', 'engagement_reopened', 'Engagement reopened for review');
       res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -2156,7 +2591,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const qg = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id));
       res.json(qg || null);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -2169,13 +2604,15 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
-      // Get iteration content
+      // Get iteration content. A named iteration must be this engagement's:
+      // another engagement's id — someone else's deliverable — is absent here.
       const iteration = iteration_id
-        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
+        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?', String(iteration_id), String(req.params.id)) as Record<string, unknown>
         // The approved iteration is the one to review; a later draft must not
         // silently displace it just because its number is higher.
         : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
+      if (!iteration && iteration_id) return res.status(404).json({ error: 'Iteration not found' });
       if (!iteration || !iteration.output_content) return res.status(400).json({ error: 'No iteration content to export' });
 
       // Get quality gate for executive summary
@@ -2230,7 +2667,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       res.setHeader('Content-Length', buffer.length);
       res.send(buffer);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 
@@ -2241,7 +2678,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const changes = await db.all('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       res.json(changes);
     } catch (e) {
-      res.status(500).json({ error: safeError(e) });
+      res.status(500).json({ error: publicErrorMessage(e) });
     }
   });
 

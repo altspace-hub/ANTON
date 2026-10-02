@@ -5,6 +5,18 @@ import { sendProjectInvitationEmail } from '../services/email.js';
 import { scopesToOwner } from '../middleware/ownership.js';
 import { isTeamMode } from '../middleware/role-guards.js';
 import { publicBaseUrl } from '../lib/request-origin.js';
+import { isDemoVisitor, DEMO_MAX_PROJECT_NOTES } from '../services/rag/demo-storage.js';
+
+/** A note is a note: bounded, as every member (and on a demo every visitor) shares the database. */
+const MAX_NOTE_CHARS = 20_000;
+const NOTE_TYPES = ['note', 'update', 'milestone'] as const;
+
+/**
+ * Public demo (DEMO_MODE=true): a visitor's project is theirs alone. Adding a
+ * member would put another visitor's account into it, and an invitation sends
+ * mail to an address the visitor types — neither is offered. Admins keep both.
+ */
+const DEMO_NO_SHARING = 'Sharing a project with other people is not available in this demo.';
 
 /** The roles project_members.role accepts (its CHECK constraint). */
 const PROJECT_ROLES = ['owner', 'admin', 'member', 'viewer'] as const;
@@ -187,6 +199,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // POST /api/projects/:id/members — add existing user by user_id
   router.post('/projects/:id/members', async (req, res) => {
     try {
+      if (isDemoVisitor(req)) return res.status(403).json({ error: DEMO_NO_SHARING });
       if (!(await requireProjectOwner(req, res))) return;
       const { userId, role } = req.body as { userId: string; role?: unknown };
       if (!userId) return res.status(400).json({ error: 'userId is required' });
@@ -217,6 +230,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // PATCH /api/projects/:id/members/:memberId — update member role
   router.patch('/projects/:id/members/:memberId', async (req, res) => {
     try {
+      if (isDemoVisitor(req)) return res.status(403).json({ error: DEMO_NO_SHARING });
       if (!(await requireProjectOwner(req, res))) return;
       const { role } = req.body as { role?: unknown };
       if (!role) return res.status(400).json({ error: 'role is required' });
@@ -242,6 +256,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // DELETE /api/projects/:id/members/:memberId — remove member
   router.delete('/projects/:id/members/:memberId', async (req, res) => {
     try {
+      if (isDemoVisitor(req)) return res.status(403).json({ error: DEMO_NO_SHARING });
       if (!(await requireProjectOwner(req, res))) return;
       const projectId = String(req.params.id);
       const memberId = String(req.params.memberId);
@@ -265,6 +280,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
       return res.status(400).json({ error: 'Invitations are only available in team mode' });
     }
     try {
+      if (isDemoVisitor(req)) return res.status(403).json({ error: DEMO_NO_SHARING });
       if (!(await requireProjectOwner(req, res))) return;
       const { email, role } = req.body as { email: string; role?: string };
       if (!email) return res.status(400).json({ error: 'email is required' });
@@ -384,6 +400,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // DELETE /api/projects/:id/invitations/:invitationId — revoke invitation
   router.delete('/projects/:id/invitations/:invitationId', async (req, res) => {
     try {
+      if (isDemoVisitor(req)) return res.status(403).json({ error: DEMO_NO_SHARING });
       if (!(await requireProjectOwner(req, res))) return;
       await db.run(
         "UPDATE project_invitations SET status = 'revoked' WHERE id = ? AND project_id = ?"
@@ -412,16 +429,26 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // POST /api/projects/:id/notes
   router.post('/projects/:id/notes', async (req, res) => {
     try {
-      const { content, noteType } = req.body as { content: string; noteType?: string };
-      if (!content?.trim()) return res.status(400).json({ error: 'content is required' });
+      const { content, noteType } = req.body as { content?: unknown; noteType?: unknown };
+      if (typeof content !== 'string' || !content.trim()) return res.status(400).json({ error: 'content is required' });
+      if (content.length > MAX_NOTE_CHARS) return res.status(400).json({ error: `A note can be at most ${MAX_NOTE_CHARS.toLocaleString('en-GB')} characters` });
+      if (noteType !== undefined && noteType !== null && noteType !== '' && !(NOTE_TYPES as readonly unknown[]).includes(noteType)) {
+        return res.status(400).json({ error: `noteType must be one of: ${NOTE_TYPES.join(', ')}` });
+      }
 
       const user = getUserFromReq(req);
+      if (isDemoVisitor(req)) {
+        const mine = await db.get<{ n: number | string }>('SELECT COUNT(*) AS n FROM project_notes WHERE user_id = ?', [user.id]);
+        if (Number(mine?.n ?? 0) >= DEMO_MAX_PROJECT_NOTES) {
+          return res.status(409).json({ error: `This demo account has reached its limit of ${DEMO_MAX_PROJECT_NOTES} notes. Delete one to add another.` });
+        }
+      }
       const id = randomUUID();
 
       await db.run(`
         INSERT INTO project_notes (id, project_id, user_id, user_name, content, note_type)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, id, req.params.id, user.id, user.display_name || 'User', content.trim(), noteType || 'note');
+      `, id, req.params.id, user.id, user.display_name || 'User', content.trim(), (typeof noteType === 'string' && noteType) || 'note');
 
       const note = await db.get('SELECT * FROM project_notes WHERE id = ?', id);
       res.json(note);

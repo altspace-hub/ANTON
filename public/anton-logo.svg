@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#0D7D6C"/>
-  <text x="50%" y="55%" dominant-baseline="central" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF">A</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="230" ry="230" fill="#0D7D6C"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="111" stroke-linejoin="miter" stroke-linecap="square">
+    <polyline points="213,469 512,239 811,469" opacity="0.45"/>
+    <polyline points="213,640 512,410 811,640" opacity="0.75"/>
+    <polyline points="213,811 512,580 811,811"/>
+  </g>
 </svg>

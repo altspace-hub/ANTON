@@ -13,6 +13,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Users, ChevronDown, X, Copy, Check, Download, Square, FileText, FileSpreadsheet, FileIcon } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
+import { fetchWithAuth, errorMessageOf } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -48,26 +49,23 @@ export interface ExplainForProps {
 
 // ── Helper ─────────────────────────────────────────────────
 
-function getAuthHeader(): Record<string, string> {
-  const token = localStorage.getItem('openexpert-token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
+// fetchWithAuth: the sign-in token where the app keeps it (session storage on a
+// public demo) and the CSRF header.
 async function* streamExplainFor(
   content: string,
   audience: string,
   moduleContext?: string,
   signal?: AbortSignal
 ): AsyncGenerator<{ type: string; content?: string; message?: string }> {
-  const res = await fetch('/api/claude/explain-for', {
+  const res = await fetchWithAuth('/api/claude/explain-for', {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content, audience, moduleContext }),
     signal,
   });
 
   if (!res.ok) {
-    yield { type: 'error', message: await res.text() };
+    yield { type: 'error', message: await errorMessageOf(res, 'The rewrite could not be made.') };
     return;
   }
 
@@ -116,6 +114,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
   const [showPanel, setShowPanel]              = useState(false);
   const [activeTab, setActiveTab]              = useState<'original' | 'explained'>('explained');
   const [copyState, setCopyState]              = useState<'idle' | 'copied'>('idle');
+  const [explainError, setExplainError]        = useState<string | null>(null);
   const { doExport, isExporting } = useExport();
 
   const dropdownRef   = useRef<HTMLDivElement>(null);
@@ -138,6 +137,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
     setDropdownOpen(false);
     setSelectedAudience(audience);
     setExplainedContent('');
+    setExplainError(null);
     setShowPanel(true);
     setActiveTab('explained');
     setIsStreaming(true);
@@ -154,11 +154,15 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
           fullText += event.content;
           setExplainedContent(fullText);
         }
-        if (event.type === 'error' || event.type === 'stream_end') break;
+        if (event.type === 'error') {
+          setExplainError(event.message || 'Explanation failed. Please try again.');
+          break;
+        }
+        if (event.type === 'stream_end') break;
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        setExplainedContent('Explanation failed. Please try again.');
+        setExplainError('Explanation failed. Please try again.');
       }
     } finally {
       setIsStreaming(false);
@@ -171,9 +175,9 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
 
       // Save as version if we have an entity ID
       if (entityId) {
-        fetch(`/api/versions/output/${entityId}`, {
+        fetchWithAuth(`/api/versions/output/${entityId}`, {
           method: 'POST',
-          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             content: fullText,
             label: `Explained for ${audience.label} at ${new Date().toLocaleTimeString()}`,
@@ -334,6 +338,9 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
           <div className="p-4">
             {activeTab === 'explained' ? (
               <div className="min-h-24">
+                {explainError && (
+                  <p role="alert" className="mb-2 text-xs text-adv-red">{explainError}</p>
+                )}
                 {!explainedContent && isStreaming && (
                   <div className="flex items-center gap-2 text-xs text-adv-gray">
                     <span className="h-1.5 w-1.5 rounded-full bg-adv-teal animate-pulse" />

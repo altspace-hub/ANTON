@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Sparkles, X, Loader2 } from 'lucide-react';
 import { suggestModuleLens, type ModuleLensSuggestion } from '@/lib/api';
 import type { OpenChatLens } from '@/stores/useConfigStore';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 interface Props {
   lens: OpenChatLens | null;
@@ -27,6 +28,8 @@ export default function LensChip({ lens, busy, disabled, onPick, onClear }: Prop
   const [matches, setMatches] = useState<ModuleLensSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // Public demo: a module the demo keeps off is never offered as a lens.
+  const { moduleHidden } = useDemoCatalogue();
 
   // Debounced search over the catalogue while the picker is open.
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function LensChip({ lens, busy, disabled, onPick, onClear }: Prop
       abortRef.current = ac;
       setSearching(true);
       try {
-        setMatches(await suggestModuleLens(q, ac.signal));
+        setMatches((await suggestModuleLens(q, ac.signal)).filter((m) => !moduleHidden(m.moduleId, m.areaId)));
       } catch {
         // aborted or offline — leave the list as it is
       } finally {
@@ -47,7 +50,7 @@ export default function LensChip({ lens, busy, disabled, onPick, onClear }: Prop
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [query, open]);
+  }, [query, open, moduleHidden]);
 
   const close = () => { setOpen(false); setQuery(''); setMatches([]); };
 

@@ -57,7 +57,15 @@ interface InsightSummary {
   insight: string;
 }
 
-export function InstitutionalMemoryTab() {
+interface InstitutionalMemoryTabProps {
+  /**
+   * Learning is switched off here (a public-demo visitor): no checkpoint
+   * decisions are recorded, so the tab says so instead of asking the server.
+   */
+  learningOff?: boolean;
+}
+
+export function InstitutionalMemoryTab({ learningOff = false }: InstitutionalMemoryTabProps = {}) {
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<InsightSummary | null>(null);
   const [history, setHistory] = useState<CheckpointDecision[]>([]);
@@ -66,8 +74,13 @@ export function InstitutionalMemoryTab() {
   const [workflowFilter, setWorkflowFilter] = useState<string | null>(null);
 
   useEffect(() => {
+    if (learningOff) {
+      setLoading(false);
+      return;
+    }
     loadMemoryData();
-  }, [workflowFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadMemoryData reads workflowFilter
+  }, [workflowFilter, learningOff]);
 
   async function loadMemoryData() {
     try {
@@ -123,6 +136,19 @@ export function InstitutionalMemoryTab() {
     if (feedback === 1) return <ThumbsUp className="w-4 h-4 text-green-400" />;
     if (feedback === -1) return <ThumbsDown className="w-4 h-4 text-red-400" />;
     return null;
+  }
+
+  if (learningOff) {
+    return (
+      <div className="text-center py-12">
+        <Brain className="w-12 h-12 text-adv-gray mx-auto mb-3" />
+        <p className="text-adv-gray">Institutional memory is empty on this demo.</p>
+        <p className="text-sm text-adv-gray mt-2">
+          It learns from the decisions people make at workflow checkpoints. Learning is switched off here, and workflows
+          are not part of the demo, so nothing is recorded.
+        </p>
+      </div>
+    );
   }
 
   if (loading) {

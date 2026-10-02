@@ -10,7 +10,7 @@ import { AREAS, MODULES } from '@/lib/constants';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield, Database, Brain, Layers } from 'lucide-react';
+import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield, Database, Brain, Layers, Mail, Copy, Link2 } from 'lucide-react';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import { IdentityPanel } from '@/components/platform/IdentityPanel';
 import ProfileSettingsTab from './ProfileSettingsTab';
@@ -22,6 +22,7 @@ import { KnowledgeLibraryManager } from '@/features/knowledge/KnowledgeLibraryMa
 import { OrgContextPanel } from '@/components/shared/OrgContextPanel';
 import LocalModelsSettingsPanel from '@/components/settings/LocalModelsSettingsPanel';
 import { useIntelligenceHealth, type FeatureHealth } from '@/components/shared/IntelligenceHealthBanner';
+import { compatModelChoices } from '@/lib/compat-model-policy';
 
 interface BrandTemplate {
   id: string;
@@ -46,6 +47,18 @@ interface TeamUser {
   /** The account signs in through single sign-on. */
   sso?: boolean;
   email?: string | null;
+  /** Invited, and no password chosen yet. */
+  pending?: boolean;
+}
+
+/** An invitation or new-password link, as POST /api/admin/invitations and …/sign-in-link return it. */
+interface IssuedAccountLink {
+  email: string | null;
+  link: string;
+  purpose: 'invite' | 'reset';
+  expiresAt: string;
+  emailed: boolean;
+  emailProblem: string | null;
 }
 
 interface UsageRow {
@@ -150,6 +163,14 @@ export default function Settings() {
   const [teamError, setTeamError] = useState('');
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [editBudgetValue, setEditBudgetValue] = useState(0);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<'analyst' | 'viewer'>('analyst');
+  const [issuedLink, setIssuedLink] = useState<IssuedAccountLink | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [groupLink, setGroupLink] = useState<string | null>(null);
+  const [groupLinkCopied, setGroupLinkCopied] = useState(false);
 
   // Brand Templates state
   const [templates, setTemplates] = useState<BrandTemplate[]>([]);
@@ -351,6 +372,9 @@ export default function Settings() {
       ]);
       if (usersRes.ok) setTeamUsers(await usersRes.json() as TeamUser[]);
       if (usageRes.ok) setUsageRows(await usageRes.json() as UsageRow[]);
+      // On a demo with an invite code: the link a group can sign up with.
+      const groupRes = await fetch('/api/admin/demo-signup-link', { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (groupRes.ok) setGroupLink(((await groupRes.json()) as { link: string | null }).link);
     } catch {
       // non-fatal
     } finally {
@@ -372,6 +396,50 @@ export default function Settings() {
       setNewUsername(''); setNewPassword(''); setNewRole('analyst'); setNewDisplayName(''); setNewBudget(0);
       await loadTeamData();
     } catch { setTeamError('Network error'); }
+  }
+
+  function showIssuedLink(data: IssuedAccountLink) {
+    setIssuedLink(data);
+    setLinkCopied(false);
+  }
+
+  async function handleInvite() {
+    setTeamError('');
+    if (!inviteEmail.trim()) { setTeamError(t('settings.inviteEmailRequired', 'Enter the email address of the person to invite.')); return; }
+    try {
+      const res = await fetchWithAuth('/api/admin/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim(), displayName: inviteName.trim() || undefined, role: inviteRole }),
+      });
+      const data = await res.json().catch(() => ({})) as IssuedAccountLink & { error?: string };
+      if (!res.ok) { setTeamError(data.error || t('settings.inviteFailed', 'Could not make the invitation')); return; }
+      showIssuedLink(data);
+      setShowInvite(false);
+      setInviteEmail(''); setInviteName(''); setInviteRole('analyst');
+      await loadTeamData();
+    } catch { setTeamError('Network error'); }
+  }
+
+  async function handleSignInLink(id: string) {
+    setTeamError('');
+    try {
+      const res = await fetchWithAuth(`/api/admin/users/${id}/sign-in-link`, { method: 'POST' });
+      const data = await res.json().catch(() => ({})) as IssuedAccountLink & { error?: string };
+      if (!res.ok) { setTeamError(data.error || t('settings.signInLinkFailed', 'Could not make a sign-in link')); return; }
+      showIssuedLink(data);
+      await loadTeamData();
+    } catch { setTeamError('Network error'); }
+  }
+
+  async function copyIssuedLink() {
+    if (!issuedLink) return;
+    try {
+      await navigator.clipboard.writeText(issuedLink.link);
+      setLinkCopied(true);
+    } catch {
+      setLinkCopied(false);
+    }
   }
 
   async function handleDeleteUser(id: string) {
@@ -471,7 +539,7 @@ export default function Settings() {
 
   // Cost-effective mode (plan 2.17): detected budget providers
   const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
-  const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
+  const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null; allowedModels?: string[] }>>([]);
 
   // Subscription execution engines (sdk:<model> / codex:<model>): enabled
   // engines' models are valid default-model choices — they run on this
@@ -627,7 +695,7 @@ export default function Settings() {
       .catch(() => {});
     fetchWithAuth('/api/settings/model-endpoints')
       .then((r) => r.ok ? r.json() : { endpoints: [] })
-      .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; enabled: boolean }> }) =>
+      .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; allowedModels?: string[]; enabled: boolean }> }) =>
         setEcoEndpoints((data.endpoints ?? []).filter((e) => e.enabled)))
       .catch(() => {});
 
@@ -1061,14 +1129,106 @@ export default function Settings() {
                 <Users className="h-4 w-4 text-adv-teal" />
                 <h2 className="text-sm font-semibold text-adv-white">{t('settings.teamMembers')}</h2>
               </div>
-              <button
-                onClick={() => setShowAddUser((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                {t('settings.addUser')}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setShowInvite((v) => !v); setShowAddUser(false); setTeamError(''); }}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                >
+                  <Mail className="h-3 w-3" />
+                  {t('settings.inviteByEmail', 'Invite by email')}
+                </button>
+                <button
+                  onClick={() => { setShowAddUser((v) => !v); setShowInvite(false); setTeamError(''); }}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  {t('settings.addUser')}
+                </button>
+              </div>
             </div>
+
+            {/* A demo with an invite code: one link for a whole group; each person makes their own account */}
+            {groupLink && (
+              <div className="mb-4 rounded-lg border border-border bg-adv-dark/50 p-4 space-y-2">
+                <h3 className="text-xs font-semibold text-adv-off-white">{t('settings.groupSignupTitle', 'Sign-up link for a group')}</h3>
+                <p className="text-xs text-adv-gray">
+                  {t('settings.groupSignupHelp', 'Anyone who opens this link can make their own account straight away, with no approval. It carries the invite code, so send it only to the people you mean.')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input readOnly value={groupLink} aria-label={t('settings.groupSignupTitle', 'Sign-up link for a group')} onFocus={(e) => e.currentTarget.select()}
+                    className="min-w-0 flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 font-mono text-xs text-adv-off-white" />
+                  <button
+                    onClick={async () => { try { await navigator.clipboard.writeText(groupLink); setGroupLinkCopied(true); } catch { setGroupLinkCopied(false); } }}
+                    className="flex items-center gap-1 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    {groupLinkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {groupLinkCopied ? t('settings.copied', 'Copied') : t('settings.copy', 'Copy')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Invite by email: the account is made now; the person chooses their own password from the link */}
+            {showInvite && (
+              <div className="mb-4 rounded-lg border border-adv-teal/30 bg-adv-dark/50 p-4 space-y-3">
+                <h3 className="text-xs font-semibold text-adv-off-white">{t('settings.inviteTitle', 'Invite someone by email')}</h3>
+                <p className="text-xs text-adv-gray">
+                  {t('settings.inviteHelp', 'ANTON makes the account and a one-time link. The person opens the link, chooses a password, and then signs in with their email address. The link works for 7 days.')}
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label htmlFor="invite-email" className="mb-1 block text-xs text-adv-gray">{t('settings.inviteEmail', 'Email address')} *</label>
+                    <input id="invite-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="name@example.com"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
+                  </div>
+                  <div>
+                    <label htmlFor="invite-name" className="mb-1 block text-xs text-adv-gray">{t('settings.displayName')}</label>
+                    <input id="invite-name" value={inviteName} onChange={(e) => setInviteName(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
+                  </div>
+                  <div>
+                    <label htmlFor="invite-role" className="mb-1 block text-xs text-adv-gray">{t('settings.role')}</label>
+                    <select id="invite-role" value={inviteRole} onChange={(e) => setInviteRole(e.target.value as 'analyst' | 'viewer')}
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
+                      <option value="analyst">{t('settings.roleAnalyst')}</option>
+                      <option value="viewer">{t('settings.roleViewer')}</option>
+                    </select>
+                  </div>
+                </div>
+                {teamError && <p className="text-xs text-adv-red">{teamError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={handleInvite} className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">{t('settings.inviteCreate', 'Make account and link')}</button>
+                  <button onClick={() => { setShowInvite(false); setTeamError(''); }} className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors">{t('settings.cancel')}</button>
+                </div>
+              </div>
+            )}
+
+            {/* The link just made: shown once, for the administrator to pass on */}
+            {issuedLink && (
+              <div className="mb-4 rounded-lg border border-adv-gold/40 bg-adv-gold/5 p-4 space-y-2" role="status">
+                <p className="text-xs text-adv-off-white">
+                  {issuedLink.purpose === 'invite'
+                    ? t('settings.linkForInvite', 'Invitation link for {{email}}:', { email: issuedLink.email ?? '' })
+                    : t('settings.linkForReset', 'New-password link for {{email}}:', { email: issuedLink.email ?? '' })}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input readOnly value={issuedLink.link} aria-label={t('settings.signInLink', 'Sign-in link')} onFocus={(e) => e.currentTarget.select()}
+                    className="min-w-0 flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 font-mono text-xs text-adv-off-white" />
+                  <button onClick={copyIssuedLink} className="flex items-center gap-1 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                    {linkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {linkCopied ? t('settings.copied', 'Copied') : t('settings.copy', 'Copy')}
+                  </button>
+                  <button onClick={() => setIssuedLink(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors">{t('settings.done', 'Done')}</button>
+                </div>
+                <p className="text-xs text-adv-gray">
+                  {issuedLink.emailed
+                    ? t('settings.linkEmailed', 'It was also emailed to them.')
+                    : (issuedLink.emailProblem ?? t('settings.linkNotEmailed', 'It was not emailed. Copy it and send it yourself.'))}
+                  {' '}
+                  {t('settings.linkExpires', 'It works once, until {{date}}. Anyone with the link can set the password, so send it only to that person.', { date: new Date(issuedLink.expiresAt).toLocaleDateString() })}
+                </p>
+              </div>
+            )}
 
             {/* Add user form */}
             {showAddUser && (
@@ -1140,6 +1300,7 @@ export default function Settings() {
                             {u.username}
                             {u.sso && <span className="ml-1.5 rounded bg-adv-blue/15 px-1.5 py-0.5 font-sans text-[11px] text-adv-blue" title={t('settings.ssoBadgeTitle', 'Signs in with single sign-on')}>{t('settings.ssoBadge', 'SSO')}</span>}
                             {u.disabled_at && <span className="ml-1.5 rounded bg-adv-red/15 px-1.5 py-0.5 font-sans text-[11px] text-adv-red" title={`${t('settings.switchedOffOn', 'Switched off')} ${new Date(u.disabled_at).toLocaleDateString()}`}>{t('settings.offBadge', 'Off')}</span>}
+                            {u.pending && !u.sso && <span className="ml-1.5 rounded bg-adv-gold/15 px-1.5 py-0.5 font-sans text-[11px] text-adv-gold" title={t('settings.pendingTitle', 'Invited; no password chosen yet')}>{t('settings.pendingBadge', 'Invited')}</span>}
                             {u.email && <div className="mt-0.5 font-sans text-[11px] text-adv-gray">{u.email}</div>}
                           </td>
                           <td className="py-2.5 text-adv-off-white">{u.display_name || '—'}</td>
@@ -1203,6 +1364,18 @@ export default function Settings() {
                                   {!u.sso && (
                                     <button onClick={() => setEditingUser(u.id)} className="rounded p-1 text-adv-gray hover:text-adv-off-white transition-colors" title={t('settings.resetPassword')}>
                                       <Edit2 className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                  {!u.sso && !u.disabled_at && (
+                                    <button
+                                      onClick={() => handleSignInLink(u.id)}
+                                      className="rounded p-1 text-adv-gray hover:text-adv-teal transition-colors"
+                                      title={u.pending
+                                        ? t('settings.newInviteLinkTitle', 'New invitation link (the person has not chosen a password yet)')
+                                        : t('settings.newSignInLinkTitle', 'New sign-in link: the person chooses a new password')}
+                                      aria-label={`${t('settings.newSignInLink', 'New sign-in link')}: ${u.username}`}
+                                    >
+                                      <Link2 className="h-3 w-3" />
                                     </button>
                                   )}
                                   {u.id !== authUser?.id && (
@@ -2289,9 +2462,9 @@ export default function Settings() {
                   ...(ecoOllama.available && ecoOllama.models.length > 0
                     ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
                     : []),
-                  ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
-                    value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
-                  })),
+                  // Every model an endpoint allows, not only its default: the
+                  // verifier should be another model than the one that answers.
+                  ...compatModelChoices(ecoEndpoints).map((c) => ({ ...c, disabled: false })),
                   ...(customSlot1.enabled && customSlot1.modelId
                     ? [{ value: customSlot1.modelId, label: customSlot1.displayName || 'Custom 1', disabled: false }]
                     : []),

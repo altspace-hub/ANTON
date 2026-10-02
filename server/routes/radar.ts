@@ -2,18 +2,26 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import * as cron from 'node-cron';
-import { createRegulatoryRadar } from '../services/regulatory-radar.js';
+import { createRegulatoryRadar, isRadarItemStatus, RADAR_ITEM_STATUSES } from '../services/regulatory-radar.js';
 import {
   type createRadarFetcher,
   isRadarAutomationDisabled,
   clampAutoScanIntervalHours,
   radarCronIsAtMostHourly,
+  parseRadarScore,
   MIN_AUTO_SCAN_INTERVAL_HOURS,
   MAX_AUTO_SCAN_INTERVAL_HOURS,
 } from '../services/radar-fetcher.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
-import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { callChat } from '../services/provider-router.js';
 import { requireAdminOrSolo } from '../middleware/role-guards.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
+
+/** A public-demo visitor: DEMO_MODE=true and not an admin. */
+function isDemoVisitor(req: { user?: { role?: string } }): boolean {
+  return isDemoMode() && req.user?.role !== 'admin';
+}
 
 type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
 
@@ -22,7 +30,11 @@ type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
  * every user. Reading it is open to everyone; anything that changes it or makes
  * it spend (sources, manual items, AI scoring, scans, the auto-scan settings)
  * is admin-only in team mode (requireAdminOrSolo). Triage of an item's status
- * stays open to every user.
+ * stays open to every user, except on a public demo: there the feed is shared
+ * by strangers, and one visitor's "dismiss" would hide an item from all of
+ * them, so a visitor reads the feed and changes nothing. A team user who may
+ * not run the radar does not see who dismissed an item (dismissed_by is a
+ * user id).
  */
 export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetcher) {
   const router = Router();
@@ -101,7 +113,11 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
         category: category as string | undefined,
         limit: limit ? parseInt(limit as string, 10) : 50,
         offset: offset ? parseInt(offset as string, 10) : 0,
-      });
+      }) as Array<Record<string, unknown>>;
+      if (scopesToOwner(req as unknown as OwnedRequest)) {
+        res.json(items.map(({ dismissed_by: _who, ...rest }) => rest));
+        return;
+      }
       res.json(items);
     } catch (err) {
       console.error('[radar] items list error:', err);
@@ -127,13 +143,19 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   // PUT /api/radar/items/:id/status — update status
   router.put('/radar/items/:id/status', async (req, res) => {
     try {
+      // The demo allowlist already answers 404 here; this holds without it.
+      if (isDemoVisitor(req)) {
+        return res.status(404).json({ error: 'Not available in this demo' });
+      }
       const { id } = req.params;
-      const { status } = req.body;
-      if (!status) {
-        return res.status(400).json({ error: 'status is required' });
+      const { status } = (req.body ?? {}) as { status?: unknown };
+      if (!isRadarItemStatus(status)) {
+        return res.status(400).json({ error: `status must be one of: ${RADAR_ITEM_STATUSES.join(', ')}` });
       }
       const userId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
-      await radar.updateItemStatus(id, status, userId);
+      if (!(await radar.updateItemStatus(String(id), status, userId))) {
+        return res.status(404).json({ error: 'Item not found' });
+      }
       res.json({ success: true });
     } catch (err) {
       console.error('[radar] status update error:', err);
@@ -145,12 +167,14 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   router.post('/radar/items/:id/score', requireAdminOrSolo, async (req, res) => {
     try {
       const id = String(req.params.id);
-      const { userAreas = [], userKeywords = [] } = req.body;
+      const body = (req.body ?? {}) as { userAreas?: unknown };
+      const userAreas = Array.isArray(body.userAreas)
+        ? body.userAreas.filter((a): a is string => typeof a === 'string').map((a) => a.slice(0, 100)).slice(0, 20)
+        : [];
 
-      // Fetch the item
-      const items = await radar.getItems({ limit: 1, offset: 0 });
-      const item = (items as unknown as Array<{ id: string; title: string; summary: string; full_text?: string }>)
-        .find((i) => i.id === id);
+      // The item itself (this used to list the newest item and look for the id
+      // in it, so every other item answered 404).
+      const item = await radar.getItem(id);
       if (!item) {
         return res.status(404).json({ error: 'Item not found' });
       }
@@ -174,16 +198,16 @@ Return ONLY valid JSON (no markdown, no extra text):
         system: 'You are a regulatory relevance scorer. Return ONLY valid JSON.',
         messages: [{ role: 'user', content: prompt }],
         maxTokens: 1024,
+        jsonMode: true,
+        purpose: 'radar-score',
+        db,
       });
 
-      const responseText = chatResult.text;
-
-      const result = JSON.parse(responseText) as {
-        relevance_score: number;
-        urgency_score: number;
-        ai_summary: string;
-        impact_areas: string[];
-      };
+      // Fenced, wrapped in prose or reasoning: read tolerantly, clamp to 0-1.
+      const result = parseRadarScore(chatResult.text);
+      if (!result) {
+        return res.status(502).json({ error: 'The model did not return a score' });
+      }
 
       // Update item with scores
       await radar.scoreItem(id, result.relevance_score, result.urgency_score, result.ai_summary, result.impact_areas);

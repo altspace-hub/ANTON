@@ -1,9 +1,12 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Parser from 'rss-parser';
+import { createHash } from 'node:crypto';
 import { getRoutedUtilityModel } from './utility-model.js';
-import { callChat, mapModelToProvider } from './provider-router.js';
-import { modelCanWebSearch, providerOfModel, webSearchTool } from './routed-web-search.js';
+import { callChat } from './provider-router.js';
+import { modelCanWebSearch, webSearchTool } from './routed-web-search.js';
+import { fetchUrl } from './url-fetcher.js';
+import { extractJsonReply, isJsonObject, hasArrayField } from './coding-workspace.js';
 import { SUBCATEGORY_KEYWORDS, CATEGORY_SCORE_PROMPTS, type RadarCategory } from './radar-constants.js';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -195,11 +198,12 @@ export async function createRadarFetcher(db: DatabaseAdapter, _legacyClient?: un
 
     // Utility tier, through the router. Only a model that can really search
     // (Anthropic API with a key, or the Claude subscription engine) may run a
-    // web-search source: any other provider would drop the tool and invent
-    // "recent publications" from memory.
+    // web search: any other provider would drop the tool and invent "recent
+    // publications" from memory. Without one (an OpenRouter-only server) the
+    // source's own page is read instead, and only what is on it is kept.
     const model = await getRoutedUtilityModel(db);
     if (!modelCanWebSearch(model)) {
-      throw new Error(`Web-search sources need a Claude model that can search the web (utility model ${model} on ${providerOfModel(model)} cannot)`);
+      return fetchPageSource(source, model, itemTypeOptions);
     }
 
     try {
@@ -275,6 +279,75 @@ If you find nothing relevant, return: []`,
     }
   }
 
+  // ── Page-read strategy (no model that can search) ────────────
+
+  /**
+   * Reads the source's page (fetchUrl: the SSRF guard on every hop, a 15 s
+   * timeout, a 2 MB cap) and asks the model, with no tools, which publications
+   * the text lists. The model only points: an item is kept when its title is in
+   * the page text (groundPageItems), its summary is the page's own words after
+   * the title, its link is the page, and a date only when the text it copied is
+   * on the page. A page that cannot be read is an error on the source.
+   */
+  async function fetchPageSource(source: RadarSource, model: string, itemTypeOptions: string): Promise<RawItem[]> {
+    const page = await fetchUrl(source.url);
+    if (page.error || !page.text.trim()) {
+      throw new Error(`Could not read the source page (${page.error ?? 'no text'}); there is no model here that can search the web instead`);
+    }
+    const pageUrl = page.finalUrl ?? source.url;
+    const text = page.text.slice(0, PAGE_TEXT_MAX_CHARS);
+
+    const message = await callChat({
+      model,
+      system: 'You list the publications a web page shows. You use only the page text you are given. Answer with one JSON object only.',
+      maxTokens: 2048,
+      jsonMode: true,
+      background: true,
+      purpose: 'radar-page-read',
+      db,
+      messages: [{
+        role: 'user',
+        content: `Below is the text of the page "${source.display_name}" (${pageUrl}), read just now.
+
+List the publications, news items or documents this page shows, newest first, at most ${PAGE_ITEMS_MAX}. For each give:
+- "title": the title copied exactly as it appears in the text
+- "date_text": the item's date copied exactly as the text writes it, or null
+- "item_type": one of ${itemTypeOptions}
+
+Use only the text below. Do not add anything that is not in it.
+Answer with {"items": [...]}, or {"items": []} when the page lists none.
+
+--- PAGE TEXT ---
+${text}
+--- END OF PAGE TEXT ---`,
+      }],
+    });
+
+    const reply = extractJsonReply(message.text, (v) => Array.isArray(v) || hasArrayField('items')(v));
+    const list: unknown[] = !reply ? []
+      : Array.isArray(reply.value) ? reply.value
+      : hasArrayField('items')(reply.value) ? (reply.value as { items: unknown[] }).items
+      : [];
+    if (!reply) console.error(`[radar-fetcher] purpose=radar-page-read: no items JSON in the reply for source ${source.id}`);
+
+    return groundPageItems(page.text, list, pageUrl).map((item) => {
+      const { subcategory, inferredCategory } = classifySubcategory(item.title, item.summary);
+      const proposed = item.itemType;
+      return {
+        external_id: `page:${createHash('sha256').update(item.title.toLowerCase()).digest('hex').slice(0, 40)}`,
+        title: item.title,
+        summary: item.summary,
+        url: item.url,
+        published_at: item.publishedAt,
+        item_type: proposed && (Object.keys(TYPE_KEYWORDS).includes(proposed) || Object.keys(PEVC_TYPE_KEYWORDS).includes(proposed))
+          ? proposed
+          : classifyItemType(item.title, item.summary, source.category),
+        category: source.category || inferredCategory || 'regulatory',
+        subcategory,
+      };
+    });
+  }
+
   // ── Insert items with dedup ──────────────────────────────────
 
   async function insertItems(sourceId: string, items: RawItem[]): Promise<number> {
@@ -340,16 +413,19 @@ Return ONLY valid JSON (no markdown):
           maxTokens: 512,
           system: 'Score the following radar item. Return only valid JSON, no markdown.',
           messages: [{ role: 'user', content: prompt }],
+          jsonMode: true,
+          background: true,
+          purpose: 'radar-score',
+          db,
         });
 
-        const responseText = chatResult.text;
-
-        const result = JSON.parse(responseText) as {
-          relevance_score: number;
-          urgency_score: number;
-          ai_summary: string;
-          impact_areas: string[];
-        };
+        // A fenced or prose-wrapped reply used to throw here, leaving the item
+        // unscored at 0.5, and re-scored (and re-billed) on every scan.
+        const result = parseRadarScore(chatResult.text);
+        if (!result) {
+          console.error(`[radar-fetcher] purpose=radar-score: no score in the reply for item ${item.id}`);
+          continue;
+        }
 
         await db.run(`
     UPDATE radar_items
@@ -573,6 +649,118 @@ export function radarCronIsAtMostHourly(expr: string): boolean {
   if (fields.length !== 5 && fields.length !== 6) return false;
   const fixed = fields.length === 6 ? fields.slice(0, 2) : fields.slice(0, 1);
   return fixed.every((f) => /^\d{1,2}$/.test(f));
+}
+
+// ── Page reading and scoring helpers ─────────────────────────────
+
+/** Page text sent to the model at most (a listing page's items come first). */
+export const PAGE_TEXT_MAX_CHARS = 30_000;
+/** Items one page read keeps at most. */
+export const PAGE_ITEMS_MAX = 20;
+/** Characters of page text after a title kept as the item's summary. */
+const PAGE_SUMMARY_CHARS = 400;
+
+export interface GroundedPageItem {
+  title: string;
+  summary: string;
+  url: string;
+  publishedAt: string | null;
+  itemType: string | null;
+}
+
+/** Whitespace collapsed and typographic quotes made plain, so a copied title matches the page. */
+function flatten(s: string): string {
+  return s.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The items of a page-read reply that are really on the page. A title must
+ * appear in the page text (case and whitespace aside) and be at least 8
+ * characters, or the item is dropped: the model points, it does not write. The
+ * summary is the page's own text after the title; the link is the page; a date
+ * counts only when the text the model copied for it is on the page and reads
+ * as a date. Repeats are dropped; at most PAGE_ITEMS_MAX are kept.
+ */
+export function groundPageItems(pageText: string, reply: unknown[], pageUrl: string): GroundedPageItem[] {
+  const flat = flatten(pageText);
+  const lower = flat.toLowerCase();
+  const seen = new Set<string>();
+  const out: GroundedPageItem[] = [];
+  for (const entry of reply) {
+    if (out.length >= PAGE_ITEMS_MAX) break;
+    if (!isJsonObject(entry) || typeof entry.title !== 'string') continue;
+    const asked = flatten(entry.title).slice(0, 500);
+    const key = asked.toLowerCase();
+    if (asked.length < 8 || seen.has(key)) continue;
+    const at = lower.indexOf(key);
+    if (at < 0) continue;
+    seen.add(key);
+
+    // The page's own spelling and the words after it. Lower-casing can change
+    // a string's length (rare letters); then the positions do not line up and
+    // the model's spelling stands, with no summary.
+    const aligned = lower.length === flat.length;
+    const title = aligned ? flat.slice(at, at + asked.length) : asked;
+    let summary = aligned ? flat.slice(at + title.length, at + title.length + PAGE_SUMMARY_CHARS).trim() : '';
+    if (aligned && flat.length > at + title.length + PAGE_SUMMARY_CHARS) {
+      const cut = summary.lastIndexOf(' ');
+      summary = `${cut > 0 ? summary.slice(0, cut) : summary}…`;
+    }
+
+    let publishedAt: string | null = null;
+    if (typeof entry.date_text === 'string') {
+      const dateText = flatten(entry.date_text);
+      const when = new Date(dateText);
+      if (dateText.length >= 6 && lower.includes(dateText.toLowerCase()) && Number.isFinite(when.getTime())) {
+        publishedAt = when.toISOString();
+      }
+    }
+
+    out.push({
+      title,
+      summary,
+      url: pageUrl,
+      publishedAt,
+      itemType: typeof entry.item_type === 'string' ? entry.item_type : null,
+    });
+  }
+  return out;
+}
+
+export interface RadarScore {
+  relevance_score: number;
+  urgency_score: number;
+  ai_summary: string;
+  impact_areas: string[];
+}
+
+/** A 0-1 score from a model value: a number or numeric string; 0-100 read as a percentage; null otherwise. */
+function unitScore(v: unknown): number | null {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return null;
+  const scaled = n > 1 && n <= 100 ? n / 100 : n;
+  return Math.min(1, Math.max(0, scaled));
+}
+
+/**
+ * The score in a model reply, or null when it carries none. Read tolerantly
+ * (a fence, prose or reasoning around the object: GLM on OpenRouter adds
+ * them), with the scores clamped to 0-1 and the text fields cut to size.
+ */
+export function parseRadarScore(text: string): RadarScore | null {
+  const reply = extractJsonReply(text ?? '', (v) => isJsonObject(v) && 'relevance_score' in v);
+  if (!reply || !isJsonObject(reply.value)) return null;
+  const v = reply.value;
+  const relevance = unitScore(v.relevance_score);
+  if (relevance === null) return null;
+  return {
+    relevance_score: relevance,
+    urgency_score: unitScore(v.urgency_score) ?? 0.5,
+    ai_summary: typeof v.ai_summary === 'string' ? v.ai_summary.trim().slice(0, 1000) : '',
+    impact_areas: Array.isArray(v.impact_areas)
+      ? v.impact_areas.filter((a): a is string => typeof a === 'string').map((a) => a.slice(0, 100)).slice(0, 10)
+      : [],
+  };
 }
 
 // ── Helpers ──────────────────────────────────────────────────────

@@ -69,6 +69,7 @@ import { createRadarFetcher, isRadarAutomationDisabled, radarCronIsAtMostHourly 
 import { setRouterDb } from './services/compat-endpoint.js';
 import { requestContextMiddleware } from './lib/request-context.js';
 import { isLoopbackRequest } from './lib/request-origin.js';
+import { cspDirectives } from './lib/content-security-policy.js';
 import { createBudgetMiddleware } from './middleware/budget.js';
 import createNotificationsRouter from './routes/notifications.js';
 import * as cron from 'node-cron';
@@ -84,8 +85,9 @@ import { createPatternDetection } from './services/pattern-detection.js';
 import { startMemorySweep } from './services/memory-sweep.js';
 import {
   isDemoMode, demoModeStartupProblem, demoModeWarnings, applyDemoModeOverrides,
-  demoPublicConfig, createDemoAllowlistMiddleware, createDemoWriteLimiter,
+  demoPublicConfig, createDemoAllowlistMiddleware, createDemoWriteLimiter, createDemoEditLimiter,
 } from './middleware/demo-mode.js';
+import { mountEngagementDemoLimits } from './services/engagement-demo-routes.js';
 import { startDemoRetention } from './services/demo-retention.js';
 import { ensureWorkComplianceRules } from './services/work-compliance-rules.js';
 import { markInterruptedRuns } from './services/run-recovery.js';
@@ -209,6 +211,8 @@ import { createMetricsRouter, incrementRequests, incrementErrors } from './route
 import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
 import { getTotalActiveStreams } from './services/stream-limiter.js';
 import { startMeshDialer } from './services/mesh/bootstrap.js';
+import { getEffectiveDefaultModel } from './services/default-model-store.js';
+import { qualityScorerModelSync } from './services/quality-ratchet.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -291,27 +295,8 @@ const app = express();
 app.use(
   helmet({
     contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],  // SEC-02: no unsafe-inline; Vite prod build uses ES module scripts
-        styleSrc:  ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        imgSrc:    ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc: [
-          "'self'",
-          'ws:',
-          'wss:',
-          'https://api.anthropic.com',
-          'https://api.openai.com',
-          'https://generativelanguage.googleapis.com',
-          'https://api.mistral.ai',
-        ],
-        fontSrc:   ["'self'", 'data:', 'https://fonts.gstatic.com'],
-        objectSrc: ["'none'"],
-        mediaSrc:  ["'self'"],
-        frameSrc:  ["'self'", 'blob:'],
-        frameAncestors: ["'none'"],
-        upgradeInsecureRequests: [], // Upgrade HTTP to HTTPS when available
-      },
+      // Fonts from this origin only; on the demo, no remote images (server/lib/content-security-policy.ts).
+      directives: cspDirectives(isDemoMode()),
     },
     crossOriginEmbedderPolicy: false, // Needed for external API calls
     hsts: {
@@ -421,6 +406,19 @@ try {
   for (const line of spendCapConfigWarnings()) logger.warn(`[llm-spend] ${line}`);
 } catch (err) {
   console.warn('[settings] failed to restore persisted provider keys:', err instanceof Error ? err.message : err);
+}
+
+// Public showcase: the owner's org context, Trades and fund identities and
+// shared knowledge atoms must not be in a demo's database (privacy memo G6).
+// One warning line naming what is there, never its content.
+if (isDemoMode()) {
+  try {
+    const { findDemoOwnerData, demoOwnerDataWarning } = await import('./services/demo-owner-data.js');
+    const warning = demoOwnerDataWarning(await findDemoOwnerData(db));
+    if (warning) logger.warn(`[demo] ${warning}`);
+  } catch (err) {
+    console.warn('[demo] could not check the database for the owner\'s data:', err instanceof Error ? err.message : err);
+  }
 }
 
 // FC-CONN-SEED: pick up FUTURECHAIN_RPC_URL from the portable bundle's
@@ -661,8 +659,12 @@ app.get('/api/config', (_req, res) => {
     googleOAuthEnabled: !demo && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     githubOAuthEnabled: !demo && !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     // Public showcase: { demoMode: false } unless DEMO_MODE=true, then the
-    // offered models, enabled pillars, sign-up state and retention.
-    ...demoPublicConfig(),
+    // offered models, enabled pillars, sign-up state and retention, and the
+    // model that scores answers (the privacy notice names it).
+    ...demoPublicConfig(process.env, demo ? { scorerModel: qualityScorerModelSync() } : {}),
+    // The model that answers unless a visitor picks another, which the demo's
+    // privacy notice and terms name ([[DEFAULT_MODEL]]).
+    ...(demo ? { defaultModel: getEffectiveDefaultModel() ?? null } : {}),
     // Enabled = the sign-in button shows (team mode). Configured = the OIDC_*
     // settings are present — Settings shows "activates in team mode" for an
     // instance being prepared before it switches over.
@@ -706,9 +708,73 @@ const codingModelBudget = createBudgetMiddleware(db);
 // Public demo: uploads, exports and version saves per visitor per 10 minutes
 // (DEMO_USER_WRITES_PER_10_MIN). Calls next() for everyone else.
 const demoWriteLimiter = createDemoWriteLimiter();
+const demoEditLimiter = createDemoEditLimiter();
 app.post('/api/files/upload', demoWriteLimiter);
 app.post(['/api/export', '/api/export/*'], demoWriteLimiter);
 app.post('/api/versions/*', demoWriteLimiter);
+// The answer tools opened to visitors (demo-mode.ts WORK_ROUTES): each is a
+// model call, most also a stored row or file. One count with the writes above
+// for a visitor, and the per-IP model-call limiter of /api/claude/message for
+// everyone. Exact paths: app.post does not match below them.
+app.post([
+  '/api/rerun',
+  '/api/reviews',
+  '/api/renderers/run',
+  '/api/claude/explain-for',
+  '/api/claude/verify-citations',
+  '/api/modules/smart-search',
+  '/api/council/:sessionId/dissent-ledger',
+  '/api/custom-modules/guide-message',
+  '/api/custom-modules/guide-generate',
+  '/api/custom-modules/test-run',
+  '/api/ai-assist/module-prompt',
+  '/api/ai-assist/module-inputs',
+  '/api/ai-assist/project-scaffold',
+], demoWriteLimiter, claudeLimiter, codingModelBudget);
+// Built modules are stored rows with a free-text prompt: counted as writes.
+app.post('/api/custom-modules', demoWriteLimiter);
+app.patch('/api/custom-modules/:id', demoWriteLimiter);
+// The features opened to visitors on 2026-10-02 (demo-mode.ts WORK_ROUTES).
+// Every path is exact, as above. Each route also checks and charges the
+// monthly budget itself; codingModelBudget is the front check.
+//   Engagement Tasks: every write under /api/engagements is one count (any
+//   method but GET/HEAD/OPTIONS): create, uploads, export and the model steps
+//   of the write limit, every other edit of the edit limit; the model steps
+//   also get the model-call limiter and the budget.
+mountEngagementDemoLimits(app, { demoWriteLimiter, demoEditLimiter, claudeLimiter, modelBudget: codingModelBudget });
+//   Projects and the Knowledge Base: stored rows and files.
+app.post([
+  '/api/projects',
+  '/api/projects/:id/files',
+  '/api/projects/:id/notes',
+  '/api/collections',
+  '/api/documents/upload',
+  '/api/documents/upload-multiple',
+], demoWriteLimiter);
+//   The Task Agent and Discover: stored tasks, interviews, uploads and
+//   exports; the conversational turns are model calls (like /api/claude/message);
+//   two GETs call a model too; the Discover report is both.
+app.post([
+  '/api/task-agent/tasks',
+  '/api/task-agent/tasks/:id/upload',
+  '/api/discovery/sessions',
+  '/api/discovery/sessions/:id/export',
+  '/api/discovery/sessions/:id/followup',
+], demoWriteLimiter);
+app.post([
+  '/api/task-agent/tasks/:id/message',
+  '/api/task-agent/tasks/:id/execute-step',
+  '/api/discovery/sessions/:id/respond',
+], claudeLimiter, codingModelBudget);
+app.get([
+  '/api/discovery/sessions/:id/start',
+  '/api/discovery/sessions/:id/insights',
+], claudeLimiter, codingModelBudget);
+app.post('/api/discovery/sessions/:id/generate', demoWriteLimiter, claudeLimiter, codingModelBudget);
+//   Intelligence: "Generate insights" is a model call on a GET.
+app.get('/api/intelligence/insights', demoWriteLimiter, claudeLimiter, codingModelBudget);
+//   Exchange: the .anton download of a built module is built per request.
+app.post('/api/exchange/export/:moduleId', demoWriteLimiter);
 app.post('/api/core-team/:projectId/panel', claudeLimiter, codingModelBudget);
 app.get('/api/coding/workshop/sessions/:id/start', claudeLimiter, codingModelBudget);
 app.post('/api/coding/workshop/sessions/:id/respond', claudeLimiter, codingModelBudget);
@@ -746,7 +812,7 @@ app.use('/api', createWorkTimelineRoutes(db));
 app.use('/api', await createFolderRoutes(db));
 app.use('/api', await createExportRouter(db));
 app.use('/api', await createTemplatesRouter(db));
-app.use('/api', await createCustomModuleRoutes(db, anthropic)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
+app.use('/api', await createCustomModuleRoutes(db)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
 app.use('/api', modulesRouter);
 app.use('/api', await createProfileRoutes(db));
 app.use('/api', await createReviewRoutes(db, anthropic));
@@ -1062,7 +1128,7 @@ app.use('/api', await createCollectionsRoutes(db));
 app.use('/api', await createSearchRoutes(db));
 app.use('/api/embeddings', await createEmbeddingRoutes(db));
 app.use('/api', await createDocumentsRouter(db));
-app.use('/api', await createDiscoveryRoutes(db, anthropic));
+app.use('/api', await createDiscoveryRoutes(db));
 app.use('/api/ollama', ollamaRouter);
 app.use('/api', await createCodingRoutes(db));
 app.use('/api', await createCodingReviewRoutes(db));

@@ -7,6 +7,7 @@
 import { useState, useRef } from 'react';
 import { Star, Upload, Loader2, RefreshCw, ChevronRight, CheckCircle, FileText, AlertCircle } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, EngagementDocument } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -48,10 +49,10 @@ export default function EngagementGoodExample({ engagement, onUpdate, onNext, on
         method: 'POST',
         body: fd,
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
     } finally {
       setUploading(false);
     }
@@ -66,10 +67,10 @@ export default function EngagementGoodExample({ engagement, onUpdate, onNext, on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
     } catch (e) {
-      setError(`Blueprint extraction failed: ${String(e)}`);
+      setError(`Blueprint extraction failed: ${errorText(e)}`);
     } finally {
       setExtracting(false);
     }

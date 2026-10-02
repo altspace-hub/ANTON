@@ -16,9 +16,15 @@
  * app_settings ('auto' | 'on' | 'off', missing row = 'auto'); the counts are
  * read live and cached for a minute because the prompt path is hot. A broken
  * read never injects: the gate answers applies=false with a reason.
+ *
+ * On the public demo (DEMO_MODE) the mode is 'off' whatever app_settings
+ * holds: shared memory — possibly the owner's own client work — must never be
+ * sent with a visitor's prompt, and 'auto' would open by itself once the
+ * counts are met (privacy review B6 / G6).
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 
 export const ATOM_INJECTION_MODE_SETTING_KEY = 'atom_injection_mode';
 export const ATOM_INJECTION_MIN_MODULE_ATOMS = 100;
@@ -102,6 +108,13 @@ export async function getAtomInjectionStatus(
   db: DatabaseAdapter,
   opts: { fresh?: boolean } = {},
 ): Promise<AtomInjectionStatus> {
+  const status = await readStatus(db, opts);
+  // After the cache, so a status cached before the flag was read cannot open it.
+  if (!isDemoMode()) return status;
+  return { ...status, mode: 'off', applies: false, reason: 'Switched off on the public demo' };
+}
+
+async function readStatus(db: DatabaseAdapter, opts: { fresh?: boolean }): Promise<AtomInjectionStatus> {
   if (!opts.fresh && cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.status;
   try {
     const modeRow = await db.get<{ value: string }>(ATOM_INJECTION_GATE_SQL.mode, ATOM_INJECTION_MODE_SETTING_KEY);

@@ -1,4 +1,5 @@
 import { Router, type Response } from 'express';
+import { extractJsonReply } from '../services/coding-workspace.js';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -9,7 +10,7 @@ import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-eng
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } from '../services/prompt-composer.js';
 import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
-import { getModule } from '../services/module-loader.js';
+import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
 import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayerDetailed } from '../services/prompt-builder.js';
@@ -43,22 +44,26 @@ import {
 } from '../services/adapters/openaiCompatibleAdapter.js';
 import { resolveCompatModel, CompatEndpointError, modelAcceptsImages, type ResolvedCompatModel } from '../services/compat-endpoint.js';
 import { assertSpendAllowed, isSpendCapError, type SpendCostSource } from '../services/llm-spend.js';
-import { isDemoMode, demoOfferedModels, demoPostAnswerCalls } from '../middleware/demo-mode.js';
+import { isDemoMode, demoOfferedModels, demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, demoModuleHidden } from '../middleware/demo-mode.js';
 import { compatReasoningParam } from '../services/thinking-map.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
 import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter.js';
 import { createBudgetMiddleware } from '../middleware/budget.js';
-import { semanticSearch } from '../services/semantic-search.js';
+import { semanticSearch, type SearchResult } from '../services/semantic-search.js';
+import { collectionReadScope } from '../services/collection-manager.js';
+import { isDemoVisitor, keywordOnlyEmbeddingAdapter } from '../services/rag/demo-storage.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
-import { mapModelToProvider, callChat, getConfiguredProvider } from '../services/provider-router.js';
-import { CLAUDE_LARGE } from '../config/claude-lineup.js';
-import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { mapModelToProvider, callChat, streamChat, setSSEHeaders } from '../services/provider-router.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM } from '../config/claude-lineup.js';
+import { hasAnyModelEngine, NO_MODEL_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { sideRouteModel, modelCallErrorStatus } from '../services/side-route-model.js';
+import { chargeMonthlyUsage as chargeUserMonthlyUsage } from '../services/budget-manager.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -159,6 +164,10 @@ export const MAX_ONLINE_REFERENCE_URLS = 20;
 
 interface OnlineReferenceConfig { enabled?: unknown; urls?: unknown }
 
+/** Knowledge settings with no mode on: what a request without any means, so its attached files are still read. */
+const NO_KNOWLEDGE_MODES = (): Parameters<typeof resolveKnowledgeSources>[0] =>
+  ({ modes: {} }) as unknown as Parameters<typeof resolveKnowledgeSources>[0];
+
 function onlineReferenceOf(knowledgeSources: unknown): OnlineReferenceConfig | undefined {
   const modes = (knowledgeSources as { modes?: { onlineReference?: unknown } } | null | undefined)?.modes;
   const ref = modes?.onlineReference;
@@ -173,9 +182,10 @@ function onlineReferenceLimitProblem(knowledgeSources: unknown): string | null {
 }
 
 /**
- * The knowledge sources with online references switched off — for a preview
- * in demo mode, where a visitor's preview must not make this server fetch
- * pages and hand back their text. The run itself still fetches them.
+ * The knowledge sources with online references switched off — for a
+ * visitor's preview and run in demo mode, where this server must not fetch
+ * pages for them: a preview handed the text back, and a run sent it to the
+ * model host (privacy review H4).
  */
 function withoutOnlineReferenceFetch(knowledgeSources: unknown): unknown {
   const ref = onlineReferenceOf(knowledgeSources);
@@ -185,6 +195,13 @@ function withoutOnlineReferenceFetch(knowledgeSources: unknown): unknown {
 }
 
 const IMAGE_UPLOAD_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+/**
+ * The longest text explain-for rewrites or verify-citations reads: well above
+ * any one answer (a compat run stops at 16,384 tokens), so only a request
+ * that is not an answer is refused.
+ */
+const EXPLAIN_FOR_MAX_CHARS = 200_000;
 
 /**
  * Can this run's engine read an image attachment? Claude and the subscription
@@ -266,6 +283,24 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Demo mode: is this run's module kept off the demo (demoModuleHidden)? The
+   * area checked is the one sent and the module's own, looked up as
+   * refuseForbiddenModule does, so a hidden module sent with another area id
+   * is still caught. A failed lookup counts as hidden: this keeps data the
+   * demo must not receive away from the model, so it fails closed.
+   */
+  async function demoRunHidden(moduleId: unknown, areaId: unknown): Promise<boolean> {
+    const mod = typeof moduleId === 'string' ? moduleId : null;
+    if (demoModuleHidden(mod, typeof areaId === 'string' ? areaId : null)) return true;
+    if (!mod) return false;
+    try {
+      return demoModuleHidden(mod, await resolveModuleAreaId(db, mod));
+    } catch {
+      return true;
     }
   }
 
@@ -433,7 +468,20 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // the compat branch no daily USD cap applies. With no list set, only
       // compat models run. Admins are not restricted. Checked on the model
       // the run would actually use (after enforce_model and the defaults).
+      //
+      // The modules kept off the demo (DEMO_HIDDEN_AREAS / DEMO_HIDDEN_MODULES)
+      // invite health, employment, credit or criminal-offence data, which the
+      // demo must not receive (privacy review H3). The listing leaves them out
+      // (modules.ts); a visitor's run of one is refused here, before anything
+      // is saved or sent.
       if (isDemoMode() && req.user?.role !== 'admin') {
+        if (await demoRunHidden(moduleId, areaId)) {
+          res.status(403).json({
+            error: 'This module is not available in this demo. Pick another module.',
+            code: 'MODULE_NOT_OFFERED',
+          });
+          return;
+        }
         const offered = demoOfferedModels();
         const allowed = offered.length > 0 ? offered.includes(selectedModel) : provider === 'openai_compatible';
         if (!allowed) {
@@ -785,8 +833,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
-      const resolved: ResolvedKnowledge = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
+      // In demo mode a visitor's online references are not fetched, as on a
+      // preview: the pages' text (possibly about other people) would go to the
+      // model host, and a fetched page is the easiest way in for a prompt
+      // injection (privacy review H4). Admins keep them.
+      const runKnowledgeSources = isDemoMode() && req.user?.role !== 'admin'
+        ? withoutOnlineReferenceFetch(knowledgeSources) as Parameters<typeof resolveKnowledgeSources>[0]
+        : knowledgeSources;
+      // Attached files are read whether or not the request carries knowledge
+      // settings: a run without them (an API client, a script) dropped every
+      // upload without a word, and the model answered "no document was
+      // supplied" (live check on the demo, 2026-10-01).
+      const resolved: ResolvedKnowledge = runKnowledgeSources || allDocumentPaths.length > 0
+        ? await resolveKnowledgeSources(runKnowledgeSources ?? NO_KNOWLEDGE_MODES(), allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -795,24 +854,44 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // NEW: RAG Search Integration (Phase 4.8 + 4.9)
       let ragContext = '';
-      let ragChunks: any[] = [];
+      let ragChunks: SearchResult[] = [];
       let ragTokenEstimate = 0;
 
       // ragSearch is nested inside knowledgeSources on the client side
-      const ragSearchConfig = (knowledgeSources as any)?.ragSearch ?? req.body.ragSearch;
-      if (ragSearchConfig?.enabled && ragSearchConfig.collections?.length > 0) {
-        const { collections, topK, rerank } = ragSearchConfig;
-
+      const ragSearchConfig = ((knowledgeSources as { ragSearch?: unknown } | null | undefined)?.ragSearch ?? req.body.ragSearch) as
+        { enabled?: unknown; collections?: unknown; topK?: unknown; rerank?: unknown } | null | undefined;
+      const requestedCollections = Array.isArray(ragSearchConfig?.collections)
+        ? [...new Set((ragSearchConfig.collections as unknown[]).filter((c): c is string => typeof c === 'string' && c.length > 0 && c.length <= 200))].slice(0, 50)
+        : [];
+      if (ragSearchConfig?.enabled && requestedCollections.length > 0) {
         try {
-          const results = await semanticSearch(db as DatabaseAdapter, {
+          // Only the collections this caller may read, decided in SQL like the
+          // Knowledge Base's own routes (collectionReadScope): on a public demo
+          // a visitor's own; a team member's own plus the shared ones; solo and
+          // admins all. Another person's collection id finds nothing — even a
+          // document of the caller's that was left in it.
+          const readScope = collectionReadScope(req as OwnedRequest);
+          const collections = readScope.sql
+            ? (await db.all<{ id: string }>(
+                `SELECT id FROM knowledge_collections WHERE id IN (${requestedCollections.map(() => '?').join(',')})${readScope.sql}`,
+                [...requestedCollections, ...readScope.params],
+              )).map((r) => r.id)
+            : requestedCollections;
+          const topK = Math.min(50, Math.max(1, Math.floor(Number(ragSearchConfig.topK) || 10)));
+          // A demo visitor's question is never embedded: the demo has no local
+          // embedder, and an embedding service is a recipient the privacy
+          // notice does not name. Their documents carry no vectors either
+          // (routes/documents.ts), so search runs by keyword.
+          const searchDeps = isDemoVisitor(req as OwnedRequest) ? { adapter: keywordOnlyEmbeddingAdapter() } : {};
+          const results = collections.length === 0 ? [] : await semanticSearch(db as DatabaseAdapter, {
             query: userMessage, // Use user's message as search query
             collections,
-            topK: topK || 10,
-            rerank: rerank ?? true,
-            // Collections are shared, documents are not: in team mode only the
-            // sender's own uploads reach their prompt (solo/admin: all).
+            topK,
+            rerank: ragSearchConfig.rerank !== false,
+            // Documents are their uploader's: in team mode only the sender's
+            // own uploads reach their prompt (solo/admin: all).
             owner: req as OwnedRequest,
-          });
+          }, searchDeps);
 
           ragChunks = results;
 
@@ -865,7 +944,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             })));
           }
         } catch (error) {
-          console.error('[RAG] Search failed:', error);
+          console.error('[RAG] Search failed:', error instanceof Error ? error.message : 'error');
           // Non-fatal — continue without RAG results
         }
       }
@@ -1336,23 +1415,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // inside onComplete only — which exists only with a sessionId and runs
       // only when an answer finished — so a run sent with no session, or
       // closed before its last chunk, never counted (review C1/C3).
-      const chargeMonthlyUsage = async (inputTokens: number, outputTokens: number): Promise<void> => {
-        if (process.env.DEPLOYMENT_MODE !== 'team' || !req.user || req.user.id === 'solo') return;
-        const input = Math.max(0, Math.round(inputTokens || 0));
-        const output = Math.max(0, Math.round(outputTokens || 0));
-        if (input === 0 && output === 0) return;
-        try {
-          await db.run(`
-            INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(user_id, year_month) DO UPDATE SET
-              input_tokens = user_monthly_usage.input_tokens + excluded.input_tokens,
-              output_tokens = user_monthly_usage.output_tokens + excluded.output_tokens
-          `, crypto.randomUUID(), req.user.id, new Date().toISOString().slice(0, 7), input, output);
-        } catch {
-          // Non-fatal
-        }
-      };
+      const chargeMonthlyUsage = (inputTokens: number, outputTokens: number): Promise<void> =>
+        chargeUserMonthlyUsage(db, req.user, inputTokens, outputTokens);
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
@@ -1371,8 +1435,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // the module prompt (file or the user's override) and the ground
             // prompt — so the audit row names the exact text, not "latest".
             const modulePromptPart = composed.parts.find((p) => p.key === 'layer4_module_prompt');
-            const modulePromptVersion = moduleId && modulePromptPart
-              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt ? 'user-override' : 'system')
+            // Public demo: a visitor's edited module prompt gets no
+            // system_prompts row — the table has no owner, so the row would
+            // outlive the account. The page sends the module's own prompt when
+            // nothing was edited; that one is versioned as the system text. The
+            // edited text stays in the message and session snapshots, which go
+            // with the session and the account (privacy review F3).
+            const demoVisitorPrompt = isDemoMode() && req.user?.role !== 'admin' && !!systemPrompt;
+            const visitorPromptEdit = demoVisitorPrompt && !!moduleId && !!modulePromptPart
+              && modulePromptPart.text.trim() !== ((await getModuleSystemPrompt(String(moduleId))) ?? '').trim();
+            const modulePromptVersion = moduleId && modulePromptPart && !visitorPromptEdit
+              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt && !demoVisitorPrompt ? 'user-override' : 'system')
               : null;
             const foundationVersion = await ensurePromptVersion(db, FOUNDATION_PROMPT_ID, foundationPromptText());
             // Build config snapshot first — used in both INSERT and UPDATE below
@@ -1401,7 +1474,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               selectedOutputFormats: outputFormats,
               selectedPersonas,
               selectedSkills,
-              knowledgeSources,
+              // What the run used: on the demo a visitor's online references are off.
+              knowledgeSources: runKnowledgeSources,
               plainTextMode: !!req.body.plainTextMode,
               writingTone: req.body.writingTone || 'professional',
               audience: req.body.audience || null,
@@ -1595,7 +1669,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               // atomCollectionEnabled=false on its dispatched body, and embedding
               // a rerun would store a near-duplicate of the original conclusion
               // under a fresh id, crowding retrieval top-K with copies.
-              if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+              // Public demo: none. Nothing a visitor can open searches them
+              // (hybrid search and Pathfinder are outside the demo's routes);
+              // they would only be a search index over visitors' answers.
+              if (!isDemoMode() && atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
                 void embedSessionOutput(db, {
                   messageId: assistantMessageId,
                   sessionId: String(sessionId),
@@ -1651,10 +1728,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // (B2 fix: nothing ever wrote quality_avg, so promotion past 'guided'
             // was arithmetically impossible). Resolves to null when scoring is
             // skipped (short output) or failed — null means "do not fold".
-            // Public demo: after-answer calls are limited (DEMO_POST_ANSWER_CALLS).
+            // Public demo: after-answer calls are limited (DEMO_POST_ANSWER_CALLS):
+            // 'scored' keeps the quality score (the Trust Score under the answer,
+            // made by QUALITY_SCORER_MODEL when set) and drops the extraction.
             const postAnswer = demoPostAnswerCalls();
             const qualityScorePromise: Promise<number | null> =
-              postAnswer === 'all' && data.text && data.text.length > 200
+              demoQualityScoreOn() && sessionId && data.text && data.text.length > 200
                 ? ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                     .then((r) => (typeof r?.score?.overall === 'number' && Number.isFinite(r.score.overall) ? r.score.overall : null))
                     .catch(() => null)
@@ -1664,7 +1743,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // doesn't spawn N parallel Haiku calls. Deduplicates per-session.
             // Missing moduleId falls back to analytic_report (most permissive);
             // threshold lowered to 100 chars to cover short policy outputs.
-            if (postAnswer === 'all' && sessionId && data.text && data.text.length > 100) {
+            if (demoStructuredExtractionOn() && sessionId && data.text && data.text.length > 100) {
               void enqueueExtraction({
                 sessionId,
                 markdown: data.text,
@@ -1678,11 +1757,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             try {
               await db.run('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?', JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
             } catch { /* non-fatal */ }
-            // Auto-save version snapshot
+            // Auto-save version snapshot, owned by the caller (migration 265):
+            // an unowned copy was never deleted with its account, and in team
+            // mode its owner could not read it back.
             if (sessionId && data.text && data.text.length > 100) {
               try {
                 const last = await db.get('SELECT MAX(version_number) as max_v FROM versions WHERE entity_type=? AND entity_id=?', 'session', sessionId) as { max_v: number | null };
-                await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
+                await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content, user_id) VALUES (?,?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text, req.user?.id ?? null);
               } catch { /* non-fatal */ }
             }
             // Apprentice progression.
@@ -1691,7 +1772,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // would inflate sessions_completed and could trigger an unearned
             // promotion. Skip the whole block for reruns (the quality fold below
             // is part of it, so a rerun also never folds a second model's score).
-            if (moduleId && !rerunOf) {
+            // Public demo: none — /apprentice is closed to visitors, so the
+            // per-module usage profile would serve nobody (privacy review M9).
+            if (moduleId && !rerunOf && !isDemoMode()) {
               try {
                 const uid = req.user?.id || 'default';
                 type ApprenticeRow = { id: string; stage: string; sessions_completed: number; quality_avg: number | null; quality_n: number | null };
@@ -2152,7 +2235,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // configured, pre-search and inject results (Claude uses its native
         // web_search tool on its own branch; everyone else gets Bing grounding).
         let webResultsInjected = false;
-        if (webSearchWasRequested) {
+        // Never for a demo visitor: Bing would be a recipient of their question
+        // that the privacy notice does not list (the Council could ask for it).
+        if (webSearchWasRequested && !(isDemoMode() && req.user?.role !== 'admin')) {
           try {
             const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('../services/bing-search.js');
             const bingKey = await getBingSearchApiKey(db);
@@ -2442,7 +2527,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // preview does not fetch them at all — the preview hands the fetched
       // text back, which made this route a free fetch-and-return proxy on the
       // server's address (no model is called, so no budget or rate limit for
-      // model calls applied). The run itself still fetches them.
+      // model calls applied). The run does not fetch them either.
       const tooManyUrls = onlineReferenceLimitProblem(knowledgeSources);
       if (tooManyUrls) {
         res.status(400).json({ error: tooManyUrls, code: 'TOO_MANY_ONLINE_REFERENCES' });
@@ -2453,8 +2538,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         : knowledgeSources;
 
       // Resolve knowledge sources
-      const resolved = previewKnowledgeSources
-        ? await resolveKnowledgeSources(previewKnowledgeSources as Parameters<typeof resolveKnowledgeSources>[0], uploadedFilePaths)
+      const resolved = previewKnowledgeSources || uploadedFilePaths.length > 0
+        ? await resolveKnowledgeSources((previewKnowledgeSources ?? NO_KNOWLEDGE_MODES()) as Parameters<typeof resolveKnowledgeSources>[0], uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // Wave 1: the preview composes the same layers as a run — org context,
@@ -2757,25 +2842,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     }
   });
 
-  // POST /api/claude/explain-for — Explain-It-Different: rewrite output for a target audience
-  // Streams SSE using the same pattern as /api/claude/message but with a fixed lightweight prompt.
-  // Defaults to claude-sonnet-4-5-20250929 (cost-effective for rewriting tasks).
-  router.post('/claude/explain-for', async (req, res) => {
+  // POST /api/claude/explain-for — Explain-It-Different: rewrite an answer for a target audience.
+  // Streams the frames /api/claude/message does (stream_start, text_delta,
+  // error, stream_end, then [DONE]) through provider-router, so it runs on
+  // whatever engine is configured. It was bound to the Anthropic API and
+  // answered 500 on a server with no Anthropic key (the public showcase).
+  // A demo visitor gets the requested model only when the demo offers it,
+  // else the server default (sideRouteModel); the tokens count against the
+  // caller's monthly budget like a Work run.
+  router.post('/claude/explain-for', checkBudget, async (req, res) => {
+    let streaming = false;
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
       const { content, audience, moduleContext, model } = req.body as {
-        content?: string;
-        audience?: string;
-        moduleContext?: string;
-        model?: string;
+        content?: unknown;
+        audience?: unknown;
+        moduleContext?: unknown;
+        model?: unknown;
       };
 
       if (!content || typeof content !== 'string' || content.trim().length === 0) {
         res.status(400).json({ error: 'content is required and must be a non-empty string.' });
+        return;
+      }
+      if (content.length > EXPLAIN_FOR_MAX_CHARS) {
+        res.status(413).json({ error: `The text is too long to rewrite (${EXPLAIN_FOR_MAX_CHARS.toLocaleString('en-GB')} characters at most).` });
         return;
       }
 
@@ -2792,27 +2887,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Build the audience-adapted prompt
-      const userPrompt = getAudiencePrompt(audience, content, moduleContext);
+      const context = typeof moduleContext === 'string' ? moduleContext.slice(0, 500) : undefined;
+      const userPrompt = getAudiencePrompt(audience, content, context);
+      // A rewrite is a medium-tier task: the configured engine's medium model
+      // unless the caller names one (offered models only for a demo visitor).
+      const selectedModel = sideRouteModel(req, model, CLAUDE_MEDIUM);
 
-      // Use Sonnet by default — fast and cost-effective for rewriting tasks
-      const selectedModel = (
-        ['claude-opus-5-5', 'claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
-          ? model
-          : 'claude-sonnet-4-5-20250929'
-      ) as 'claude-opus-5-5' | 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
-
-      await streamToResponse(
-        {
-          model: selectedModel,
-          thinking: 'think',
-          system: 'You are an expert communication specialist at ANTON, a Financial Crime Prevention consultancy. Your role is to rewrite analysis outputs to suit specific audiences without altering underlying facts. Always produce clean Markdown with clear headings.',
-          messages: [{ role: 'user', content: userPrompt }],
-        },
-        res
-      );
+      setSSEHeaders(res);
+      streaming = true;
+      res.write(`data: ${JSON.stringify({ type: 'stream_start', model: selectedModel })}\n\n`);
+      const result = await streamChat({
+        model: selectedModel,
+        thinkingLevel: 'think',
+        maxTokens: 8192,
+        system: 'You are an expert communication specialist at ANTON, a Financial Crime Prevention consultancy. Your role is to rewrite analysis outputs to suit specific audiences without altering underlying facts. Always produce clean Markdown with clear headings.',
+        messages: [{ role: 'user', content: userPrompt }],
+        db,
+      }, res);
+      await chargeUserMonthlyUsage(db, req.user, result.inputTokens, result.outputTokens);
+      res.write(`data: ${JSON.stringify({ type: 'stream_end', usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens } })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
     } catch (error) {
-      if (!res.headersSent) {
-        res.status(500).json({ error: safeError(error) });
+      const message = publicErrorMessage(error);
+      if (!streaming && !res.headersSent) {
+        res.status(modelCallErrorStatus(error)).json({ error: message });
+      } else if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
       }
     }
   });
@@ -2822,8 +2925,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // and streams an Opus-synthesised confidence-weighted response.
   router.post('/claude/deliberate', checkBudget, async (req, res) => {
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      // The panel and the synthesis run through provider-router on the
+      // configured engine; a key-only gate refused every call on a server
+      // whose engine is an OpenAI-compatible endpoint.
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
@@ -2855,8 +2961,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         .map((id: string) => path.join(path.resolve(process.env.UPLOAD_DIR || './uploads'), id))
         .filter((p: string) => p.startsWith(path.resolve(process.env.UPLOAD_DIR || './uploads')));
 
-      const resolved = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+      const resolved = knowledgeSources || uploadedFilePaths.length > 0
+        ? await resolveKnowledgeSources(knowledgeSources ?? NO_KNOWLEDGE_MODES(), uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // User profile for personalisation (the caller's own in team mode — B4)
@@ -2953,8 +3059,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
-      if (!hasClaudeEngine()) {
-        res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+      // The check runs through provider-router on the routed utility model, so
+      // any configured engine can answer it, not only Claude.
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
@@ -2967,10 +3075,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // ATTR-04: pass source manifest for cross-checking citations against loaded sources
       const safeManifest = Array.isArray(sourceManifest) ? sourceManifest.filter(s => typeof s === 'string') : undefined;
-      const citations = await verifyCitations(text, safeManifest);
+      const citations = await verifyCitations(text.slice(0, EXPLAIN_FOR_MAX_CHARS), safeManifest?.slice(0, 200), db);
       res.json({ citations });
     } catch (error) {
-      res.status(500).json({ error: safeError(error) });
+      res.status(modelCallErrorStatus(error)).json({ error: publicErrorMessage(error) });
     }
   });
 
@@ -2982,11 +3090,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     // The call below goes through provider-router on the routed utility
     // model, so a server whose configured engine is an OpenAI-compatible
     // endpoint or Ollama can answer it too.
-    const configured = getConfiguredProvider();
-    if (!hasClaudeEngine() && configured !== 'openai_compatible' && configured !== 'ollama') {
-      res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+    if (!hasAnyModelEngine()) {
+      res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
       return;
     }
+    // Demo mode: a visitor is never pointed at a module the demo keeps off
+    // (demoModuleHidden) — the run would be refused. Left out of the
+    // candidates, and dropped if the model names one anyway.
+    const hideFromCaller = isDemoMode() && req.user?.role !== 'admin';
+    const hidden = (id: string, areaId: string | null | undefined): boolean =>
+      hideFromCaller && demoModuleHidden(id, areaId);
 
     const { query } = req.body as { query?: string };
 
@@ -2997,7 +3110,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
     try {
       const { getAllModules } = await import('../services/module-loader.js');
-      const catalog = await getAllModules();
+      const catalog = (await getAllModules()).filter((m) => !hidden(m.id, (m as { areaId?: string }).areaId));
 
       // Cheap keyword pre-filter over the full catalog: score each module by
       // query-token matches in id / label / description, keep the top ~150
@@ -3030,33 +3143,40 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // errored on every query on a subscription-only instance.
       const response = await callChat({
         model: await getRoutedUtilityModel(db),
-        system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
+        system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY one JSON object of the form {"modules":[...]} — no prose, no markdown fences, nothing else.`,
         messages: [{
           role: 'user',
-          content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
+          content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as one JSON object:\n{"modules":[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]}`,
         }],
         maxTokens: 512,
         jsonMode: true,
         db,
+        purpose: 'module-smart-search',
       });
 
-      const text = response.text.trim() || '[]';
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      // jsonMode becomes response_format json_object on compat models, which
+      // allows an object only: the list comes wrapped as { modules: [...] }. A
+      // bare array (a Claude reply) is still read; prose or a fence around the
+      // JSON is skipped (extractJsonReply).
+      const reply = extractJsonReply(response.text ?? '', (v) =>
+        Array.isArray(v) || (!!v && typeof v === 'object' && Array.isArray((v as { modules?: unknown }).modules)));
+      const replyValue = reply?.value;
+      const matches: unknown[] = Array.isArray(replyValue) ? replyValue
+        : replyValue && typeof replyValue === 'object' ? (replyValue as { modules: unknown[] }).modules : [];
 
       // Grounding is not enough on its own. This route already puts real candidates in
       // the prompt, but returned the model's answer unchecked — and a model given 40
       // options still occasionally names a 41st that sounds right. A recommendation that
       // 404s is worse than a missing one: it teaches the user the feature is broken.
       const { valid, rejected } = await validateModuleMatches(
-        (matches as Array<{ moduleId: string }>).map((m) => ({ ...m, moduleId: String(m?.moduleId ?? '') })),
+        (matches.filter((m) => !!m && typeof m === 'object') as Array<{ moduleId?: unknown }>).map((m) => ({ ...m, moduleId: String(m.moduleId ?? '') })),
       );
       if (rejected.length > 0) {
         console.warn(`[modules/recommend] dropped invented id(s): ${rejected.join(', ')}`);
       }
-      res.json(valid.slice(0, 3));
+      res.json(valid.filter((m) => !hidden(m.moduleId, m.areaId)).slice(0, 3));
     } catch (error) {
-      res.status(500).json({ error: safeError(error) });
+      res.status(modelCallErrorStatus(error)).json({ error: publicErrorMessage(error) });
     }
   });
 

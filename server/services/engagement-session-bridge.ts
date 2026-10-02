@@ -26,6 +26,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { getModelConfig } from '../types/modelAdapter.js';
 import { createOutputStore } from './output-store.js';
 import { writeSessionConclusion } from './session-conclusion.js';
+import { demoPostAnswerCalls } from '../middleware/demo-mode.js';
 
 /**
  * The area an engagement's atoms belong to: its first domain area as a
@@ -173,6 +174,9 @@ async function feedIterationMemory(
     console.warn('[engagement-session-bridge] memory feed failed (non-fatal):', err instanceof Error ? err.message : err);
   }
 
+  // A public demo with DEMO_POST_ANSWER_CALLS=none makes no model call after an
+  // answer, the Work route's rule (claude.ts): no conclusion either.
+  if (demoPostAnswerCalls() === 'none') return;
   try {
     // Never rejects by contract; the catch is for a replaced implementation.
     void writeSessionConclusion(db, {

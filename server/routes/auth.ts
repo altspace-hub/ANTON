@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'crypto';
+import { randomUUID, randomBytes, createHash, createHmac, timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -11,18 +11,20 @@ import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
 import { getUserBudgetStatus } from '../services/budget-manager.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
 import { validate } from '../lib/validate.js';
 import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, RegisterSchema } from '../lib/schemas.js';
 import {
   isDemoMode, demoSignupPolicy, demoAccountTtlDays, demoUserMonthlyTokens,
-  demoMaxSignupsPerDay, createDemoSignupLimiter,
+  demoMaxSignupsPerDay, createDemoSignupLimiter, DEMO_TERMS_VERSION, demoSignupWithEmail,
 } from '../middleware/demo-mode.js';
 import {
   readOidcSettings, oidcSettingsProblems, identityFromClaims, tenantAllowed,
   provisionOidcUser, hasSsoIdentity, SsoRefusedError, type OidcSettings,
 } from '../services/oidc-sso.js';
 import { invitationStillValid } from './project-collaboration.js';
+import rateLimit from 'express-rate-limit';
+import { findOpenInvitation, acceptInvitation, InvitationError, PASSWORD_MAX, normaliseEmail } from '../services/account-invitations.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -47,13 +49,18 @@ async function issueSession(db: DatabaseAdapter, user: AuthUser, notAfter?: Date
 }
 
 /** SEC-05: the session also rides in an httpOnly cookie — downloads, EventSource
- *  and plain links cannot send the Authorization header. */
+ *  and plain links cannot send the Authorization header.
+ *
+ *  On a public demo it is a browser-session cookie (no Max-Age): closing the
+ *  browser removes it, as the demo's cookie rules require of sign-in storage
+ *  (privacy review M4 / D25). The session still ends on the server at
+ *  user_sessions.expires_at, whichever comes first. */
 function setSessionCookie(res: Response, token: string): void {
   res.cookie('openexpert_session', token, {
     httpOnly: true,
     secure: isSecureCookie(),
     sameSite: 'strict',
-    maxAge: sessionTtlMs(),
+    ...(isDemoMode() ? {} : { maxAge: sessionTtlMs() }),
     path: '/',
   });
 }
@@ -209,10 +216,41 @@ function restartOnCallbackHost(req: Request, provider: 'google' | 'github'): str
   return `${callback.origin}/api/auth/${provider}?${params}`;
 }
 
-/** POST /api/auth/demo-signup — username and password as elsewhere (RegisterSchema), plus the invite code. */
-const DemoSignupSchema = RegisterSchema.pick({ username: true, password: true }).extend({
+/**
+ * POST /api/auth/demo-signup — username and password as elsewhere
+ * (RegisterSchema), the invite code, and the two ticks: 18 or over, and the
+ * demo terms of termsVersion accepted. The ticks are optional here and checked
+ * in the handler, so a missing one is refused with a sentence the form can
+ * show rather than a field list.
+ */
+const DemoSignupSchema = RegisterSchema.pick({ password: true }).extend({
+  // One of the two, as DEMO_SIGNUP_WITH_EMAIL decides; checked in the handler.
+  username: z.string().max(100).optional(),
+  email: z.string().max(254).optional(),
   code: z.string().max(200).optional(),
+  over18: z.boolean().optional(),
+  acceptTerms: z.boolean().optional(),
+  termsVersion: z.string().max(40).optional(),
 });
+
+/** Why a demo sign-up's declarations are not enough, or null. The sentences are shown to the visitor. */
+function demoSignupDeclarationProblem(body: { over18?: boolean; acceptTerms?: boolean; termsVersion?: string }): string | null {
+  if (body.over18 !== true) return 'You must be 18 or over to use this demo. Please confirm it to continue.';
+  if (body.acceptTerms !== true) return 'Please accept the demo terms to create an account.';
+  if (body.termsVersion !== DEMO_TERMS_VERSION) {
+    return 'The demo terms have changed since this page was loaded. Please reload the page, read the terms and try again.';
+  }
+  return null;
+}
+
+/**
+ * A short keyed hash of a typed username, for the security log. Attempts on
+ * one name still group together, but a password typed into the username field
+ * is never stored as text (privacy review M2).
+ */
+function typedNameTag(name: string): string {
+  return createHmac('sha256', process.env.JWT_SECRET ?? '').update(`login-name:${name}`).digest('hex').slice(0, 12);
+}
 
 /** Names a visitor may not take: they read as the instance speaking. */
 const RESERVED_DEMO_USERNAMES = new Set(['admin', 'administrator', 'root', 'solo', 'system', 'anton', 'openexpert', 'support', 'owner']);
@@ -227,7 +265,11 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       res.json({ user: { id: 'solo', username: 'solo', role: 'admin' }, token: 'solo-mode' });
       return;
     }
-    const { username, password } = req.body as { username: string; password: string };
+    const { password } = req.body as { username: string; password: string };
+    // An invited account's username is its email address, stored lower case
+    // (services/account-invitations.ts); people type addresses in any case.
+    const typed = (req.body as { username: string }).username;
+    const username = typed.includes('@') ? typed.trim().toLowerCase() : typed;
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
     // Check for too many recent failed attempts (account lockout)
@@ -237,18 +279,25 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     `, username) as { count: number };
 
     if (recentFails.count >= 5) {
+      // The account's id, never the typed name: retention deletes these rows
+      // by account id, and the typed text may be a mistyped password (M2).
+      const locked = await db.get<{ id: string }>('SELECT id FROM users WHERE username = ?', username);
       logSecurityEvent(db, {
         eventType: 'failed_login',
-        userId: username,
+        userId: locked?.id,
         ipAddress,
-        details: `Account locked due to ${recentFails.count} failed login attempts`,
+        details: locked
+          ? `Account locked due to ${recentFails.count} failed login attempts`
+          : `Sign-in locked due to ${recentFails.count} failed attempts for a non-existent user (name tag ${typedNameTag(username)})`,
         severity: 'high',
       });
       res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 15 minutes.' });
       return;
     }
 
-    const user = await db.get('SELECT * FROM users WHERE username = ?', username) as Record<string, unknown> | undefined;
+    // An address an administrator once typed in mixed case as a plain username still signs in as typed.
+    const user = (await db.get('SELECT * FROM users WHERE username = ?', username)
+      ?? (typed !== username ? await db.get('SELECT * FROM users WHERE username = ?', typed) : undefined)) as Record<string, unknown> | undefined;
 
     if (!user) {
       // Record failed attempt
@@ -256,7 +305,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       logSecurityEvent(db, {
         eventType: 'failed_login',
         ipAddress,
-        details: `Login attempt for non-existent user: ${username}`,
+        details: `Login attempt for non-existent user (name tag ${typedNameTag(username)})`,
         severity: 'medium',
       });
       res.status(401).json({ error: 'Invalid credentials' });
@@ -379,14 +428,30 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   // an analyst with a small monthly token budget; it expires after
   // DEMO_ACCOUNT_TTL_DAYS, when services/demo-retention.ts deletes it and
   // everything it wrote. Throttled per IP (every attempt counts) and capped
-  // per day instance-wide; the invite code is DEMO_SIGNUP_CODE.
+  // per day instance-wide; the invite code is DEMO_SIGNUP_CODE. The visitor
+  // must confirm being 18 or over and accept the demo terms of the current
+  // DEMO_TERMS_VERSION; the account stores both (migration 291).
   const demoSignupLimiter = createDemoSignupLimiter();
   router.post('/auth/demo-signup', demoSignupLimiter, validate(DemoSignupSchema), async (req, res) => {
     if (!IS_TEAM_MODE || !isDemoMode()) {
       res.status(404).json({ error: 'Not found' });
       return;
     }
-    const { username, password, code } = req.body as z.infer<typeof DemoSignupSchema>;
+    const body = req.body as z.infer<typeof DemoSignupSchema>;
+    const { password, code } = body;
+    // With DEMO_SIGNUP_WITH_EMAIL the address is the username (lower case),
+    // as for an invited account; otherwise a made-up username.
+    const withEmail = demoSignupWithEmail();
+    const email = withEmail ? normaliseEmail(body.email) : null;
+    const username = withEmail ? (email ?? '') : (body.username ?? '').trim();
+    if (withEmail && !email) {
+      res.status(400).json({ error: 'Invalid request body', details: { email: ['Enter a valid email address.'] } });
+      return;
+    }
+    if (!withEmail && !/^[a-zA-Z0-9_-]{3,50}$/.test(username)) {
+      res.status(400).json({ error: 'Invalid request body', details: { username: ['Only letters, numbers, _ and - allowed (3-50)'] } });
+      return;
+    }
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
     const policy = demoSignupPolicy();
     if (!policy.open) {
@@ -400,6 +465,13 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       res.status(403).json({ error: 'That invite code is not valid.' });
       return;
     }
+    // 18 or over, and the current demo terms accepted — recorded on the account
+    // below, so acceptance can be shown later (privacy review G7).
+    const declarationProblem = demoSignupDeclarationProblem(body);
+    if (declarationProblem) {
+      res.status(400).json({ error: declarationProblem });
+      return;
+    }
     if (RESERVED_DEMO_USERNAMES.has(username.toLowerCase())) {
       res.status(409).json({ error: 'That username is not available. Choose another.' });
       return;
@@ -408,7 +480,10 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const cap = demoMaxSignupsPerDay();
       if (cap > 0) {
         const today = await db.get<{ n: number | string }>(
-          `SELECT COUNT(*) AS n FROM users WHERE demo_expires_at IS NOT NULL AND created_at > NOW() - INTERVAL '1 day'`,
+          // Sign-ups only: accounts an administrator invited do not use up the day's places.
+          `SELECT COUNT(*) AS n FROM users
+            WHERE demo_expires_at IS NOT NULL AND created_at > NOW() - INTERVAL '1 day'
+              AND NOT EXISTS (SELECT 1 FROM account_invitations ai WHERE ai.user_id = users.id)`,
         );
         if (Number(today?.n ?? 0) >= cap) {
           res.status(429).json({ error: 'Today\'s demo sign-ups are full. Please try again tomorrow.' });
@@ -416,9 +491,12 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
         }
       }
       // Case-insensitively unique: 'Alice' and 'alice' would be two people who look like one.
-      const taken = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', username);
+      // An address is also taken when another account carries it as its email.
+      const taken = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?) OR (? AND LOWER(email) = LOWER(?))', username, withEmail, username);
       if (taken) {
-        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        res.status(409).json({ error: withEmail
+          ? 'An account with this email address already exists. Sign in instead, or ask the administrator for a new sign-in link.'
+          : 'That username is taken. Choose another.' });
         return;
       }
 
@@ -426,23 +504,87 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const expiresAt = new Date(Date.now() + demoAccountTtlDays() * 24 * 60 * 60 * 1000);
       const hash = await bcrypt.hash(password, 10);
       await db.run(
-        `INSERT INTO users (id, username, password_hash, role, display_name, monthly_token_budget, demo_expires_at)
-         VALUES (?, ?, ?, 'analyst', ?, ?, ?)`,
-        id, username, hash, username, demoUserMonthlyTokens(), expiresAt.toISOString(),
+        `INSERT INTO users (id, username, email, password_hash, role, display_name, monthly_token_budget, demo_expires_at,
+                            terms_version, terms_accepted_at, age_confirmed_at)
+         VALUES (?, ?, ?, ?, 'analyst', ?, ?, ?, ?, NOW(), NOW())`,
+        id, username, email, hash, email ? email.split('@')[0] : username, demoUserMonthlyTokens(), expiresAt.toISOString(), DEMO_TERMS_VERSION,
       );
       await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
       console.log(`[auth] demo account created: user ${id}`);
 
-      const authUser: AuthUser = { id, username, role: 'analyst', display_name: username };
+      const authUser: AuthUser = { id, username, role: 'analyst', display_name: email ? email.split('@')[0] : username };
       const token = await issueSession(db, authUser, expiresAt);
       setSessionCookie(res, token);
       res.status(201).json({ user: authUser, token, expiresAt: expiresAt.toISOString() });
     } catch (err) {
       // Two sign-ups for one name at once: the unique index decides.
       if ((err as { code?: string }).code === '23505') {
-        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        res.status(409).json({ error: demoSignupWithEmail()
+          ? 'An account with this email address already exists. Sign in instead.'
+          : 'That username is taken. Choose another.' });
         return;
       }
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Accounts made by invitation (services/account-invitations.ts) ──────────
+  //
+  // The link an administrator hands over opens /welcome#token=…; the page
+  // checks the token, then sends it back with the chosen password. Public
+  // (the person has no session yet), throttled per IP; the token is 256
+  // random bits, so the limit is against noise, not guessing.
+  const invitationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    validate: false,
+    keyGenerator: (r: Request) => (r.ip ?? 'unknown').replace(/^::ffff:/i, ''),
+    message: { error: 'Too many attempts from this address. Try again in a few minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  const InvitationTokenSchema = z.object({ token: z.string().min(1).max(200) });
+  const InvitationAcceptSchema = InvitationTokenSchema.extend({
+    password: z.string().min(1).max(PASSWORD_MAX),
+    over18: z.boolean().optional(),
+    acceptTerms: z.boolean().optional(),
+    termsVersion: z.string().max(40).optional(),
+  });
+
+  // POST /api/auth/invitation/check — what the link is for, or 400.
+  router.post('/auth/invitation/check', invitationLimiter, validate(InvitationTokenSchema), async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(404).json({ error: 'Not found' }); return; }
+    try {
+      const open = await findOpenInvitation(db, (req.body as { token: string }).token);
+      if (!open) {
+        res.status(400).json({ error: 'This link does not work any more: it was used, it expired, or a newer one replaced it. Ask the person who invited you for a new link.' });
+        return;
+      }
+      res.json({
+        email: open.email, displayName: open.displayName, purpose: open.purpose, expiresAt: open.expiresAt,
+        termsRequired: open.termsRequired, termsVersion: open.termsVersion,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // POST /api/auth/invitation/accept — set the password and sign in.
+  router.post('/auth/invitation/accept', invitationLimiter, validate(InvitationAcceptSchema), async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(404).json({ error: 'Not found' }); return; }
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    try {
+      const account = await acceptInvitation(db, req.body as z.infer<typeof InvitationAcceptSchema>);
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', account.username, ipAddress);
+      console.log(`[auth] password chosen from an account link: user ${account.id}`);
+      const authUser: AuthUser = {
+        id: account.id, username: account.username, role: account.role, display_name: account.display_name ?? undefined,
+      };
+      const token = await issueSession(db, authUser, account.demoExpiresAt);
+      setSessionCookie(res, token);
+      res.json({ user: authUser, token });
+    } catch (err) {
+      if (err instanceof InvitationError) { res.status(err.status).json({ error: publicErrorMessage(err) }); return; }
       res.status(500).json({ error: safeError(err) });
     }
   });

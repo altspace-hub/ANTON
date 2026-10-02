@@ -19,7 +19,10 @@ import {
   isDemoMode, demoModeStartupProblem, applyDemoModeOverrides, DEMO_FORCED_FLAGS,
   demoPublicConfig, demoEnabledPillars, demoSignupPolicy, demoAccountTtlDays,
   demoRouteAllowed, demoRouteRules, createDemoAllowlistMiddleware, demoModeWarnings,
+  DEMO_TERMS_VERSION, DEFAULT_DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_MODULES,
+  demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, qualityScorerModelEnv, WORK_ROUTES,
 } from '../../server/middleware/demo-mode.js';
+import { ENGAGEMENT_WORK_ROUTES } from '../../server/services/engagement-demo-routes.js';
 
 const ENV_KEYS = [
   'DEMO_MODE', 'DEPLOYMENT_MODE', 'DEMO_ENABLED_PILLARS', 'DEMO_EXTRA_ROUTES', 'DEMO_OFFERED_MODELS',
@@ -45,12 +48,12 @@ describe('the DEMO_MODE switch', () => {
   it('refuses to start a demo outside team mode (every solo visitor would be an admin)', () => {
     expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'solo' })).toMatch(/requires DEPLOYMENT_MODE=team/);
     expect(demoModeStartupProblem({ DEMO_MODE: 'true' })).toMatch(/requires DEPLOYMENT_MODE=team/);
-    expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team' })).toBeNull();
+    expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', LLM_USER_HASH_SECRET: 'h'.repeat(64) })).toBeNull();
     expect(demoModeStartupProblem({ DEPLOYMENT_MODE: 'solo' })).toBeNull();
   });
 
   it('refuses to start with a spend cap it cannot read, naming the variable and not its value', () => {
-    const team = { DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team' };
+    const team = { DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', LLM_USER_HASH_SECRET: 'h'.repeat(64) };
     const comma = demoModeStartupProblem({ ...team, LLM_USER_DAILY_SPEND_CAP_USD: '0,25' });
     expect(comma).toMatch(/FATAL: LLM_USER_DAILY_SPEND_CAP_USD/);
     expect(comma).not.toContain('0,25');
@@ -127,15 +130,23 @@ describe('/api/config demo fields', () => {
       enabledPillars: ['work', 'pathfinder', 'markets'],
       signupOpen: true,
       signupCodeRequired: true,
+      signupWithEmail: false,
       retentionDays: 14,
       privacyPath: '/privacy',
+      termsPath: '/terms',
+      termsVersion: DEMO_TERMS_VERSION,
+      operatorName: '',
       answersScored: false,
+      scorerModel: null,
+      // Neither hidden list is set: the built-in ones apply (demo-hidden-defaults.test.ts).
+      hiddenAreas: [...DEFAULT_DEMO_HIDDEN_AREAS],
+      hiddenModules: [...DEFAULT_DEMO_HIDDEN_MODULES],
     });
     // The code itself is never published.
     expect(JSON.stringify(cfg)).not.toContain('swordfish');
   });
 
-  it('answersScored follows DEMO_POST_ANSWER_CALLS: only "all" makes a quality score', () => {
+  it('answersScored follows DEMO_POST_ANSWER_CALLS: "scored" and "all" make a quality score', () => {
     const scored = (v?: string) => {
       const cfg = demoPublicConfig({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', ...(v === undefined ? {} : { DEMO_POST_ANSWER_CALLS: v }) });
       return cfg.demoMode ? cfg.answersScored : null;
@@ -143,7 +154,48 @@ describe('/api/config demo fields', () => {
     expect(scored()).toBe(false);
     expect(scored('conclusion')).toBe(false);
     expect(scored('none')).toBe(false);
+    expect(scored('scored')).toBe(true);
+    expect(scored(' Scored ')).toBe(true);
     expect(scored('all')).toBe(true);
+  });
+
+  it('"scored" turns the quality score on and the structured extraction off; "all" both; outside a demo both', () => {
+    const DEMO = { DEMO_MODE: 'true' };
+    expect(demoPostAnswerCalls({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe('scored');
+    expect(demoQualityScoreOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(true);
+    expect(demoStructuredExtractionOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(false);
+    expect(demoQualityScoreOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'all' })).toBe(true);
+    expect(demoStructuredExtractionOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'all' })).toBe(true);
+    for (const v of [undefined, 'conclusion', 'none', 'bogus']) {
+      const env = { ...DEMO, ...(v === undefined ? {} : { DEMO_POST_ANSWER_CALLS: v }) };
+      expect(demoQualityScoreOn(env), String(v)).toBe(false);
+      expect(demoStructuredExtractionOn(env), String(v)).toBe(false);
+    }
+    // Negative control: every other install scores and extracts, whatever the variable says.
+    expect(demoQualityScoreOn({ DEMO_POST_ANSWER_CALLS: 'none' })).toBe(true);
+    expect(demoStructuredExtractionOn({ DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(true);
+  });
+
+  it('scorerModel names the scorer only while answers are scored: the one index.ts resolves, else QUALITY_SCORER_MODEL', () => {
+    const SCORER = 'compat:openrouter:deepseek/deepseek-v4-flash-0731';
+    const cfg = (env: Record<string, string>, opts?: { scorerModel?: string | null }) => {
+      const c = demoPublicConfig({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', ...env }, opts);
+      return c.demoMode ? c.scorerModel : 'not a demo';
+    };
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored', QUALITY_SCORER_MODEL: ` ${SCORER} ` })).toBe(SCORER);
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored' }, { scorerModel: 'compat:openrouter:z-ai/glm-5.3' })).toBe('compat:openrouter:z-ai/glm-5.3');
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored' })).toBeNull();
+    // Not scored: no scorer is named, whatever is configured.
+    expect(cfg({ QUALITY_SCORER_MODEL: SCORER }, { scorerModel: SCORER })).toBeNull();
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'none', QUALITY_SCORER_MODEL: SCORER })).toBeNull();
+    expect(qualityScorerModelEnv({})).toBeNull();
+    expect(qualityScorerModelEnv({ QUALITY_SCORER_MODEL: '   ' })).toBeNull();
+  });
+
+  it('warns when a scored demo sends answers to a scorer outside the compat endpoint', () => {
+    const base = { DEMO_MODE: 'true', DEMO_POST_ANSWER_CALLS: 'scored' };
+    expect(demoModeWarnings({ ...base, QUALITY_SCORER_MODEL: 'claude-haiku-4-5' }).join('\n')).toMatch(/QUALITY_SCORER_MODEL/);
+    expect(demoModeWarnings({ ...base, QUALITY_SCORER_MODEL: 'compat:openrouter:moonshotai/kimi-k2.6' }).join('\n')).not.toMatch(/QUALITY_SCORER_MODEL/);
   });
 
   it('sign-up: a code opens it; no code is closed unless DEMO_SIGNUP_OPEN=true', () => {
@@ -182,10 +234,10 @@ describe('the route allowlist (pure)', () => {
   it('refuses everything else, including writes to what it may read', () => {
     for (const [m, p] of [
       ['GET', '/agents'], ['POST', '/agents/x/connectors'], ['POST', '/data/import'], ['GET', '/markets/theses'],
-      ['POST', '/custom-modules'], ['PATCH', '/custom-modules/x'], ['POST', '/sessions/abc/share'],
+      ['PUT', '/custom-modules/x'], ['POST', '/sessions/abc/share'],
       ['POST', '/settings/default-model'], ['POST', '/settings/model-endpoints'], ['GET', '/settings/custom-models'],
-      ['PUT', '/profile'], ['GET', '/files/upload/extra'], ['GET', '/pathfinder/threads'], ['POST', '/renderers/run'],
-      ['POST', '/rerun'], ['GET', '/admin/users'], ['POST', '/radar/settings'], ['GET', '/sessionsX'],
+      ['PUT', '/profile'], ['GET', '/files/upload/extra'], ['GET', '/pathfinder/threads'], ['POST', '/renderers/run/x'],
+      ['DELETE', '/rerun'], ['GET', '/admin/users'], ['POST', '/radar/settings'], ['GET', '/sessionsX'],
       ['GET', '//agents'], ['POST', '/claude/deliberate'], ['POST', '/auth/mfa/enable'],
       ['DELETE', '/sessions/abc/messages/m1/artifacts'], ['GET', '/sessions/abc/messages/m1/artifacts/x'],
     ] as const) {
@@ -203,14 +255,154 @@ describe('the route allowlist (pure)', () => {
   });
 
   it('DEMO_EXTRA_ROUTES adds prefixes, optionally for one method', () => {
-    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/renderers, POST:/rerun, not-a-path, GET|POST:/quality/' });
-    expect(demoRouteAllowed('POST', '/renderers/run', extra)).toBe(true);
-    expect(demoRouteAllowed('GET', '/renderers', extra)).toBe(true);
-    expect(demoRouteAllowed('POST', '/rerun', extra)).toBe(true);
-    expect(demoRouteAllowed('GET', '/rerun/quality/x', extra)).toBe(false);
+    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/evidence-packs, POST:/folders, not-a-path, GET|POST:/quality/' });
+    expect(allowed('GET', '/evidence-packs')).toBe(false);
+    expect(demoRouteAllowed('GET', '/evidence-packs', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/evidence-packs/x/build', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/folders', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/folders/f1/scan', extra)).toBe(true);
+    expect(demoRouteAllowed('GET', '/folders', extra)).toBe(false);
     expect(demoRouteAllowed('GET', '/quality/leaderboard', extra)).toBe(true);
     expect(demoRouteAllowed('DELETE', '/quality/x', extra)).toBe(false);
-    expect(demoRouteAllowed('GET', '/renderersX', extra)).toBe(false);
+    expect(demoRouteAllowed('GET', '/evidence-packsX', extra)).toBe(false);
+  });
+
+  it('opens the Work tools of 2026-10-01 — each exactly, never its siblings', () => {
+    // Opened: My Work, Explain for, the citation check, Review, Rerun with,
+    // Transform, Find the right module, the AI Council's ledger, Build Module.
+    for (const [m, p] of [
+      ['GET', '/work-timeline'],
+      ['POST', '/claude/explain-for'], ['POST', '/claude/verify-citations'],
+      ['GET', '/reviews/modes'], ['POST', '/reviews'],
+      ['POST', '/rerun'], ['GET', '/rerun/quality/m1'],
+      ['GET', '/renderers/applicable'], ['POST', '/renderers/run'], ['GET', '/renderers/artifacts/42'], ['GET', '/sessions/s1/artifacts'],
+      ['POST', '/modules/smart-search'],
+      ['POST', '/council/s1/dissent-ledger'],
+      ['POST', '/custom-modules'], ['PATCH', '/custom-modules/custom-1'], ['DELETE', '/custom-modules/custom-1'],
+      ['POST', '/custom-modules/guide-message'], ['POST', '/custom-modules/guide-generate'], ['POST', '/custom-modules/test-run'],
+      ['POST', '/ai-assist/module-prompt'], ['POST', '/ai-assist/module-inputs'],
+      ['POST', '/versions/module/custom-1'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(true);
+    }
+    // Negative controls: the siblings a prefix would have opened, and the
+    // features that stay admin-only (C8).
+    for (const [m, p] of [
+      ['POST', '/work-timeline'], ['GET', '/work-timeline/x'],
+      ['POST', '/claude/deliberate'], ['POST', '/claude/explain-for/x'],
+      ['POST', '/reviews/orchestrate'], ['GET', '/reviews'], ['GET', '/reviews/x'], ['DELETE', '/reviews'],
+      ['GET', '/rerun'], ['GET', '/rerun/quality'], ['GET', '/rerun/quality/m1/x'],
+      ['GET', '/renderers'], ['GET', '/renderers/board-deck'], ['POST', '/renderers/applicable'], ['DELETE', '/renderers/artifacts/42'],
+      ['POST', '/sessions/s1/artifacts'],
+      ['POST', '/modules/community'],
+      ['GET', '/council/s1/dissent-ledger'], ['POST', '/council/s1'],
+      ['POST', '/custom-modules/x/share'], ['PUT', '/custom-modules/custom-1'],
+      ['POST', '/ai-assist/skill-draft'], ['POST', '/ai-assist/module-prompt/x'],
+      ['POST', '/versions/output/x/y'], ['POST', '/versions/session/s1'], ['DELETE', '/versions/module/custom-1'],
+      ['POST', '/pathfinder/search'], ['GET', '/coding/projects'], ['GET', '/intelligence/dashboard'],
+      ['GET', '/orchestrator/status'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(false);
+    }
+  });
+
+  it('opens the features of 2026-10-02 — each exactly, never its siblings', () => {
+    // Opened: Engagement Tasks, Projects, the Knowledge Base, the Task Agent,
+    // Discover, read-only Orchestration / Intelligence / Horizon Radar, and
+    // the (unsigned) download of a built module.
+    for (const [m, p] of [
+      ['GET', '/engagements'], ['POST', '/engagements'], ['GET', '/engagements/e1'], ['PATCH', '/engagements/e1'],
+      ['DELETE', '/engagements/e1'], ['POST', '/engagements/e1/execute'], ['GET', '/engagements/e1/execute/stream'],
+      ['POST', '/engagements/e1/quality-gate/run'], ['POST', '/engagements/e1/export'], ['GET', '/engagements/peer-library'],
+      ['GET', '/projects'], ['POST', '/projects'], ['GET', '/projects/p1'], ['PATCH', '/projects/p1'], ['DELETE', '/projects/p1'],
+      ['GET', '/projects/p1/stats'], ['GET', '/projects/p1/files'], ['POST', '/projects/p1/files'],
+      ['GET', '/projects/p1/files/f1/download'], ['DELETE', '/projects/p1/files/f1'],
+      ['GET', '/projects/p1/notes'], ['POST', '/projects/p1/notes'], ['DELETE', '/projects/p1/notes/n1'],
+      ['PATCH', '/sessions/s1/project'], ['POST', '/ai-assist/project-scaffold'],
+      ['GET', '/collections'], ['POST', '/collections'], ['DELETE', '/collections/c1'], ['GET', '/collections/c1/documents'],
+      ['POST', '/documents/upload'], ['GET', '/documents/collection/c1'], ['DELETE', '/documents/d1'],
+      ['GET', '/task-agent/capabilities'], ['GET', '/task-agent/stats'], ['GET', '/task-agent/tasks'], ['POST', '/task-agent/tasks'],
+      ['GET', '/task-agent/tasks/t1'], ['DELETE', '/task-agent/tasks/t1'], ['POST', '/task-agent/tasks/t1/message'],
+      ['POST', '/task-agent/tasks/t1/select-approach'], ['POST', '/task-agent/tasks/t1/intake-ready'],
+      ['POST', '/task-agent/tasks/t1/execute-step'], ['GET', '/task-agent/tasks/t1/execute-step/stream'],
+      ['POST', '/task-agent/tasks/t1/upload'], ['DELETE', '/task-agent/tasks/t1/upload/f1'], ['PUT', '/task-agent/tasks/t1/knowledge-packs'],
+      ['GET', '/discovery/sessions'], ['POST', '/discovery/sessions'], ['GET', '/discovery/sessions/d1'], ['DELETE', '/discovery/sessions/d1'],
+      ['GET', '/discovery/sessions/d1/start'], ['POST', '/discovery/sessions/d1/respond'], ['GET', '/discovery/sessions/d1/insights'],
+      ['POST', '/discovery/sessions/d1/generate'], ['GET', '/discovery/sessions/d1/output'], ['POST', '/discovery/sessions/d1/export'],
+      ['PATCH', '/discovery/sessions/d1/upgrade'], ['POST', '/discovery/sessions/d1/pack'], ['POST', '/discovery/sessions/d1/followup'],
+      ['GET', '/discovery/packs'],
+      ['GET', '/org-context'], ['GET', '/insights'], ['GET', '/insights/unread-count'], ['GET', '/continuity/profiles'],
+      ['GET', '/intelligence/summary'], ['GET', '/intelligence/distribution'], ['GET', '/intelligence/top-entities'],
+      ['GET', '/intelligence/insights'], ['GET', '/intelligence/export'], ['GET', '/intelligence/temporal/atoms-per-day'],
+      ['GET', '/intelligence/temporal/entity-activity'], ['GET', '/intelligence/temporal/quality-trend'],
+      ['GET', '/knowledge-graph/entities'],
+      ['GET', '/radar/summary'], ['GET', '/radar/items'], ['GET', '/radar/sources'], ['GET', '/radar/scan-status'],
+      ['POST', '/exchange/export/custom-1'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(true);
+    }
+    // Negative controls: the siblings a prefix would have opened, the
+    // features' admin and sharing routes, and Coding and the App Gateway.
+    for (const [m, p] of [
+      // Engagement Tasks: the host-folder index, project linking, web search
+      ['POST', '/engagements/e1/rag-directory'], ['DELETE', '/engagements/e1/rag-directory'],
+      ['POST', '/engagements/e1/rag-directory/reindex'], ['PATCH', '/engagements/e1/project'],
+      ['POST', '/engagements/e1/peer-benchmarks/web-search'], ['PUT', '/engagements/e1'],
+      // Projects: sharing, and the invitation flow
+      ['GET', '/projects/p1/members'], ['POST', '/projects/p1/members'], ['PATCH', '/projects/p1/members/m1'],
+      ['DELETE', '/projects/p1/members/m1'], ['GET', '/projects/p1/invitations'], ['POST', '/projects/p1/invitations'],
+      ['DELETE', '/projects/p1/invitations/i1'], ['GET', '/projects/invitations/accept/tok'], ['PUT', '/projects/p1'],
+      ['GET', '/projects/p1/files/f1'], ['PATCH', '/sessions/s1/project/x'],
+      // The Knowledge Base: edits, queries, maintenance, host folders
+      ['PUT', '/collections/c1'], ['GET', '/collections/c1'], ['POST', '/collections/c1/query'], ['GET', '/collections/health/check'],
+      ['POST', '/knowledge/reembed'], ['POST', '/knowledge/reindex-stuck'], ['POST', '/documents/upload-multiple'],
+      ['GET', '/documents/d1'], ['POST', '/documents/d1/reindex'], ['GET', '/documents/collection/c1/stats'],
+      ['GET', '/rag/folders'], ['GET', '/folders/registered'], ['POST', '/embeddings/search/atoms'], ['POST', '/embeddings/similar'],
+      // The Task Agent: missions, completion with a score, PATCH, admin intake
+      ['POST', '/task-agent/tasks/t1/execute-as-mission'], ['POST', '/task-agent/tasks/t1/sync-mission'],
+      ['POST', '/task-agent/tasks/t1/complete'], ['PATCH', '/task-agent/tasks/t1'], ['GET', '/task-agent/tasks/t1/execute-step/status'],
+      ['POST', '/task-agent/backfill-atoms'], ['POST', '/task-agent/ingest'],
+      // Discover: state writes, status, follow-ups, single packs
+      ['PUT', '/discovery/sessions/d1'], ['PATCH', '/discovery/sessions/d1/status'], ['GET', '/discovery/followups/pending'],
+      ['PUT', '/discovery/followups/f1'], ['GET', '/discovery/packs/healthcare'], ['PATCH', '/discovery/sessions/d1'],
+      // Orchestration, Intelligence, Radar, Exchange: writes, switches, triage, imports, signing
+      ['PUT', '/org-context'], ['GET', '/org-context/history'], ['PATCH', '/insights/i1/read'], ['POST', '/insights/generate'],
+      ['GET', '/continuity/profiles/cp1'], ['POST', '/continuity/profiles'], ['GET', '/intelligence/atom-ab'],
+      ['POST', '/intelligence/atom-injection/mode'], ['GET', '/intelligence/temporal/patterns-per-week'], ['GET', '/patterns'],
+      ['POST', '/ai-assist/intelligence-brief'], ['GET', '/knowledge-graph/entities/org/acme'], ['POST', '/knowledge-graph/build'],
+      ['PUT', '/radar/items/r1/status'], ['POST', '/radar/scan'], ['GET', '/radar/settings'], ['POST', '/radar/sources'],
+      ['POST', '/exchange/import'], ['POST', '/exchange/validate'], ['GET', '/exchange/signing-identity'],
+      ['POST', '/exchange/export-bundle/market-index'], ['POST', '/exchange/export-run'], ['POST', '/exchange/export/a/b'],
+      // Coding and the App Gateway stay with admins
+      ['GET', '/coding/projects'], ['POST', '/coding/studio/p1/run'], ['GET', '/app/radar/items'], ['GET', '/app-gateway/devices'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(false);
+    }
+  });
+
+  it('takes the Engagement Task entries from services/engagement-demo-routes.ts, unchanged', () => {
+    const inWork = WORK_ROUTES.filter(([, p]) => p.startsWith('/engagements')).map(([m, p]) => `${m} ${p}`);
+    expect(inWork).toEqual(ENGAGEMENT_WORK_ROUTES.map(([m, p]) => `${m} ${p}`));
+  });
+
+  it('covers the calls the opened Work tools make, read from src/', () => {
+    // If one of these moves, the tool 404s on the demo again.
+    const read = (f: string) => readFileSync(join(__dirname, '../../src', f), 'utf8');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/api/renderers/applicable?session_id=');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/api/renderers/run');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/artifacts`');
+    expect(read('pages/AICouncilPage.tsx')).toContain('/dissent-ledger`');
+    expect(read('pages/BuildYourOwnModule.tsx')).toContain('/api/custom-modules/guide-generate');
+    expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews`');
+    expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews/modes`');
+    // The features of 2026-10-02.
+    expect(read('pages/AntonTaskAgentPage.tsx')).toContain('/api/task-agent/tasks');
+    expect(read('pages/DiscoverPage.tsx')).toContain('/api/discovery/sessions');
+    expect(read('pages/KnowledgeBasePage.tsx')).toContain('/api/collections');
+    expect(read('pages/RadarPage.tsx')).toContain('/api/radar/items');
+    expect(read('pages/ExchangePage.tsx')).toContain('`${API_BASE}/exchange/export/${moduleId}');
+    expect(read('pages/OrchestrationDashboard.tsx')).toContain('/api/insights');
+    expect(read('pages/IntelligenceDashboard.tsx')).toContain('/api/intelligence/summary');
   });
 
   it('covers the calls the Work page makes when it loads and runs', () => {
@@ -268,6 +460,38 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
     expect((await call('GET', '/sessions', 'analyst')).status).toBe(200);
   });
 
+  it('lets a visitor reach each opened Work tool, and keeps a sibling of each at 404', async () => {
+    process.env.DEMO_MODE = 'true';
+    for (const [m, p, sibling] of [
+      ['GET', '/work-timeline', '/work-timeline/all'],
+      ['POST', '/claude/explain-for', '/claude/deliberate'],
+      ['POST', '/claude/verify-citations', '/claude/message-sync'],
+      ['POST', '/reviews', '/reviews/orchestrate'],
+      ['POST', '/rerun', '/rerun/import'],
+      ['POST', '/renderers/run', '/renderers/run/all'],
+      ['POST', '/modules/smart-search', '/modules/community'],
+      ['POST', '/council/s1/dissent-ledger', '/council/s1/members'],
+      ['POST', '/custom-modules/test-run', '/custom-modules/x/share'],
+      ['POST', '/ai-assist/module-inputs', '/ai-assist/skill-draft'],
+      // Opened 2026-10-02
+      ['POST', '/engagements/e1/execute', '/engagements/e1/rag-directory'],
+      ['GET', '/projects/p1', '/projects/p1/members'],
+      ['POST', '/projects/p1/notes', '/projects/p1/invitations'],
+      ['POST', '/documents/upload', '/documents/upload-multiple'],
+      ['GET', '/collections', '/collections/health/check'],
+      ['POST', '/task-agent/tasks/t1/execute-step', '/task-agent/tasks/t1/execute-as-mission'],
+      ['GET', '/discovery/sessions/d1/start', '/discovery/followups/pending'],
+      ['GET', '/radar/items', '/radar/settings'],
+      ['GET', '/continuity/profiles', '/continuity/profiles/cp1'],
+      ['POST', '/exchange/export/custom-1', '/exchange/import'],
+    ] as const) {
+      expect((await call(m, p, 'analyst')).status, `${m} ${p}`).toBe(200);
+      expect((await call(m, sibling, 'analyst')).status, `${m} ${sibling}`).toBe(404);
+      // Negative control: an admin reaches the sibling too.
+      expect((await call(m, sibling, 'admin')).status, `admin ${m} ${sibling}`).toBe(200);
+    }
+  });
+
   it('never restricts an admin — the owner runs the instance through the same server', async () => {
     process.env.DEMO_MODE = 'true';
     expect((await call('POST', '/data/import', 'admin')).status).toBe(200);
@@ -285,8 +509,9 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
     process.env.DEMO_ENABLED_PILLARS = 'pathfinder';
     expect((await call('GET', '/pathfinder/threads', 'analyst')).status).toBe(200);
     delete process.env.DEMO_ENABLED_PILLARS;
-    process.env.DEMO_EXTRA_ROUTES = '/rerun';
-    expect((await call('POST', '/rerun', 'analyst')).status).toBe(200);
+    expect((await call('GET', '/evidence-packs', 'analyst')).status).toBe(404);
+    process.env.DEMO_EXTRA_ROUTES = '/evidence-packs';
+    expect((await call('GET', '/evidence-packs', 'analyst')).status).toBe(200);
   });
 
   it('index.ts mounts it after the auth middleware and before every authenticated route', () => {

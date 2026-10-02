@@ -1,7 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info, Loader2, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
-import { MODULES, AREAS } from '@/lib/constants';
+import type { MODULES } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { fetchCustomModules, getAuthHeader, type CustomModuleData } from '@/lib/api';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 const API_BASE = '/api';
 
@@ -52,6 +56,10 @@ interface ImportResult {
 
 export default function ExchangePage() {
   const [tab, setTab] = useState<'export' | 'import'>('export');
+  // On a public demo a visitor downloads the modules they built, unsigned;
+  // importing (which installs a bundle for the whole instance) stays with the
+  // operator, and the server refuses both other paths.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
@@ -62,12 +70,14 @@ export default function ExchangePage() {
         </div>
         <div>
           <h1 className="text-xl font-semibold text-adv-white">Exchange</h1>
-          <p className="text-sm text-adv-gray">Export and import .anton module packages</p>
+          <p className="text-sm text-adv-gray">
+            {demoLimited ? 'Download the modules you built as .anton packages' : 'Export and import .anton module packages'}
+          </p>
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 rounded-lg bg-adv-dark-2 p-1">
+      {/* Tab bar (export only on a demo) */}
+      {!demoLimited && <div className="flex gap-1 rounded-lg bg-adv-dark-2 p-1">
         <button
           onClick={() => setTab('export')}
           className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
@@ -86,14 +96,16 @@ export default function ExchangePage() {
           <Upload className="h-4 w-4" />
           Import
         </button>
-      </div>
+      </div>}
 
-      {tab === 'export' ? <ExportTab /> : <ImportTab />}
+      {tab === 'export' || demoLimited ? <ExportTab demoLimited={demoLimited} /> : <ImportTab />}
     </div>
   );
 }
 
-function ExportTab() {
+function ExportTab({ demoLimited }: { demoLimited: boolean }) {
+  // On a public demo the module list leaves out the modules and areas kept off it.
+  const catalogue = useDemoCatalogue();
   const [moduleId, setModuleId] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [authorName, setAuthorName] = useState('');
@@ -121,21 +133,27 @@ function ExportTab() {
     return () => { cancelled = true; };
   }, []);
 
-  // Probe the instance signing identity (drives the "Sign this bundle" toggle)
+  // Probe the instance signing identity (drives the "Sign this bundle" toggle).
+  // A demo visitor's exports are never signed with the instance key: no probe.
   useEffect(() => {
     let cancelled = false;
+    if (demoLimited) {
+      setSigningIdentity({ available: false });
+      return () => { cancelled = true; };
+    }
     fetch(`${API_BASE}/exchange/signing-identity`, { headers: getAuthHeader() })
       .then((res) => (res.ok ? res.json() : { available: false }))
       .then((data: SigningIdentity) => { if (!cancelled) setSigningIdentity(data); })
       .catch(() => { if (!cancelled) setSigningIdentity({ available: false }); });
     return () => { cancelled = true; };
-  }, []);
+  }, [demoLimited]);
 
-  // Build built-in module options grouped by area
-  const builtinOptions = AREAS.map((area) => ({
+  // Build built-in module options grouped by area (none for a demo visitor,
+  // who exports only the modules they built)
+  const builtinOptions = demoLimited ? [] : catalogue.areas.map((area) => ({
     area,
     modules: area.moduleIds
-      .map((id) => MODULES.find((m) => m.id === id))
+      .map((id) => catalogue.modules.find((m) => m.id === id))
       .filter(Boolean) as typeof MODULES,
   })).filter((g) => g.modules.length > 0);
 
@@ -167,7 +185,11 @@ function ExportTab() {
       const res = await fetch(url, {
         method: 'POST',
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(demoLimited ? {
+          // A demo visitor's own module: its governance link only, never signed.
+          ...(sourceUrl.trim() ? { sourceUrl: sourceUrl.trim() } : {}),
+          sign: false,
+        } : {
           authorName: authorName.trim() || 'Anonymous',
           authorOrg: authorOrg.trim(),
           description: description.trim(),
@@ -186,8 +208,8 @@ function ExportTab() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Export failed');
+        const data = await res.json().catch(() => ({})) as { error?: unknown };
+        throw new Error(typeof data.error === 'string' && data.error ? data.error : 'Export failed');
       }
 
       // Trigger browser download
@@ -255,10 +277,15 @@ function ExportTab() {
               {customModules.length} custom module{customModules.length !== 1 ? 's' : ''} in My Modules
             </p>
           )}
+          {demoLimited && !loadingCustom && customModules.length === 0 && (
+            <p className="mt-1 text-xs text-adv-gray">
+              You have not built a module yet. Build one with Build Module, then download it here.
+            </p>
+          )}
         </div>
 
-        {/* Author fields */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Author fields (built-in modules only: not on a demo) */}
+        {!demoLimited && <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-adv-off-white">Author Name</label>
             <input
@@ -279,10 +306,10 @@ function ExportTab() {
               className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
-        </div>
+        </div>}
 
         {/* Description */}
-        <div>
+        {!demoLimited && <div>
           <label className="mb-1.5 block text-sm font-medium text-adv-off-white">Description</label>
           <textarea
             value={description}
@@ -291,10 +318,10 @@ function ExportTab() {
             rows={3}
             className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
-        </div>
+        </div>}
 
         {/* Tags */}
-        <div>
+        {!demoLimited && <div>
           <label className="mb-1.5 block text-sm font-medium text-adv-off-white">Tags</label>
           <input
             type="text"
@@ -303,7 +330,7 @@ function ExportTab() {
             placeholder="compliance, aml, gap-analysis (comma-separated)"
             className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
-        </div>
+        </div>}
 
         {/* Governance (optional trust metadata, Wave 2.6) */}
         <div className="grid grid-cols-2 gap-4">
@@ -320,7 +347,7 @@ function ExportTab() {
             />
             <p className="mt-1 text-[11px] text-adv-gray">Canonical source of the module's reference material</p>
           </div>
-          <div>
+          {!demoLimited && <div>
             <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
               Validated by <span className="text-adv-gray font-normal">(optional)</span>
             </label>
@@ -332,11 +359,11 @@ function ExportTab() {
               className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <p className="mt-1 text-[11px] text-adv-gray">Who verified this module's content</p>
-          </div>
+          </div>}
         </div>
 
-        {/* License */}
-        <div>
+        {/* License (built-in modules only: not on a demo) */}
+        {!demoLimited && <div>
           <label className="mb-1.5 block text-sm font-medium text-adv-off-white">License</label>
           <select
             value={license}
@@ -349,7 +376,17 @@ function ExportTab() {
               </option>
             ))}
           </select>
-        </div>
+        </div>}
+
+        {demoLimited && (
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-gray">
+            <Shield className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Exports from this demo are unsigned: the file is your module, and nothing in it is vouched for by this
+              server. No copy is kept here.
+            </span>
+          </div>
+        )}
 
         {/* Ed25519 provenance (Wave 2.4) — only shown when this instance can sign */}
         {signingIdentity?.available && (

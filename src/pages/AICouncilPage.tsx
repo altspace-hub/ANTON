@@ -6,6 +6,15 @@ import remarkGfm from 'remark-gfm';
 import { streamMessage, createSession, fetchSession, uploadFile, fetchWithAuth } from '@/lib/api';
 import { useExport } from '@/hooks/useExport';
 import TransformPanel from '@/components/shared/TransformPanel';
+import ModelSelector from '@/components/shared/ModelSelector';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+import { demoDefaultModel } from '@/lib/demo-model-names';
+import { webSearchUnavailable } from '@/lib/compat-model-policy';
+import { fitCouncilModels, nextCouncilModel } from '@/lib/council-models';
+import { modelLabel } from '@/lib/model-labels';
+import { findSensitiveInput, describeSensitiveKinds, type SensitiveFinding } from '@/lib/sensitive-input-check';
 import type { ClaudeRunConfig, ModelId, StreamEvent } from '@/lib/types';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -221,7 +230,7 @@ function voteSectionMd(votes: CouncilVote[], tally: VoteTally, mode: ConsensusMo
     '',
     '| Member | Model | Vote | Reason |',
     '|---|---|---|---|',
-    ...votes.map((v) => `| ${roleLabel(v.role)} | ${MODEL_LABELS[v.model] ?? v.model} | **${v.position.toUpperCase()}** | ${v.reason.replace(/\|/g, '/')} |`),
+    ...votes.map((v) => `| ${roleLabel(v.role)} | ${modelLabel(v.model)} | **${v.position.toUpperCase()}** | ${v.reason.replace(/\|/g, '/')} |`),
     '',
     `**Tally (deterministic):** ${tally.agree} agree · ${tally.disagree} disagree · ${tally.abstain} abstain → **${tally.outcome}**`,
   ];
@@ -247,54 +256,46 @@ const OUTPUT_FORMAT_PROMPTS: Record<OutputFormat, string> = {
   'consolidated-review': 'a consolidated peer review report synthesising all reviewers\' findings, highlighting consensus points, conflicts, and final recommendations.',
 };
 
-const MODEL_LABELS: Record<string, string> = {
-  'claude-opus-5-5':           'Claude Opus 5.5',
-  'claude-opus-4-8':           'Claude Opus 4.8',
-  'claude-sonnet-4-6':         'Claude Sonnet 4.6',
-  'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
-  'gpt-4o':                    'GPT-4o',
-  'gpt-4o-mini':               'GPT-4o mini',
-  'gemini-2.0-flash':          'Gemini 2.0 Flash',
-  'mistral-large-latest':      'Mistral Large',
-};
+/**
+ * The models members and the chair pick from are the model picker's
+ * (ModelSelector): the configured engines, or on a public demo the models it
+ * offers. A council's members are spread over the offered models
+ * (council-models.ts), and every answer is labelled with the model the server
+ * says ran it (the context_used frame), not the one picked.
+ */
 
-/** Flat list for the model <select> — value is the model ID (except ollama which is a prefix) */
-const MODEL_GROUPS: { groupLabel: string; models: { id: string; label: string }[] }[] = [
-  {
-    groupLabel: 'Anthropic — Claude',
-    models: [
-      { id: 'claude-opus-5-5',           label: 'Claude Opus 5.5 (best quality)' },
-      { id: 'claude-opus-4-8',           label: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (balanced)' },
-      { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fast)' },
-    ],
-  },
-  {
-    groupLabel: 'OpenAI — GPT',
-    models: [
-      { id: 'gpt-4o',      label: 'GPT-4o' },
-      { id: 'gpt-4o-mini', label: 'GPT-4o mini (fast)' },
-    ],
-  },
-  {
-    groupLabel: 'Google — Gemini',
-    models: [
-      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-    ],
-  },
-  {
-    groupLabel: 'Mistral',
-    models: [
-      { id: 'mistral-large-latest', label: 'Mistral Large' },
-    ],
-  },
-  {
-    groupLabel: 'Ollama — Local',
-    models: [
-      { id: '__ollama__', label: 'Ollama (local model)…' },
-    ],
-  },
-];
+/** One member's or the chair's turn: the text, the model that ran it, and the server's refusal if any. */
+interface TurnResult { text: string; model: string; error: string | null }
+
+async function streamTurn(
+  config: ClaudeRunConfig,
+  isAborted: () => boolean,
+  onText?: (text: string) => void,
+): Promise<TurnResult> {
+  let text = '';
+  let model = String(config.model);
+  let error: string | null = null;
+  for await (const ev of streamMessage(config) as AsyncGenerator<StreamEvent>) {
+    if (isAborted()) break;
+    // The server resolves the id it runs (a mapped or corrected one); say that one.
+    if (ev.type === 'context_used' && ev.context?.model) model = ev.context.model;
+    if (ev.type === 'text_delta') {
+      text += ev.content;
+      onText?.(text);
+    }
+    if (ev.type === 'error') {
+      // streamMessage reports its own retries as error frames; it goes on after them.
+      if (ev.message?.startsWith('Connection dropped')) continue;
+      error = ev.message || 'The model did not answer.';
+      break;
+    }
+    if (ev.type === 'stream_end') break;
+  }
+  return { text, model, error };
+}
+
+/** The key of one member's answer in one round. */
+const turnKey = (round: number, memberId: string): string => `${round}:${memberId}`;
 
 
 const EMPTY_KS = {
@@ -394,19 +395,6 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
     ROLE_PRESETS.find((r) => r.id === member.role) ? '' : member.role
   );
   const isCustom = !ROLE_PRESETS.slice(0, -1).find((r) => r.id === member.role);
-  const isOllama = String(member.model).startsWith('ollama:');
-  const [ollamaModel, setOllamaModel] = useState(isOllama ? String(member.model).replace('ollama:', '') : '');
-
-  // Select value: '__ollama__' when model starts with 'ollama:', else the model id
-  const selectValue = isOllama ? '__ollama__' : String(member.model);
-
-  function handleModelChange(val: string) {
-    if (val === '__ollama__') {
-      onUpdate({ ...member, model: `ollama:${ollamaModel || 'llama3.2'}` as ModelId });
-    } else {
-      onUpdate({ ...member, model: val as ModelId });
-    }
-  }
 
   return (
     <div className="relative rounded-xl border border-border bg-adv-card p-4 min-w-[200px]">
@@ -451,36 +439,11 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
         )}
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-adv-gray">Model</label>
-        <select
-          value={selectValue}
-          onChange={(e) => handleModelChange(e.target.value)}
-          disabled={disabled}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
-        >
-          {MODEL_GROUPS.map((g) => (
-            <optgroup key={g.groupLabel} label={g.groupLabel}>
-              {g.models.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        {isOllama && (
-          <input
-            type="text"
-            value={ollamaModel}
-            onChange={(e) => {
-              setOllamaModel(e.target.value);
-              onUpdate({ ...member, model: `ollama:${e.target.value}` as ModelId });
-            }}
-            placeholder="e.g. llama3.2, mistral, gemma3"
-            disabled={disabled}
-            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
-          />
-        )}
-      </div>
+      <ModelSelector
+        value={member.model}
+        onChange={(model) => onUpdate({ ...member, model })}
+        variant="dropdown"
+      />
     </div>
   );
 }
@@ -600,6 +563,24 @@ function DissentLedgerPanel({ state }: { state: LedgerState }) {
 
 export default function AICouncilPage() {
   const [setup, setSetup] = useState<CouncilSetup>(defaultSetup);
+  // Public demo: members and chair come from the offered models, and a
+  // visitor's topic is checked for personal data before it goes out, as on the
+  // Work page. Web search is not offered on a model that cannot search.
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLoaded = useDemoStore((s) => s.loaded);
+  const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
+  const modelPool = demoConfig.demoMode ? demoConfig.offeredModels : [];
+  const poolDefault = demoDefaultModel(demoConfig);
+  const poolKey = demoLoaded ? modelPool.join('|') : null;
+  // The pickers mount only once the members sit on the pool's models, so a
+  // picker never corrects every member to the same first offered model.
+  const [fittedFor, setFittedFor] = useState<string | null>(null);
+  const [sensitiveFindings, setSensitiveFindings] = useState<SensitiveFinding[] | null>(null);
+  const confirmedSensitiveRef = useRef<Set<string>>(new Set());
+  // The model that actually wrote each answer (turnKey), each vote and the synthesis.
+  const [servedModels, setServedModels] = useState<Record<string, string>>({});
+  const [turnErrors, setTurnErrors] = useState<Record<string, string>>({});
+  const [chairServedModel, setChairServedModel] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>('setup');
   const [currentRound, setCurrentRound] = useState(0);
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
@@ -670,6 +651,25 @@ export default function AICouncilPage() {
 
   const isRunning = phase === 'running';
 
+  useEffect(() => { void useDemoStore.getState().load(); }, []);
+  useEffect(() => {
+    if (poolKey === null) return;
+    if (modelPool.length > 0) {
+      setSetup((prev) => {
+        const fitted = fitCouncilModels(prev.members, prev.chairModel, modelPool, poolDefault);
+        return { ...prev, members: fitted.members, chairModel: fitted.chairModel as ModelId };
+      });
+    }
+    setFittedFor(poolKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poolKey]);
+  const modelsReady = poolKey !== null && fittedFor === poolKey;
+
+  // Web search is Claude's tool: not offered when any member or the chair runs
+  // on a model without it, nor to a demo visitor.
+  const webSearchOffered = !demoLimited
+    && ![...setup.members.map((m) => m.model), setup.chairModel].some((m) => webSearchUnavailable(m));
+
   // ── Helpers ──────────────────────────────────────────────────
 
   const updateMember = (id: string, updated: CouncilMember) => {
@@ -692,21 +692,41 @@ export default function AICouncilPage() {
       ...prev,
       members: [
         ...prev.members,
-        { id: crypto.randomUUID(), role: 'risk-expert', model: 'claude-sonnet-4-6' },
+        { id: crypto.randomUUID(), role: 'risk-expert', model: nextCouncilModel(prev.members, modelPool, 'claude-sonnet-4-6') as ModelId },
       ],
     }));
   };
 
+  // A preset names Claude models; on a demo its members move onto the offered ones.
   const applyPreset = (preset: Partial<CouncilSetup>) => {
-    setSetup((prev) => ({ ...prev, ...preset }));
+    setSetup((prev) => {
+      const next = { ...prev, ...preset };
+      const fitted = fitCouncilModels(next.members, next.chairModel, modelPool, poolDefault);
+      return { ...next, members: fitted.members, chairModel: fitted.chairModel as ModelId };
+    });
   };
 
   // ── Orchestration ─────────────────────────────────────────────
 
-  const runCouncil = async () => {
+  const runCouncil = async (confirmed = false) => {
     if (!setup.topic.trim() || setup.members.length < 1) return;
+    // A demo visitor's topic is checked for a personnummer, email addresses and
+    // phone numbers first; they confirm it is made up or public, or edit it.
+    if (demoLimited) {
+      const key = (f: SensitiveFinding) => `${f.kind}:${f.match}`;
+      const findings = findSensitiveInput([setup.topic]).filter((f) => !confirmedSensitiveRef.current.has(key(f)));
+      if (findings.length > 0 && !confirmed) {
+        setSensitiveFindings(findings);
+        return;
+      }
+      findings.forEach((f) => confirmedSensitiveRef.current.add(key(f)));
+    }
+    setSensitiveFindings(null);
 
     setPhase('running');
+    setServedModels({});
+    setTurnErrors({});
+    setChairServedModel(null);
     setMemberStreams({});
     setRoundHistory([]);
     setChairOutput('');
@@ -723,7 +743,8 @@ export default function AICouncilPage() {
     const abortController = { abort: () => { aborted = true; } };
     abortRef.current = abortController;
 
-    const ks = setup.webSearch ? WEB_SEARCH_KS : EMPTY_KS;
+    const webSearch = setup.webSearch && webSearchOffered;
+    const ks = webSearch ? WEB_SEARCH_KS : EMPTY_KS;
     let allRoundsContext = '';
 
     // Wave 4.2: attached documents enter each member's context (budgeted).
@@ -746,7 +767,7 @@ export default function AICouncilPage() {
           consensus: setup.consensus,
           outputFormat: setup.outputFormat,
           chainMode: setup.chainMode,
-          webSearch: setup.webSearch,
+          webSearch,
           attachments: docNames.map((name) => {
             const a = attachments.find((x) => x.name === name);
             return { name, chars: a?.chars ?? 0, truncated: truncatedNames.includes(name) };
@@ -786,10 +807,9 @@ Be specific, analytical, and stay in your assigned role. Respond in 3-6 paragrap
 
           setActiveMemberId(member.id);
 
-          let text = '';
           setMemberStreams((prev) => ({ ...prev, [member.id]: '' }));
 
-          const stream = streamMessage(
+          const turn = await streamTurn(
             {
               model: member.model,
               thinking: 'think',
@@ -799,20 +819,16 @@ Be specific, analytical, and stay in your assigned role. Respond in 3-6 paragrap
               history: [],
               outputFormats: [],
               knowledgeSources: ks,
-            }
+            },
+            () => aborted,
+            (text) => setMemberStreams((prev) => ({ ...prev, [member.id]: text })),
           );
-
-          for await (const ev of stream as AsyncGenerator<StreamEvent>) {
-            if (aborted) break;
-            if (ev.type === 'text_delta') {
-              text += ev.content;
-              setMemberStreams((prev) => ({ ...prev, [member.id]: text }));
-            }
-            if (ev.type === 'stream_end' || ev.type === 'error') break;
-          }
+          const key = turnKey(round, member.id);
+          setServedModels((prev) => ({ ...prev, [key]: turn.model }));
+          if (turn.error) setTurnErrors((prev) => ({ ...prev, [key]: turn.error as string }));
 
           if (!aborted) {
-            roundOutputs.push(`### ${roleLabel(member.role)} — ${MODEL_LABELS[member.model] ?? member.model}\n\n${text}`);
+            roundOutputs.push(`### ${roleLabel(member.role)} — ${modelLabel(turn.model)}\n\n${turn.text || '_(No answer from this member.)_'}`);
           }
         }
 
@@ -845,8 +861,7 @@ Be specific, analytical, and stay in your assigned role. Respond in 3-6 paragrap
 Respond with ONLY strict JSON — no markdown fences, no extra text:
 {"position": "agree" | "disagree" | "abstain", "oneLineReason": "one short sentence"}`;
 
-          let voteText = '';
-          const voteStream = streamMessage(
+          const voteTurn = await streamTurn(
             {
               model: member.model,
               thinking: 'quick',
@@ -856,20 +871,16 @@ Respond with ONLY strict JSON — no markdown fences, no extra text:
               history: [],
               outputFormats: [],
               knowledgeSources: EMPTY_KS,
-            } satisfies ClaudeRunConfig
+            } satisfies ClaudeRunConfig,
+            () => aborted,
           );
-          for await (const ev of voteStream as AsyncGenerator<StreamEvent>) {
-            if (aborted) break;
-            if (ev.type === 'text_delta') voteText += ev.content;
-            if (ev.type === 'stream_end' || ev.type === 'error') break;
-          }
           if (aborted) break;
 
-          const parsed = parseVote(voteText);
+          const parsed = parseVote(voteTurn.text);
           const vote: CouncilVote = {
             memberId: member.id,
             role: member.role,
-            model: String(member.model),
+            model: voteTurn.model,
             position: parsed.position,
             reason: parsed.reason,
           };
@@ -913,8 +924,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           voteMd,
         ].filter(Boolean).join('\n\n');
 
-        let chairText = '';
-        const chairStream = streamMessage(
+        const chairTurn = await streamTurn(
           {
             model: setup.chairModel,
             thinking: 'think_hard',
@@ -926,17 +936,12 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
             knowledgeSources: EMPTY_KS,
             moduleId: COUNCIL_MODULE_ID,
             sessionId: sessionIdRef.current ?? undefined,
-          } satisfies ClaudeRunConfig
+          } satisfies ClaudeRunConfig,
+          () => aborted,
+          (text) => setChairOutput(text),
         );
-
-        for await (const ev of chairStream as AsyncGenerator<StreamEvent>) {
-          if (aborted) break;
-          if (ev.type === 'text_delta') {
-            chairText += ev.content;
-            setChairOutput(chairText);
-          }
-          if (ev.type === 'stream_end' || ev.type === 'error') break;
-        }
+        setChairServedModel(chairTurn.model);
+        if (chairTurn.error) setTurnErrors((prev) => ({ ...prev, chair: chairTurn.error as string }));
 
         setChairStreaming(false);
         setActiveMemberId(null);
@@ -1024,6 +1029,9 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
     setVoteTally(null);
     setIsVoting(false);
     setLedgerState({ status: 'idle', ledger: null });
+    setServedModels({});
+    setTurnErrors({});
+    setChairServedModel(null);
     sessionIdRef.current = null;
     if (archivedSessionId) setSearchParams({}, { replace: true });
   };
@@ -1078,8 +1086,14 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           onChange={(e) => setSetup((prev) => ({ ...prev, topic: e.target.value }))}
           placeholder="Describe the document, decision, plan, or question for the council to deliberate on…"
           rows={4}
+          aria-describedby={demoLimited ? 'demo-data-warning' : undefined}
           className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
+        {demoLimited && (
+          <p id="demo-data-warning" className="mt-1.5 text-sm text-adv-gold">
+            Demo: don&apos;t enter real personal or client data. Each member&apos;s model receives your topic and attached files.
+          </p>
+        )}
 
         {/* Document input (Wave 4.2) — members deliberate over attached files */}
         <input
@@ -1177,41 +1191,42 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
             Add Member
           </button>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {setup.members.map((member) => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              onUpdate={(updated) => updateMember(member.id, updated)}
-              onRemove={() => removeMember(member.id)}
-              disabled={false}
-            />
-          ))}
-        </div>
+        {modelsReady ? (
+          <div className="flex flex-wrap gap-3">
+            {setup.members.map((member) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                onUpdate={(updated) => updateMember(member.id, updated)}
+                onRemove={() => removeMember(member.id)}
+                disabled={false}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-adv-gray">Loading the models…</p>
+        )}
+        {modelPool.length > 1 && (
+          <p className="mt-2 text-xs text-adv-gray">
+            Members are spread over the models this demo offers, so the council hears more than one model.
+          </p>
+        )}
       </div>
 
-      {/* Council config row */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {/* Chair model */}
-        <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
-            Chair Model
-          </label>
-          <select
+      {/* Chair model */}
+      {modelsReady && (
+        <div className="max-w-sm">
+          <ModelSelector
             value={setup.chairModel}
-            onChange={(e) => setSetup((prev) => ({ ...prev, chairModel: e.target.value as ModelId }))}
-            className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
-          >
-            {MODEL_GROUPS.map((g) => (
-              <optgroup key={g.groupLabel} label={g.groupLabel}>
-                {g.models.filter(m => m.id !== '__ollama__').map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+            onChange={(model) => setSetup((prev) => ({ ...prev, chairModel: model }))}
+            variant="dropdown"
+            label="Chair model"
+          />
         </div>
+      )}
 
+      {/* Council config row */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {/* Rounds */}
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
@@ -1234,7 +1249,8 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           </div>
         </div>
 
-        {/* Web search */}
+        {/* Web search — only where every model of the council can search */}
+        {webSearchOffered && (
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Web Search
@@ -1258,6 +1274,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
             ))}
           </div>
         </div>
+        )}
 
         {/* Consensus */}
         <div>
@@ -1330,10 +1347,46 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
         </div>
       </div>
 
+      {/* A demo visitor's topic that looks like real personal data waits for them */}
+      {demoLimited && sensitiveFindings && sensitiveFindings.length > 0 && (
+        <div role="alert" className="rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2.5 text-sm text-adv-off-white">
+          <p>
+            Your topic seems to contain {describeSensitiveKinds(sensitiveFindings)}:{' '}
+            {sensitiveFindings.slice(0, 3).map((f, i) => (
+              <span key={`${f.kind}:${f.match}`}>
+                {i > 0 && ', '}
+                <code className="rounded bg-adv-dark px-1">{f.match}</code>
+              </span>
+            ))}
+            {sensitiveFindings.length > 3 && ' …'}
+          </p>
+          <p className="mt-1 text-adv-gray">
+            This demo must not receive real personal data. Remove it or replace it with made-up details. If it is
+            made up or public, you can start the council as it is.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setSensitiveFindings(null)}
+              className="rounded-lg bg-adv-teal px-3 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+            >
+              Edit my text
+            </button>
+            <button
+              type="button"
+              onClick={() => { void runCouncil(true); }}
+              className="rounded-lg border border-border px-3 py-1.5 text-sm text-adv-off-white hover:border-adv-gold transition-colors"
+            >
+              It is made up or public: start the council
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Start button */}
       <button
-        onClick={runCouncil}
-        disabled={!setup.topic.trim() || setup.members.length < 1}
+        onClick={() => { void runCouncil(); }}
+        disabled={!setup.topic.trim() || setup.members.length < 1 || !modelsReady}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3 text-sm font-semibold text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Play className="h-4 w-4" />
@@ -1386,7 +1439,8 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
             {setup.members.map((member) => {
               const text = memberStreams[member.id] ?? '';
               const isActive = activeMemberId === member.id && phase === 'running' && currentRound === round;
-              if (!text && !isActive) return null;
+              const turnError = turnErrors[turnKey(round, member.id)];
+              if (!text && !isActive && !turnError) return null;
 
               return (
                 <div
@@ -1402,10 +1456,11 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
                     <span className="text-xs font-semibold text-adv-off-white capitalize">
                       {member.role.replace(/-/g, ' ')}
                     </span>
-                    <span className="text-xs text-adv-gray">
-                      {MODEL_LABELS[member.model] ?? member.model}
+                    <span className="text-xs text-adv-gray" title={servedModels[turnKey(round, member.id)] ?? member.model}>
+                      {modelLabel(servedModels[turnKey(round, member.id)] ?? member.model)}
                     </span>
                   </div>
+                  {turnError && <p role="alert" className="mb-2 text-xs text-adv-red">{turnError}</p>}
                   {text ? (
                     <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
@@ -1459,7 +1514,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
                   </span>
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-adv-off-white">{roleLabel(v.role)}</span>
-                    <span className="ml-2 text-xs text-adv-gray">{MODEL_LABELS[v.model] ?? v.model}</span>
+                    <span className="ml-2 text-xs text-adv-gray">{modelLabel(v.model)}</span>
                     {v.reason && <p className="text-xs text-adv-gray">{v.reason}</p>}
                   </div>
                 </div>
@@ -1493,10 +1548,11 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           <div className="mb-3 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
-              Chair Synthesis ({MODEL_LABELS[setup.chairModel] ?? setup.chairModel}) — {OUTPUT_FORMAT_LABELS[setup.outputFormat]}
+              Chair Synthesis ({modelLabel(chairServedModel ?? setup.chairModel)}) — {OUTPUT_FORMAT_LABELS[setup.outputFormat]}
             </span>
             <div className="h-px flex-1 bg-border" />
           </div>
+          {turnErrors.chair && <p role="alert" className="mb-2 text-xs text-adv-red">{turnErrors.chair}</p>}
           <div className={`rounded-xl border p-5 ${chairStreaming ? 'border-adv-teal/50 bg-adv-teal-soft' : 'border-adv-teal/20 bg-adv-card'}`}>
             <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{chairOutput}</ReactMarkdown>

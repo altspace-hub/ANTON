@@ -1,0 +1,139 @@
+/**
+ * DemoTermsPage — /terms, reachable without signing in.
+ *
+ * The terms a visitor accepts when making a public-demo account
+ * (DEMO_MODE=true; privacy review G7): 18 or over, no real personal or
+ * confidential data, acceptable use, answers are AI-generated and not
+ * advice, deletion after the retention period, and the contact point for
+ * reports. Sign-up sends DEMO_TERMS_TEXT_VERSION and the server stores it
+ * with the account (migration 291), so a change to this text must change
+ * that version and DEMO_TERMS_VERSION on the server.
+ *
+ * [[NAME]] marks a fact the owner supplies (src/lib/demo-legal.ts). The DRAFT
+ * box stays up until every fact is filled in and counsel has signed off.
+ */
+import LegalDocument from '@/components/shared/LegalDocument';
+import { DEMO_TERMS_TEXT_VERSION } from '@/lib/demo-legal';
+
+export const DEMO_TERMS_MD = `# Demo terms: ANTON public demo
+
+**Version:** ${DEMO_TERMS_TEXT_VERSION} · **In force from:** [[TERMS_EFFECTIVE_DATE]]
+
+These terms apply when you create an account on the public demo of ANTON at [[DEMO_URL]], or take up an invitation to one, and while you use it. When you accept them, we store which version you accepted and when. Please also read the [privacy notice](/privacy).
+
+## 1. Who we are
+
+The demo is run by [[CONTROLLER_NAME]] ([[CONTROLLER_LEGAL_FORM]]), [[CONTROLLER_ADDRESS]], organisation number [[CONTROLLER_ORG_NO]] ("we", "us"). Contact: [[PRIVACY_EMAIL]].
+
+## 2. What the demo is
+
+- A free trial of ANTON's Work modules, Open Chat, the AI Council, the 5-minute Brief, Build Module, Engagement Tasks, the Task Agent, Discover, Projects and the Knowledge Base, with downloading a module you built (Exchange) and read-only views of Orchestration, Intelligence and the Horizon Radar, so that you can see how the software works. It is not a production service.
+- You need an invite code to sign up, or an invitation from us by email.
+- Some features and modules are switched off.
+- Your use is limited by a monthly token budget, daily spending caps, upload limits and rate limits.
+- We may change, limit, interrupt or end the demo at any time, without notice. We don't promise that it will be available.
+
+## 3. Who may use it
+
+- You must be 18 or over.
+- Create one account only, for yourself. Keep your password secret and don't share your account.
+- Don't publish or pass on your invite code, sign-up link or invitation link.
+
+## 4. No real personal data, no confidential material
+
+- Use made-up or public information only.
+- Don't enter, upload or paste real personal data about you or anyone else. That includes real names, personal identity numbers (personnummer) or other ID numbers, contact details, health data, information about crimes, and financial, employment or client details.
+- Don't enter confidential material, such as client files, trade secrets or anything you must keep secret.
+- If you choose a username, don't use your real name. (If you signed up with your email address, or we invited you, that address is your username.)
+- This applies to the modules you build too: don't build a module that asks for real personal data, or for health, employment, credit or criminal-offence information.
+- It applies to your engagements, tasks, interviews and projects, and to the documents you upload to them or to the Knowledge Base: describe people by their role, not by name, and don't upload real engagement letters, client files or documents about other people.
+- If you enter such data anyway, you are responsible for having the right to do so, and we may delete it.
+
+## 5. Acceptable use
+
+You must not use the demo to:
+
+- break the law, or enter or create illegal content;
+- infringe other people's rights, or harass, deceive or harm anyone;
+- create malware, or any content that sexually exploits children;
+- make or prepare decisions about people that have legal or similarly significant effects, such as decisions on hiring, credit, insurance or access to services;
+- attack, probe or overload the demo, or get around its security, limits or access controls;
+- scrape the demo, or use it through bots or scripts (use it only through its normal web pages);
+- try to see other visitors' data;
+- resell the demo or the AI service, or give others access to it.
+
+## 6. The AI service
+
+- Answers come from the AI model you choose in the model list: [[DEFAULT_MODEL]] unless you pick [[OTHER_MODELS]]. We reach them through OpenRouter, Inc. (USA), and Inceptron AB runs them in the EU/EEA.
+- Some features send your request to more than one of these models: the AI Council, a second opinion on an answer ("Rerun with…" and Review), the review step of an Engagement Task, and the Trust Score (also on Task Agent steps) where this demo scores answers. The [privacy notice](/privacy#section-6-1) lists what each feature sends (section 6.1).
+- None of these models can search the web. A feature that would need web search says so, or refuses, instead of answering as if it had searched.
+- Your use must also follow:
+  - OpenRouter's Terms of Service (https://openrouter.ai/terms), which require us to make our users follow them;
+  - any usage rules of the model's maker that OpenRouter passes on.
+- Under its own terms, OpenRouter screens requests for misuse and may use inputs in anonymised form for usage statistics. The [privacy notice](/privacy#section-6-2) explains this (section 6.2).
+
+## 7. Answers are generated by AI
+
+- You are using an AI system. Answers, and what the demo writes about them (session titles and summaries, reviews, council syntheses and Trust Scores), are generated automatically, and so are engagement deliverables, task results, discovery reports and insights. No person writes or checks them.
+- They can be wrong, incomplete, out of date or made up. They are not legal, financial, tax, medical or other professional advice.
+- A Trust Score, a review or a second opinion is an AI model's view of an answer, sometimes from the same model that wrote it. It does not show that the answer is right.
+- Before you rely on anything that matters, check it with a qualified person or an original source. You decide how you use an answer, and you are responsible for that.
+
+## 8. Your content and the answers
+
+- You keep whatever rights you have in what you enter and in the modules you build. You allow us to process them only to run the demo for you, as the privacy notice describes.
+- The modules you build, and your engagements, tasks, interviews, projects and Knowledge Base collections, stay private to you. They are not shared with other visitors, and they are deleted with your account.
+- A module you download as an .anton file is not signed by us, and we keep no copy of the file.
+- We claim no rights in the answers generated for you. We don't promise that they are free of other people's rights.
+- These terms give you no rights in the ANTON software or its module content beyond using the demo.
+
+## 9. Account expiry and deletion
+
+- Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password from an invitation. It is then deleted with everything in it, normally within a day ([privacy notice](/privacy#section-9), section 9).
+- We keep no copy for you, so export anything you want to keep before then.
+- You can ask us to delete your account earlier ([privacy notice](/privacy#section-12), section 12).
+
+## 10. Ending your use
+
+- You can stop using the demo at any time.
+- We may switch off or delete an account without notice in two cases:
+  - we reasonably believe that it breaks these terms or the law;
+  - we need to, to protect the demo, other visitors or anyone else.
+
+  You can ask us why at [[PRIVACY_EMAIL]].
+- If the demo ends, accounts are deleted as the privacy notice describes.
+
+## 11. Reports and questions
+
+Write to [[PRIVACY_EMAIL]], in English or Swedish, to:
+
+- report illegal content, misuse or a breach of these terms;
+- ask anything about the demo.
+
+Please say what the problem is and where you saw it.
+
+## 12. No warranty; liability
+
+- The demo is free and provided "as is" and "as available". As far as the law allows, we give no warranty that it works without errors or that it suits any purpose.
+- As far as the law allows, we are not liable for any loss that comes from using the demo or from relying on its answers.
+- None of this limits:
+  - liability for harm caused intentionally or by gross negligence;
+  - any other liability that the law does not allow us to limit;
+  - your rights as a consumer under mandatory law.
+
+## 13. Changes to these terms
+
+If we change these terms, we publish the new version here with a new version and date. It applies to accounts created after that date. The version you accepted is stored with your account.
+
+## 14. Law and disputes
+
+Swedish law applies to these terms, without its rules on choice of law. Disputes are decided by Swedish courts. This does not take away any protection you have under the mandatory law of the country where you live, or any right you have to go to court there.
+
+---
+
+Version ${DEMO_TERMS_TEXT_VERSION} · Operated by [[CONTROLLER_NAME]] · [Privacy notice](/privacy)
+`;
+
+export default function DemoTermsPage() {
+  return <LegalDocument markdown={DEMO_TERMS_MD} what="demo terms" plural />;
+}

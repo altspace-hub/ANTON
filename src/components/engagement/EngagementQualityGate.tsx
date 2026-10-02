@@ -12,6 +12,7 @@ import {
   ListChecks, Star, Layers, BookOpen, Zap, Users, GitBranch, SkipForward
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, QualityGate } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -148,7 +149,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
         signal: abortRef.current.signal,
       });
 
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       if (!res.body) throw new Error('No response stream');
 
       const reader = res.body.getReader();
@@ -231,7 +232,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
         }
       }
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') setError(String(e));
+      if ((e as Error).name !== 'AbortError') setError(errorText(e));
     } finally {
       setRunning(false);
     }
@@ -245,7 +246,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -254,7 +255,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(`Export failed: ${e}`);
+      setError(`Export failed: ${errorText(e)}`);
     } finally {
       setExporting(null);
     }

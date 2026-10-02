@@ -1,6 +1,8 @@
 /**
  * demo-post-answer-calls.db.test.ts — on a public demo, an answer is followed by
- * at most the session conclusion (DEMO_POST_ANSWER_CALLS, default 'conclusion').
+ * at most the session conclusion (DEMO_POST_ANSWER_CALLS, default 'conclusion'),
+ * or with 'scored' also the quality score — the Trust Score under the answer —
+ * made by QUALITY_SCORER_MODEL when set, but never the structured extraction.
  *
  * Every other install follows an answer with three utility calls: a quality
  * score, the structured extraction and the session conclusion. A live run on
@@ -30,6 +32,8 @@ const d = DATABASE_URL ? describe : describe.skip;
 const tag = randomUUID().slice(0, 8);
 const SLUG = `tpost${tag}`;
 const MODEL = `compat:${SLUG}:fake-model`;
+/** A second model on the same endpoint: the one that rates the first one's answer. */
+const SCORER = `compat:${SLUG}:scorer-model`;
 const LONG_ANSWER = `Answer ${tag}. ` + 'The controls are adequate but the monitoring needs work. '.repeat(12);
 
 function startFake(): Promise<{ server: Server; baseUrl: string }> {
@@ -61,7 +65,7 @@ d('after-answer model calls on a public demo', () => {
   let app: Server;
   let base = '';
   const sessions: string[] = [];
-  const saved = { demo: process.env.DEMO_MODE, post: process.env.DEMO_POST_ANSWER_CALLS, mode: process.env.DEPLOYMENT_MODE };
+  const saved = { demo: process.env.DEMO_MODE, post: process.env.DEMO_POST_ANSWER_CALLS, mode: process.env.DEPLOYMENT_MODE, scorer: process.env.QUALITY_SCORER_MODEL };
   let setDefault: (db: DatabaseAdapter, model: string | null) => Promise<unknown>;
 
   beforeAll(async () => {
@@ -91,7 +95,7 @@ d('after-answer model calls on a public demo', () => {
   });
 
   afterAll(async () => {
-    for (const [k, v] of [['DEMO_MODE', saved.demo], ['DEMO_POST_ANSWER_CALLS', saved.post], ['DEPLOYMENT_MODE', saved.mode]] as const) {
+    for (const [k, v] of [['DEMO_MODE', saved.demo], ['DEMO_POST_ANSWER_CALLS', saved.post], ['DEPLOYMENT_MODE', saved.mode], ['QUALITY_SCORER_MODEL', saved.scorer]] as const) {
       if (v === undefined) delete process.env[k]; else process.env[k] = v;
     }
     await new Promise((r) => setTimeout(r, 1500));
@@ -104,7 +108,7 @@ d('after-answer model calls on a public demo', () => {
         await db.run('DELETE FROM sessions WHERE id = ?', s).catch(() => {});
       }
       // The utility calls carry no session id here, so their ledger rows go by model.
-      await db.run('DELETE FROM llm_spend_ledger WHERE model = ?', MODEL).catch(() => {});
+      await db.run('DELETE FROM llm_spend_ledger WHERE model IN (?, ?)', MODEL, SCORER).catch(() => {});
       await db.run('DELETE FROM custom_model_endpoints WHERE slug = ?', SLUG).catch(() => {});
       const { setRouterDb } = await import('../../server/services/compat-endpoint.js');
       setRouterDb(null);
@@ -116,6 +120,10 @@ d('after-answer model calls on a public demo', () => {
 
   /** One Work run in a fresh session; the ledger purposes it produced within `waitMs`. */
   async function purposesOfOneRun(waitMs = 4000): Promise<string[]> {
+    return (await oneRun(waitMs)).purposes;
+  }
+
+  async function oneRun(waitMs = 4000): Promise<{ sessionId: string; purposes: string[] }> {
     const sessionId = `sess-post-${tag}-${sessions.length}`;
     sessions.push(sessionId);
     await db.run(`INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, 'general', 'post-answer', '{}', 'solo')`, sessionId);
@@ -132,10 +140,12 @@ d('after-answer model calls on a public demo', () => {
     await res.text();
     await new Promise((r) => setTimeout(r, waitMs));
     const rows = await db.all<{ purpose: string }>(
-      "SELECT purpose FROM llm_spend_ledger WHERE session_id = ? OR (session_id IS NULL AND created_at >= ?::timestamptz AND purpose <> 'work-run')",
-      sessionId, since,
+      // This test's own model only: other DB tests running at the same time
+      // write rows with no session too (a citation check, a review).
+      "SELECT purpose FROM llm_spend_ledger WHERE session_id = ? OR (session_id IS NULL AND model IN (?, ?) AND created_at >= ?::timestamptz AND purpose <> 'work-run')",
+      sessionId, MODEL, SCORER, since,
     );
-    return [...new Set(rows.map((r) => r.purpose))].sort();
+    return { sessionId, purposes: [...new Set(rows.map((r) => r.purpose))].sort() };
   }
 
   it('on a demo, only the session conclusion follows the answer', async () => {
@@ -145,6 +155,32 @@ d('after-answer model calls on a public demo', () => {
     expect(purposes).toContain('work-run');
     expect(purposes).not.toContain('quality-score');
     expect(purposes).not.toContain('structured-extraction');
+  }, 30_000);
+
+  it('DEMO_POST_ANSWER_CALLS=scored: the conclusion and the quality score follow the answer, the extraction does not', async () => {
+    process.env.DEMO_MODE = 'true';
+    process.env.DEMO_POST_ANSWER_CALLS = 'scored';
+    delete process.env.QUALITY_SCORER_MODEL;
+    const { sessionId, purposes } = await oneRun();
+    expect(purposes).toContain('work-run');
+    expect(purposes).toContain('quality-score');
+    expect(purposes).toContain('session-conclusion');
+    expect(purposes).not.toContain('structured-extraction');
+    // With no QUALITY_SCORER_MODEL the routed utility model scores: here the Settings default.
+    const row = await db.get<{ model_used: string }>('SELECT model_used FROM quality_scores WHERE session_id = ?', sessionId);
+    expect(row?.model_used).toBe(MODEL);
+  }, 30_000);
+
+  it('QUALITY_SCORER_MODEL: a second model scores the answer, and quality_scores names it', async () => {
+    process.env.DEMO_MODE = 'true';
+    process.env.DEMO_POST_ANSWER_CALLS = 'scored';
+    process.env.QUALITY_SCORER_MODEL = SCORER;
+    const { sessionId } = await oneRun();
+    const row = await db.get<{ model_used: string; score_overall: number }>('SELECT model_used, score_overall FROM quality_scores WHERE session_id = ?', sessionId);
+    expect(row?.model_used).toBe(SCORER);
+    expect(Number(row?.score_overall)).toBe(8);
+    const ledger = await db.all<{ model: string }>("SELECT model FROM llm_spend_ledger WHERE purpose = 'quality-score' AND model = ?", SCORER);
+    expect(ledger.length).toBeGreaterThanOrEqual(1);
   }, 30_000);
 
   it('DEMO_POST_ANSWER_CALLS=none: nothing follows the answer', async () => {

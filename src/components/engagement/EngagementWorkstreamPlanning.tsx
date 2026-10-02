@@ -11,6 +11,7 @@ import {
   Loader2, CheckCircle, Calendar, Brain, Edit3, GripVertical, AlertCircle
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, Workstream } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -55,6 +56,8 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<NewWsForm>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
+  // A refusal (the demo's row cap or write limit) is shown, not swallowed.
+  const [addError, setAddError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<NewWsForm>>({});
@@ -64,8 +67,9 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
   async function addWorkstream() {
     if (!form.title.trim()) return;
     setSaving(true);
+    setAddError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}/workstreams`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/workstreams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,9 +81,12 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
           sort_order: workstreams.length,
         }),
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       setForm(DEFAULT_FORM);
       setShowAddForm(false);
       onReload();
+    } catch (e) {
+      setAddError(errorText(e));
     } finally {
       setSaving(false);
     }
@@ -247,8 +254,9 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
             </div>
           </div>
 
+          {addError && <p role="alert" className="text-sm text-adv-red">{addError}</p>}
           <div className="flex gap-2 justify-end">
-            <button onClick={() => { setShowAddForm(false); setForm(DEFAULT_FORM); }} className="text-xs text-adv-gray hover:text-adv-off-white px-3 py-1.5">Cancel</button>
+            <button onClick={() => { setShowAddForm(false); setForm(DEFAULT_FORM); setAddError(null); }} className="text-xs text-adv-gray hover:text-adv-off-white px-3 py-1.5">Cancel</button>
             <button
               onClick={addWorkstream}
               disabled={!form.title.trim() || saving}

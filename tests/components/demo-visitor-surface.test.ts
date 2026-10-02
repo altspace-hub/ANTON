@@ -9,17 +9,21 @@
  *
  *   - "Collect insights — Responses contribute to knowledge base": a demo
  *     never learns from a visitor's runs;
- *   - knowledge modes a visitor cannot use: Local Folders, Combined, the
- *     Knowledge Collections (RAG) and the Regulatory Knowledge Packs;
- *   - Home's Pathfinder search, 5-Minute Brief and "Add deadline";
+ *   - knowledge modes a visitor cannot use: Online links, Local Folders, Combined
+ *     and the Regulatory Knowledge Packs (the Knowledge Collections card is
+ *     open to them since 2026-10-02: their own collections, keyword search);
+ *   - Home's Pathfinder search and "Add deadline";
  *   - on the Work page: Deliberation mode, the Risk Atlas banner, the
  *     knowledge-library suggestion (it turns on Local Folders), prompt
- *     versions, the Trades "My way" check, Share / quality stars /
- *     Explain-for under the answer, and the toolbar's Citations, Review,
- *     Rerun, Export run, Evidence and Save-as-module.
+ *     versions, the Trades "My way" check, Share / quality stars under the
+ *     answer, and the toolbar's Export run, Evidence and Save-as-module.
  *
  * Each is hidden for a visitor; every block has a negative control — an admin
  * on the demo and everyone on an ordinary server keep the old behaviour.
+ *
+ * Opened to visitors on 2026-10-01 (the server added their routes): the
+ * 5-Minute Brief and "View All" to My Work on Home, Explain-for under the
+ * answer, and the toolbar's Citations, Review and "Rerun with…".
  * Rendered with react-dom in jsdom; fetch is a stub that records every call.
  */
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
@@ -206,16 +210,25 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
     },
     ragSearch: { enabled: true, collections: [], topK: 10, rerank: true, showRelevance: true },
   };
-  const hiddenFromVisitor = ['Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Knowledge Collections (RAG)', 'Regulatory Knowledge Packs'];
+  // Online links too: the server does not fetch them for a visitor (privacy review H4, D8).
+  const hiddenFromVisitor = ['Online Regulation / Document Links', 'Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Regulatory Knowledge Packs'];
+  const COLLECTIONS = 'Knowledge Collections (RAG)';
+  const KEYWORD_WORDING = 'Searches your own Knowledge Base collections by keyword during the run';
+  const VECTOR_WORDING = 'local vector search fused with keyword matching';
 
-  it('offers a visitor the model\'s own knowledge and online links only, and calls nothing outside the demo', async () => {
+  it('offers a visitor the model\'s own knowledge and their own collections, and calls nothing outside the demo', async () => {
     as('visitor');
     await render(KnowledgeSourcePanel as ComponentType<object>, { config: everyMode, onChange: () => {}, model: GLM });
     expect(text()).toContain("The Model's Own Knowledge");
-    expect(text()).toContain('Online Regulation / Document Links');
     for (const title of hiddenFromVisitor) expect(text(), title).not.toContain(title);
-    expect(called('/api/collections')).toBe(false);
     expect(called('/api/knowledge-packs')).toBe(false);
+    // Opened 2026-10-02: the visitor's own collections (GET /collections is
+    // open to them; the run searches them by keyword only — routes/claude.ts),
+    // described as the keyword search it is.
+    expect(text()).toContain(COLLECTIONS);
+    expect(text()).toContain(KEYWORD_WORDING);
+    expect(text()).not.toContain(VECTOR_WORDING);
+    expect(called('/api/collections')).toBe(true);
   });
 
   it('negative controls: an admin on the demo and everyone on an ordinary server see every mode', async () => {
@@ -223,7 +236,10 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
       await fresh();
       as(who);
       await render(KnowledgeSourcePanel as ComponentType<object>, { config: everyMode, onChange: () => {}, model: GLM });
-      for (const title of hiddenFromVisitor) expect(text(), `${who}: ${title}`).toContain(title);
+      for (const title of [...hiddenFromVisitor, COLLECTIONS]) expect(text(), `${who}: ${title}`).toContain(title);
+      // Their documents are embedded: the card says vector search.
+      expect(text(), who).toContain(VECTOR_WORDING);
+      expect(text(), who).not.toContain(KEYWORD_WORDING);
       expect(called('/api/collections'), who).toBe(true);
       expect(called('/api/knowledge-packs'), who).toBe(true);
     }
@@ -233,12 +249,13 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
 // ── 4. Home ──────────────────────────────────────────────────────────────
 
 describe('Home (HomeV2)', () => {
-  it('gives a visitor the module catalogue — no Pathfinder, 5-Minute Brief, deadline adding or agents', async () => {
+  it('gives a visitor the module catalogue and the 5-Minute Brief — no Pathfinder, deadline adding or agents', async () => {
     as('visitor');
     await render(HomeV2 as ComponentType<object>);
     expect(text()).not.toContain('Pathfinder · search that thinks');
     expect(container.querySelector('input[placeholder="Search that thinks before it answers…"]')).toBeNull();
-    expect(text()).not.toContain('5-Minute Brief');
+    // Opened to visitors: the Brief runs on an offered model.
+    expect(text()).toContain('5-Minute Brief');
     expect(text()).not.toContain('Add deadline');
     expect(text()).not.toContain('Agent status');
     expect(text()).not.toContain('ask Pathfinder');
@@ -273,14 +290,15 @@ describe('ExportBar under an answer', () => {
     sessionId: 's1', onReframe: () => {}, moduleContext: 'Risk assessment', entityId: 's1', moduleId: 'risk-assessment',
   };
 
-  it('offers a visitor the exports, not Share, the quality stars or Explain-for', async () => {
+  it('offers a visitor the exports and Explain-for, not Share or the quality stars', async () => {
     as('visitor');
     await render(ExportBar as ComponentType<object>, props);
     expect(button('.md')).toBeDefined();
     expect(button('Explain Differently')).toBeDefined(); // a normal run, allowed
     expect(button('export.share')).toBeUndefined();
     expect(text()).not.toContain('Rate output quality');
-    expect(button('Rewrite this output for a different audience')).toBeUndefined();
+    // POST /claude/explain-for is one of the demo's Work routes now.
+    expect(button('Rewrite this output for a different audience')).toBeDefined();
   });
 
   it('negative controls: an admin and an ordinary server keep Share, the stars and Explain-for', async () => {
@@ -306,8 +324,10 @@ describe('OutputToolbar under an answer', () => {
     as('visitor');
     await render(OutputToolbar as ComponentType<object>, props);
     const labels = chipLabels();
-    for (const gone of ['Citations', 'Review', 'Rerun with…', 'Export run', 'Evidence', 'Save']) expect(labels, gone).not.toContain(gone);
-    for (const kept of ['Trust Score', 'Provenance', 'Thinking', 'History', 'Feedback', 'Certificate']) expect(labels, kept).toContain(kept);
+    for (const gone of ['Export run', 'Evidence', 'Save']) expect(labels, gone).not.toContain(gone);
+    for (const kept of ['Trust Score', 'Provenance', 'Citations', 'Review', 'Thinking', 'History', 'Rerun with…', 'Feedback', 'Certificate']) {
+      expect(labels, kept).toContain(kept);
+    }
     await click(button('Certificate'));
     expect(text()).toContain('Download Trust Certificate');
     expect(text()).not.toContain('reusable custom module');

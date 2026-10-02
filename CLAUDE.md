@@ -357,7 +357,7 @@ No class components. No `this`. Use hooks.
 
 **Light theme by default** (as of v0.7.5). Three themes: `light`, `dark`, `corporate`. Theme variables live in `src/index.css` as OKLCH CSS custom properties and switch via `html.light` / `html.corporate` classes. The dark theme is the original ANTON look; light is for daytime professionals; corporate is a blue-tinted variant for enterprise deployments.
 
-The brand green (`#0D7D6C` — light-mode deep teal) is **locked** in the logo SVG (`public/anton-logo.svg`), the Sidebar logo box, and the LoginPage logo so the brand mark stays consistent across themes.
+The brand mark is the **chevron mark**: three white chevrons rising in opacity on the brand green (`#0D7D6C` — light-mode deep teal), the geometry of the phone apps' launcher icons (`logo_app/`). It is **locked** in `public/anton-logo.svg` (the browser tab icon) and `src/components/shared/AntonMark.tsx` (the Sidebar, the login page and the invitation page) so it stays the same across themes.
 
 Reference palette (dark-mode hex values, light/corporate use OKLCH equivalents in `src/index.css`):
 

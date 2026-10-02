@@ -10,6 +10,7 @@ import {
   CheckCircle, Circle, Loader2, Search, Filter, FolderOpen, Link2
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { useEngagementDemo } from '@/components/engagement/engagement-demo';
 
 interface Engagement {
   id: string;
@@ -76,11 +77,16 @@ export default function EngagementListPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState<'all' | 'personal' | 'in-project'>('all');
   const [linkingEngId, setLinkingEngId] = useState<string | null>(null);
+  // Public demo: projects are not offered to visitors, so neither is linking to one.
+  const demo = useEngagementDemo();
 
   useEffect(() => {
     loadEngagements();
-    loadProjects();
   }, []);
+
+  useEffect(() => {
+    if (!demo.restricted) loadProjects();
+  }, [demo.restricted]);
 
   async function loadProjects() {
     try {
@@ -177,6 +183,7 @@ export default function EngagementListPage() {
       </div>
 
       {/* Filter tabs */}
+      {!demo.restricted && (
       <div className="flex items-center gap-1 border-b border-border pb-3">
         {(['all', 'personal', 'in-project'] as const).map(f => (
           <button
@@ -192,6 +199,7 @@ export default function EngagementListPage() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Engagement list */}
       {loading ? (
@@ -268,6 +276,7 @@ export default function EngagementListPage() {
                     >
                       <Archive className="h-4 w-4" />
                     </button>
+                    {!demo.restricted && (
                     <div className="relative">
                       <button
                         onClick={e => { e.stopPropagation(); setLinkingEngId(linkingEngId === eng.id ? null : eng.id); }}
@@ -305,6 +314,7 @@ export default function EngagementListPage() {
                         </div>
                       )}
                     </div>
+                    )}
                     <ChevronRight className="h-5 w-5 text-adv-teal" />
                   </div>
                 </div>

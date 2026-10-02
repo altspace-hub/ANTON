@@ -7,6 +7,24 @@ import { createProjectWorkspace, deleteProjectWorkspace } from '../services/work
 import { safeError } from '../lib/error-response.js';
 import { resolveProjectAccess } from '../services/project-context.js';
 import { scopesToOwner, assertOwned } from '../middleware/ownership.js';
+import { isDemoVisitor, DEMO_MAX_PROJECTS } from '../services/rag/demo-storage.js';
+
+/** Text limits for a project's fields: rows in a database every member (and, on a demo, every visitor) shares. */
+const MAX_NAME = 200;
+const MAX_DESCRIPTION = 5000;
+/** A status is a short word ('active', 'archived', 'deleted', ...). */
+const STATUS_RE = /^[a-z_]{1,30}$/;
+
+/**
+ * A project row as the API returns it: without workspace_path. The path is a
+ * server directory (derivable from WORKSPACES_DIR and the id, and read by no
+ * client), and the Open Chat project picker took a row that carries one for a
+ * Code Studio project and left every Work project out of its list.
+ */
+function publicProject<T extends Record<string, unknown>>(row: T): Omit<T, 'workspace_path'> {
+  const { workspace_path: _path, ...rest } = row;
+  return rest;
+}
 
 export async function createProjectRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -80,7 +98,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
            ORDER BY p.updated_at DESC`
         );
       }
-      res.json(projects);
+      res.json((projects as Array<Record<string, unknown>>).map(publicProject));
     } catch (error) {
       console.error('[projects] Failed to fetch projects:', error);
       res.status(500).json({ error: 'Failed to fetch projects' });
@@ -93,19 +111,33 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       // No request body in the log: a project name or description is client data,
       // and on a shared server the log is read by people who are not in the project.
       console.log('[projects] Creating project');
-      const { name, description, template_id } = req.body as { name: string; description?: string; template_id?: string };
+      const { name, description, template_id } = req.body as { name?: unknown; description?: unknown; template_id?: unknown };
 
-      if (!name?.trim()) {
-        console.log('[projects] Validation failed: name is required');
+      if (typeof name !== 'string' || !name.trim()) {
         res.status(400).json({ error: 'name is required' });
         return;
+      }
+      if (name.trim().length > MAX_NAME
+        || (description !== undefined && description !== null && (typeof description !== 'string' || description.length > MAX_DESCRIPTION))
+        || (template_id !== undefined && template_id !== null && (typeof template_id !== 'string' || template_id.length > 100))) {
+        res.status(400).json({ error: `name (${MAX_NAME} characters at most) and description (${MAX_DESCRIPTION}) must be text` });
+        return;
+      }
+
+      // A demo visitor's projects are capped: each makes a directory tree on
+      // the disk every visitor shares. Soft-deleted ones count — their folders stay.
+      if (isDemoVisitor(req)) {
+        const mine = await db.get<{ n: number | string }>('SELECT COUNT(*) AS n FROM projects WHERE user_id = ?', [getUserId(req)]);
+        if (Number(mine?.n ?? 0) >= DEMO_MAX_PROJECTS) {
+          res.status(409).json({ error: `This demo account has reached its limit of ${DEMO_MAX_PROJECTS} projects. Delete one to make another.` });
+          return;
+        }
       }
 
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       // Create workspace folders
-      console.log('[projects] Creating workspace for project:', id);
       const workspace = await createProjectWorkspace(id);
 
       // Insert into database with workspace_path. user_id records the creator —
@@ -114,7 +146,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       const creatorId = getUserId(req);
       await db.run(
         'INSERT INTO projects (id, name, description, template_id, workspace_path, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      , id, name.trim(), description || null, template_id || null, workspace.root, creatorId, now, now);
+      , id, name.trim(), (typeof description === 'string' && description) || null, (typeof template_id === 'string' && template_id) || null, workspace.root, creatorId, now, now);
 
       // Auto-add creator as project owner
       try {
@@ -125,19 +157,17 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
         // Ignore if user table FK fails in solo mode
       }
 
-      console.log('[projects] ✅ Project created successfully:', id);
       res.json({
         id,
         name: name.trim(),
-        description: description || null,
+        description: (typeof description === 'string' && description) || null,
         status: 'active',
         session_count: 0,
-        workspace_path: workspace.root,
         created_at: now,
         updated_at: now
       });
     } catch (error) {
-      console.error('[projects] ❌ Project creation failed:', error);
+      console.error('[projects] Project creation failed:', error instanceof Error ? error.message : 'error');
       res.status(500).json({ error: 'Failed to create project' });
     }
   });
@@ -156,7 +186,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       const sessions = await db.all(
         'SELECT id, module_id, title, summary, config, created_at, updated_at, project_id FROM sessions WHERE project_id = ? ORDER BY updated_at DESC'
       , req.params.id);
-      res.json({ ...project as object, sessions });
+      res.json({ ...publicProject(project as Record<string, unknown>), sessions });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch project' });
     }
@@ -213,14 +243,24 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
   // PATCH /api/projects/:id — membership is already checked by the gate above.
   router.patch('/projects/:id', async (req, res) => {
     try {
-      const body = req.body as { name?: unknown; description?: string; status?: string };
-      const { description, status } = body;
+      const body = req.body as { name?: unknown; description?: unknown; status?: unknown };
       // A non-string name used to reach name.trim() and 500.
-      if (body.name !== undefined && typeof body.name !== 'string') {
-        res.status(400).json({ error: 'name must be a string' });
+      if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > MAX_NAME)) {
+        res.status(400).json({ error: `name must be text of 1 to ${MAX_NAME} characters` });
+        return;
+      }
+      if (body.description !== undefined && body.description !== null
+        && (typeof body.description !== 'string' || body.description.length > MAX_DESCRIPTION)) {
+        res.status(400).json({ error: `description must be text of at most ${MAX_DESCRIPTION} characters` });
+        return;
+      }
+      if (body.status !== undefined && (typeof body.status !== 'string' || !STATUS_RE.test(body.status))) {
+        res.status(400).json({ error: 'status must be a short word such as active or archived' });
         return;
       }
       const name = body.name as string | undefined;
+      const description = body.description as string | null | undefined;
+      const status = body.status as string | undefined;
       if (scopesToOwner(req)) {
         const role = await projectRoleOf(String(req.params.id), getUserId(req));
         // A viewer reads the project; a rename changes it for every member.
@@ -269,22 +309,21 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      console.log('[projects] Deleting project:', projectId);
-
       // Delete workspace folder — belt and braces: never for an id that is not a
       // plain directory name, even though every insert path generates the id.
       if (projectId === path.basename(projectId) && projectId !== '.' && projectId !== '..') {
         await deleteProjectWorkspace(projectId);
       }
 
-      // Unlink sessions before deleting
+      // Unlink sessions before deleting; the knowledge-source entry for the
+      // project's upload folder goes with the folder.
       await db.run('UPDATE sessions SET project_id = NULL WHERE project_id = ?', projectId);
+      await db.run('DELETE FROM registered_folders WHERE project_id = ?', projectId);
       await db.run('DELETE FROM projects WHERE id = ?', projectId);
 
-      console.log('[projects] ✅ Project deleted successfully:', projectId);
       res.json({ ok: true });
     } catch (error) {
-      console.error('[projects] ❌ Project deletion failed:', error);
+      console.error('[projects] Project deletion failed:', error instanceof Error ? error.message : 'error');
       res.status(500).json({ error: 'Failed to delete project' });
     }
   });

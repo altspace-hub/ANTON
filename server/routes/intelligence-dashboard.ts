@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { createInsightsGenerator } from '../services/insights-generator.js';
+import { createInsightsGenerator, parseInsightTimeRange, timeRangeSql } from '../services/insights-generator.js';
+import { publicErrorMessage } from '../lib/error-response.js';
+import { modelCallErrorStatus } from '../services/side-route-model.js';
 import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
 import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
 import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
@@ -218,37 +220,41 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // GET /api/intelligence/insights — generate AI insights from atoms
+  // GET /api/intelligence/insights — generate AI insights from atoms. A model
+  // call (the utility model), so index.ts puts it behind the model-call limiter
+  // and the budget check; its tokens count against the caller's monthly budget.
+  // A failed call answers with the reason the person may read (a daily cap).
   router.get('/intelligence/insights', async (req, res) => {
     try {
-      const timeRange = (req.query.timeRange as string) || 'week';
-      const category = req.query.category as string | undefined;
-      const areaId = req.query.areaId as string | undefined;
+      const timeRange = parseInsightTimeRange(req.query.timeRange) ?? 'week';
+      const category = typeof req.query.category === 'string' ? req.query.category.slice(0, 100) : undefined;
+      const areaId = typeof req.query.areaId === 'string' ? req.query.areaId.slice(0, 100) : undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
 
       // The atoms sent to the model are the caller's own + shared ones: the
       // insights, and the supporting atom ids returned with them, quote them.
       const generatedInsights = await insights.generateInsights({
-        timeRange: timeRange as any,
+        timeRange,
         category,
         areaId,
         limit,
         scope: searchScopeForRequest(req),
+        chargeUser: req.user ?? null,
       });
 
       res.json({ insights: generatedInsights });
     } catch (error: unknown) {
-      console.error('[intelligence/insights]', error);
-      res.status(500).json({ error: errMsg(error) });
+      console.error('[intelligence/insights]', error instanceof Error ? error.message : error);
+      res.status(modelCallErrorStatus(error)).json({ error: publicErrorMessage(error) });
     }
   });
 
   // GET /api/intelligence/distribution — atom distribution by category
   router.get('/intelligence/distribution', async (req, res) => {
     try {
-      const timeRange = (req.query.timeRange as string) || 'week';
+      const timeRange = parseInsightTimeRange(req.query.timeRange) ?? 'week';
       const distribution = await insights.getAtomDistribution({
-        timeRange: timeRange as 'day' | 'week' | 'month' | 'all',
+        timeRange,
         scope: searchScopeForRequest(req),
       });
       res.json(distribution);
@@ -286,8 +292,9 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/export', async (req, res) => {
     try {
       const format = (req.query.format as string) || 'json';
-      const timeRange = req.query.timeRange as string | undefined;
-      const category = req.query.category as string | undefined;
+      // A known range or none: the INTERVAL is written from a fixed table.
+      const timeRange = parseInsightTimeRange(req.query.timeRange);
+      const category = typeof req.query.category === 'string' ? req.query.category : undefined;
 
       // Build query — own + shared atoms in team mode (up to 1000 with content,
       // so this was the widest copy of every user's atoms on the server).
@@ -295,15 +302,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       let query = `SELECT * FROM knowledge_atoms WHERE is_active = 1${owner.sql}`;
       const queryParams: any[] = [...owner.params];
 
-      if (timeRange) {
-        const timeMap = {
-          day: '1 day',
-          week: '7 days',
-          month: '30 days',
-          all: '365 days',
-        };
-        query += ` AND created_at >= NOW() - INTERVAL '${timeMap[timeRange as keyof typeof timeMap]}'`;
-      }
+      query += timeRangeSql(timeRange);
 
       if (category) {
         query += ' AND category = ?';

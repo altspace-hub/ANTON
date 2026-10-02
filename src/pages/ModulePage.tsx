@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, useSearchParams, Navigate } from 'react-router-dom';
+import { useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { MODULES, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
 import { RIGHTS_ADVICE_AREAS as RIGHTS_DISCLAIMER_AREAS } from '@/lib/advice-boundary-areas';
 import type { KnowledgeSourceConfig, KnowledgeLibraryEntry } from '@/lib/types';
@@ -61,6 +61,8 @@ import { useConfigStore } from '@/stores/useConfigStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
+import { findSensitiveInput, textsOfInputs, describeSensitiveKinds, type SensitiveFinding } from '@/lib/sensitive-input-check';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
@@ -101,7 +103,37 @@ You do NOT make compliance decisions, give legal advice, or replace professional
 You provide analysis, structured information, and decision support to human experts who retain full professional responsibility for all compliance and legal conclusions.
 Every output must include appropriate caveats where decisions depend on facts or legal interpretation not visible in this analysis.`;
 
+/**
+ * A module the public demo keeps off (DEMO_HIDDEN_MODULES / DEMO_HIDDEN_AREAS;
+ * privacy review H3), opened by a visitor from a typed or old link: a short
+ * note instead of the module. Nothing of the module is loaded, and its name
+ * is not shown. The server refuses to run it for a visitor in any case.
+ */
+function DemoModuleNotOffered() {
+  return (
+    <div className="flex h-full items-center justify-center p-6">
+      <div role="status" className="max-w-md rounded-xl border border-border bg-adv-card p-6 text-center">
+        <p className="text-base font-medium text-adv-off-white">This module is not offered on this demo.</p>
+        <p className="mt-2 text-sm text-adv-gray">
+          The demo leaves out modules that invite health, employment, credit or criminal-offence data.
+        </p>
+        <Link to="/" className="mt-4 inline-block text-sm font-medium text-adv-teal hover:underline">
+          Back to the modules
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function ModulePage() {
+  const { moduleId } = useParams<{ moduleId: string }>();
+  const { moduleHidden } = useDemoCatalogue();
+  // Checked before the workspace mounts, so none of its loading runs.
+  if (moduleHidden(moduleId)) return <DemoModuleNotOffered />;
+  return <ModuleWorkspace />;
+}
+
+function ModuleWorkspace() {
   const { t, i18n } = useTranslation();
   const { moduleId } = useParams<{ moduleId: string }>();
   const [searchParams] = useSearchParams();
@@ -154,6 +186,12 @@ export default function ModulePage() {
   }, [messages]);
 
   const [userInput, setUserInput] = useState('');
+  // Public demo (privacy review H3): what in the visitor's text looks like
+  // real personal data, shown before anything is sent; and what they have
+  // already confirmed is made up, so it is not asked about again.
+  const [sensitiveFindings, setSensitiveFindings] = useState<SensitiveFinding[] | null>(null);
+  const confirmedSensitiveRef = useRef<Set<string>>(new Set());
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showSources, setShowSources] = useState(false); // ATTR-05
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -695,13 +733,27 @@ export default function ModulePage() {
   const blockingInputs = messages.length === 0 ? missingRequiredInputs : [];
   const showMissingInputsNotice = runBlockedOnInputs && blockingInputs.length > 0;
 
-  const handleRun = () => {
+  /** `confirmed`: the visitor has said the personal-looking details are made up or public. */
+  const handleRun = (confirmed = false) => {
     if (!userInput.trim()) return;
     if (blockingInputs.length > 0) {
       setRunBlockedOnInputs(true);
       return;
     }
     setRunBlockedOnInputs(false);
+    // A demo visitor's text is checked for a personnummer, email addresses and
+    // phone numbers before it is sent; they confirm, or edit it first.
+    if (demoLimited) {
+      const key = (f: SensitiveFinding) => `${f.kind}:${f.match}`;
+      const findings = findSensitiveInput([userInput, ...textsOfInputs(moduleInputs)])
+        .filter((f) => !confirmedSensitiveRef.current.has(key(f)));
+      if (findings.length > 0 && confirmed !== true) {
+        setSensitiveFindings(findings);
+        return;
+      }
+      findings.forEach((f) => confirmedSensitiveRef.current.add(key(f)));
+    }
+    setSensitiveFindings(null);
     setLearnOffered(false);
     setLearnDone(false);
     runMessage(userInput.trim());
@@ -936,7 +988,7 @@ export default function ModulePage() {
           <div className="space-y-3">
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <label className="block text-sm font-medium text-adv-off-white">
+                <label htmlFor="module-prompt" className="block text-sm font-medium text-adv-off-white">
                   {messages.length === 0 ? t('module.describeTask') : t('module.followUp')}
                 </label>
                 {/* "Try an example" chip — fills the task box (+ guided inputs) with the module's worked example */}
@@ -958,13 +1010,18 @@ export default function ModulePage() {
               </div>
               <div className="relative">
                 <textarea
+                  id="module-prompt"
+                  ref={promptInputRef}
                   value={userInput}
+                  aria-describedby={demoLimited ? 'demo-data-warning' : undefined}
                   onChange={(e) => {
                     const newVal = e.target.value;
                     // Reset banner dismissed state when input changes significantly (>20 chars diff)
                     if (bannerDismissed && Math.abs(newVal.length - bannerDismissedAtLength) > 20) {
                       setBannerDismissed(false);
                     }
+                    // An edited text is checked again when it is sent.
+                    if (sensitiveFindings) setSensitiveFindings(null);
                     setUserInput(newVal);
                   }}
                   onKeyDown={(e) => {
@@ -986,7 +1043,9 @@ export default function ModulePage() {
                   className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                   rows={4}
                 />
-                {isSpeechSupported && (
+                {/* Not on a demo (privacy review M5, D9): the browser's speech
+                    recognition may send the audio to the browser's maker. */}
+                {isSpeechSupported && !demoLimited && (
                   <button
                     type="button"
                     onClick={isListening ? stopListening : startListening}
@@ -1001,6 +1060,45 @@ export default function ModulePage() {
                   </button>
                 )}
               </div>
+              {demoLimited && (
+                <p id="demo-data-warning" className="mt-1.5 text-sm text-adv-gold">
+                  Demo: don&apos;t enter real personal or client data.
+                </p>
+              )}
+              {demoLimited && sensitiveFindings && sensitiveFindings.length > 0 && (
+                <div role="alert" className="mt-2 rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2.5 text-sm text-adv-off-white">
+                  <p>
+                    Your text seems to contain {describeSensitiveKinds(sensitiveFindings)}:{' '}
+                    {sensitiveFindings.slice(0, 3).map((f, i) => (
+                      <span key={`${f.kind}:${f.match}`}>
+                        {i > 0 && ', '}
+                        <code className="rounded bg-adv-dark px-1">{f.match}</code>
+                      </span>
+                    ))}
+                    {sensitiveFindings.length > 3 && ' …'}
+                  </p>
+                  <p className="mt-1 text-adv-gray">
+                    This demo must not receive real personal data. Remove it or replace it with made-up details. If it is
+                    made up or public, you can send it as it is.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setSensitiveFindings(null); promptInputRef.current?.focus(); }}
+                      className="rounded-lg bg-adv-teal px-3 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                    >
+                      Edit my text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRun(true)}
+                      className="rounded-lg border border-border px-3 py-1.5 text-sm text-adv-off-white hover:border-adv-gold transition-colors"
+                    >
+                      It is made up or public: send it
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Context budget — live token breakdown */}
@@ -1061,7 +1159,7 @@ export default function ModulePage() {
                 </button>
               ) : (
                 <button
-                  onClick={handleRun}
+                  onClick={() => handleRun()}
                   disabled={!userInput.trim()}
                   className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -1459,8 +1557,10 @@ export default function ModulePage() {
           {/* Export */}
           {outputContent && !isStreaming && (
             <>
-              {/* EUAI-02: Human oversight sign-off for high-risk FCP modules */}
-              {sessionId && (OVERSIGHT_GATED_MODULES as readonly string[]).includes(moduleId ?? '') && (
+              {/* EUAI-02: Human oversight sign-off for high-risk FCP modules.
+                  Not for a demo visitor (privacy review H1, D10): the form asks
+                  for a reviewer's full name, and the demo takes no real names. */}
+              {!demoLimited && sessionId && (OVERSIGHT_GATED_MODULES as readonly string[]).includes(moduleId ?? '') && (
                 <HumanOversightGate
                   sessionId={sessionId}
                   moduleId={moduleId ?? ''}

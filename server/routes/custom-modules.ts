@@ -2,11 +2,49 @@ import { Router, type Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { randomUUID } from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
-import { safeError } from '../lib/error-response.js';
+import { JSON_ONLY_NUDGE } from '../services/adapters/provider-extras.js';
+import { extractJsonReply, isJsonObject } from '../services/coding-workspace.js';
+import { publicErrorMessage } from '../lib/error-response.js';
+import { chargeMonthlyUsage } from '../services/budget-manager.js';
 import { assertOwned, ownerFilter, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode, demoModuleHidden } from '../middleware/demo-mode.js';
+import { hasAnyModelEngine, NO_MODEL_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { modelCallErrorStatus } from '../services/side-route-model.js';
+
+/** The area a demo visitor's module goes to when the one asked for is kept off the demo. */
+const DEMO_FALLBACK_AREA = 'my-modules';
+
+/**
+ * The area to store for a module the caller writes. On a demo a visitor may
+ * not file a module under an area the demo keeps off (demoModuleHidden: health,
+ * HR, workers' rights): GET /custom-modules/:id would then answer 404 to its
+ * own owner, and the module would invite the data those areas are closed for.
+ * Such an area becomes DEMO_FALLBACK_AREA. Everyone else keeps what they sent.
+ */
+function areaForCaller(req: OwnedRequest, area: unknown): string | null {
+  if (typeof area !== 'string' || !area.trim()) return null;
+  const value = area.trim().slice(0, 100);
+  if (isDemoMode() && req.user?.role !== 'admin' && demoModuleHidden(null, value)) return DEMO_FALLBACK_AREA;
+  return value;
+}
+
+/** Guided-builder turns sent to the model: the last ones only, each bounded. */
+const GUIDE_MAX_TURNS = 30;
+const GUIDE_MAX_TURN_CHARS = 8_000;
+
+/** The conversation as the client sent it, cleaned: user/assistant turns of text, the latest GUIDE_MAX_TURNS. */
+function guideTurns(messages: unknown): Array<{ role: 'user' | 'assistant'; content: string }> {
+  if (!Array.isArray(messages)) return [];
+  return messages
+    .filter((m): m is { role: 'user' | 'assistant'; content: string } =>
+      !!m && typeof m === 'object'
+      && ((m as { role?: unknown }).role === 'user' || (m as { role?: unknown }).role === 'assistant')
+      && typeof (m as { content?: unknown }).content === 'string')
+    .slice(-GUIDE_MAX_TURNS)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, GUIDE_MAX_TURN_CHARS) }));
+}
 
 const GUIDE_SYSTEM_PROMPT = `You are a friendly AI module designer helping users create custom Claude modules tailored to their specific tasks.
 
@@ -58,6 +96,11 @@ executive-summary, decision-memo, detailed-findings, regulatory-comparison, impa
 
 Choose area based on the domain. Common area IDs: financial-crime-prevention, legal-compliance, risk-management, banking-finance, technology, marketing-communications, hr-talent, strategy-consulting, legal-general, tax, data-analytics, startups-entrepreneurship, education, healthcare, coding, my-modules`;
 
+/** The generator's reply must be one JSON object with at least a name and a system prompt. */
+function isModuleConfig(value: unknown): boolean {
+  return isJsonObject(value) && typeof value.name === 'string' && typeof value.system_prompt === 'string';
+}
+
 /**
  * Whether the caller may read one custom module: its owner, an admin, anyone in
  * solo mode, or anyone once it is shared with the community. A row the caller
@@ -76,13 +119,51 @@ export async function canReadCustomModule(db: DatabaseAdapter, req: OwnedRequest
 }
 
 /**
+ * Demo mode: whether a visitor (a non-admin) must not see this custom module,
+ * because its id or its area is kept off the demo (demoModuleHidden, the same
+ * rule as the built-in catalogue in routes/modules.ts and the run route). An
+ * admin, and everyone outside demo mode, sees it.
+ */
+function hiddenFromDemoVisitor(req: OwnedRequest, row: { id?: unknown; area?: unknown }): boolean {
+  if (!isDemoMode() || req.user?.role === 'admin') return false;
+  return demoModuleHidden(
+    typeof row.id === 'string' ? row.id : null,
+    typeof row.area === 'string' ? row.area : null,
+  );
+}
+
+/**
  * Custom modules belong to the person who made them (custom_modules.user_id,
  * migration 290). In team mode a user lists their own, reads their own plus the
  * community-shared ones, and only the owner or an admin may edit, delete or
  * share one: a module's system prompt is what everyone who runs it gets, so it
  * is not everyone's to rewrite. Solo mode is not scoped.
  */
-export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
+/**
+ * Bounds on what a module stores. POST and PATCH are open to demo visitors,
+ * and every other route that stores a visitor's bytes has a bound (versions,
+ * uploads); without one a single request stored an 11 MB prompt.
+ */
+const MODULE_FIELD_LIMITS: ReadonlyArray<readonly [field: string, max: number]> = [
+  ['name', 200], ['short_name', 50], ['description', 2_000], ['icon', 50], ['area', 100], ['system_prompt', 100_000],
+];
+const MODULE_CONFIG_MAX_CHARS = 200_000;
+/** Modules one demo visitor may keep. */
+const DEMO_MODULES_PER_ACCOUNT = 50;
+
+/** Why a module body is too large to store, or null. */
+export function moduleSizeProblem(body: Record<string, unknown>): string | null {
+  for (const [field, max] of MODULE_FIELD_LIMITS) {
+    const v = body[field];
+    if (typeof v === 'string' && v.length > max) return `${field} is too long (at most ${max.toLocaleString('en-GB')} characters).`;
+  }
+  if (body.config !== undefined && JSON.stringify(body.config ?? {}).length > MODULE_CONFIG_MAX_CHARS) {
+    return `config is too large (at most ${MODULE_CONFIG_MAX_CHARS.toLocaleString('en-GB')} characters).`;
+  }
+  return null;
+}
+
+export async function createCustomModuleRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   const ownedModule = (req: OwnedRequest, res: Response, id: string) =>
@@ -110,7 +191,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
     try {
       if (!(await canReadCustomModule(db, req, req.params.id))) return res.status(404).json({ error: 'Not found' });
       const m = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
-      if (!m) return res.status(404).json({ error: 'Not found' });
+      if (!m || hiddenFromDemoVisitor(req, m)) return res.status(404).json({ error: 'Not found' });
       res.json({ ...m, config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch custom module' });
@@ -133,6 +214,14 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       if (!name?.trim()) {
         return res.status(400).json({ error: 'name is required' });
       }
+      const tooLarge = moduleSizeProblem(req.body as Record<string, unknown>);
+      if (tooLarge) return res.status(413).json({ error: tooLarge });
+      if (isDemoMode() && req.user?.role !== 'admin') {
+        const n = await db.get<{ n: number | string }>('SELECT COUNT(*) AS n FROM custom_modules WHERE user_id = ?', req.user?.id ?? '');
+        if (Number(n?.n ?? 0) >= DEMO_MODULES_PER_ACCOUNT) {
+          return res.status(409).json({ error: `This demo account already has ${DEMO_MODULES_PER_ACCOUNT} modules. Delete one before saving another.` });
+        }
+      }
 
       const id = `custom-${randomUUID().slice(0, 8)}`;
       const now = new Date().toISOString();
@@ -146,7 +235,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         (short_name || name).trim().slice(0, 20),
         description || '',
         icon || 'Puzzle',
-        area || 'custom',
+        areaForCaller(req, area) ?? 'custom',
         system_prompt || '',
         JSON.stringify(config || {}),
         now,
@@ -167,6 +256,8 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       if (!(await ownedModule(req, res, req.params.id))) return;
 
       const { name, short_name, description, icon, area, system_prompt, config } = req.body as Record<string, unknown>;
+      const tooLarge = moduleSizeProblem(req.body as Record<string, unknown>);
+      if (tooLarge) return res.status(413).json({ error: tooLarge });
       const now = new Date().toISOString();
 
       await db.run(`
@@ -185,7 +276,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         short_name || null,
         description || null,
         icon || null,
-        area || null,
+        areaForCaller(req, area),
         system_prompt || null,
         config ? JSON.stringify(config) : null,
         now,
@@ -205,6 +296,10 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       if (!(await ownedModule(req, res, req.params.id))) return;
       const result = await db.run(`DELETE FROM custom_modules WHERE id = ?`, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
+      // The copies Build Module saved on every save (POST /versions/module/:id)
+      // go with it: a visitor cannot list or delete them, and deleting the
+      // module is how they remove what they wrote.
+      await db.run(`DELETE FROM versions WHERE entity_type = 'module' AND entity_id = ?`, req.params.id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete custom module' });
@@ -232,10 +327,11 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   });
 
   // GET /api/modules/community — return all community-shared custom modules
-  router.get('/modules/community', async (_req, res) => {
+  // (on a demo, a visitor gets none whose id or area is kept off the demo)
+  router.get('/modules/community', async (req, res) => {
     try {
       const modules = await db.all(`SELECT * FROM custom_modules WHERE is_shared_with_community = 1 ORDER BY updated_at DESC`) as Record<string, unknown>[];
-      res.json(modules.map((m) => ({
+      res.json(modules.filter((m) => !hiddenFromDemoVisitor(req, m)).map((m) => ({
         ...m,
         config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config,
       })));
@@ -245,98 +341,123 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   });
 
   // POST /api/custom-modules/guide-message — AI-guided module builder: one chat turn
+  // The model calls below go through provider-router on the configured
+  // engine. They were gated on an Anthropic client, built only from
+  // ANTHROPIC_API_KEY, and answered 503 on a server whose engine is an
+  // OpenAI-compatible endpoint — for an administrator too.
   router.post('/custom-modules/guide-message', async (req, res) => {
-    if (!anthropic) {
-      return res.status(503).json({ error: 'AI service not configured' });
+    if (!hasAnyModelEngine()) {
+      return res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
     }
     const { messages, userMessage } = req.body as {
-      messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-      userMessage: string;
+      messages?: unknown;
+      userMessage?: unknown;
     };
-    if (!userMessage?.trim()) {
+    if (typeof userMessage !== 'string' || !userMessage.trim()) {
       return res.status(400).json({ error: 'userMessage is required' });
     }
     try {
       const allMessages = [
-        ...messages,
-        { role: 'user' as const, content: userMessage.trim() },
+        ...guideTurns(messages),
+        { role: 'user' as const, content: userMessage.trim().slice(0, GUIDE_MAX_TURN_CHARS) },
       ];
       const result = await callChat({
         model: await getRoutedUtilityModel(db),
         maxTokens: 512,
         system: GUIDE_SYSTEM_PROMPT,
         messages: allMessages,
+        db,
+        purpose: 'module-builder-guide',
       });
+      await chargeMonthlyUsage(db, req.user, result.inputTokens, result.outputTokens);
       res.json({ response: result.text });
     } catch (err) {
-      const msg = safeError(err);
-      res.status(500).json({ error: msg });
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 
   // POST /api/custom-modules/guide-generate — generate module config JSON from conversation
   router.post('/custom-modules/guide-generate', async (req, res) => {
-    if (!anthropic) {
-      return res.status(503).json({ error: 'AI service not configured' });
+    if (!hasAnyModelEngine()) {
+      return res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
     }
-    const { messages } = req.body as {
-      messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-    };
-    if (!messages?.length) {
+    const turns = guideTurns((req.body as { messages?: unknown }).messages);
+    if (turns.length === 0) {
       return res.status(400).json({ error: 'messages are required' });
     }
     try {
-      const conversationSummary = messages
+      const conversationSummary = turns
         .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
         .join('\n\n');
-      const result = await callChat({
+      const ask = (system: string) => callChat({
         model: mapModelToProvider('claude-sonnet-4-6'),
         maxTokens: 2048,
-        system: GENERATE_SYSTEM_PROMPT,
+        system,
         messages: [
           {
             role: 'user',
             content: `Here is the discovery conversation:\n\n${conversationSummary}\n\nGenerate the module configuration JSON now.`,
           },
         ],
-      });
-      const text = result.text.trim();
-      // Strip any accidental markdown fences
-      const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      const moduleConfig = JSON.parse(cleaned);
+        jsonMode: true,
+        db,
+        purpose: 'module-builder-generate',
+      }).then(async (r) => { await chargeMonthlyUsage(db, req.user, r.inputTokens, r.outputTokens); return r; });
+      // A reply with prose, reasoning or a fence around the JSON is read
+      // (extractJsonReply), and one with no usable object is asked once more
+      // for JSON only. A strict JSON.parse failed on GLM, DeepSeek and Kimi
+      // replies that carried any text beside the object.
+      let reply = extractJsonReply((await ask(GENERATE_SYSTEM_PROMPT)).text, isModuleConfig);
+      if (!reply || !isModuleConfig(reply.value)) {
+        reply = extractJsonReply((await ask(GENERATE_SYSTEM_PROMPT + JSON_ONLY_NUDGE)).text, isModuleConfig);
+      }
+      if (!reply || !isModuleConfig(reply.value)) {
+        return res.status(502).json({ error: 'The model did not return a module configuration. Try Generate again.' });
+      }
+      const moduleConfig = reply.value as Record<string, unknown>;
+      // A demo visitor's module never lands in an area the demo keeps off.
+      if (isDemoMode() && req.user?.role !== 'admin' && typeof moduleConfig.area === 'string'
+        && demoModuleHidden(null, moduleConfig.area)) {
+        moduleConfig.area = DEMO_FALLBACK_AREA;
+      }
       res.json({ moduleConfig });
     } catch (err) {
-      const msg = safeError(err);
-      res.status(500).json({ error: msg });
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 
   // POST /api/custom-modules/test-run — non-streaming preview with Haiku
   router.post('/custom-modules/test-run', async (req, res) => {
-    if (!anthropic) return res.status(503).json({ error: 'AI service not configured' });
+    if (!hasAnyModelEngine()) return res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
     const { systemPrompt, referenceOutput, testQuery, knowledgeLibraryIds } = req.body as {
-      systemPrompt: string;
-      referenceOutput?: string;
-      testQuery: string;
-      knowledgeLibraryIds?: string[];
+      systemPrompt?: unknown;
+      referenceOutput?: unknown;
+      testQuery?: unknown;
+      knowledgeLibraryIds?: unknown;
     };
-    if (!testQuery?.trim()) return res.status(400).json({ error: 'testQuery is required' });
-    if (!systemPrompt?.trim()) return res.status(400).json({ error: 'systemPrompt is required' });
+    if (typeof testQuery !== 'string' || !testQuery.trim()) return res.status(400).json({ error: 'testQuery is required' });
+    if (typeof systemPrompt !== 'string' || !systemPrompt.trim()) return res.status(400).json({ error: 'systemPrompt is required' });
+    // Ids of knowledge_library rows: strings only, at most 50.
+    const libraryIds = Array.isArray(knowledgeLibraryIds)
+      ? [...new Set(knowledgeLibraryIds.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 200))].slice(0, 50)
+      : [];
 
     try {
       let fullSystem = systemPrompt.trim();
 
-      // Resolve knowledge library paths for context
-      if (knowledgeLibraryIds && knowledgeLibraryIds.length > 0) {
-        const placeholders = knowledgeLibraryIds.map(() => '?').join(',');
-        const entries = await db.all(`SELECT path, label FROM knowledge_library WHERE id IN (${placeholders})`, ...knowledgeLibraryIds) as Array<{ path: string; label: string }>;
-        if (entries.length > 0) {
-          const pathList = entries.map(e => `- ${e.label}: ${e.path}`).join('\n');
-          fullSystem += `\n\n## KNOWLEDGE SOURCES\nThe following document corpora are available:\n${pathList}`;
+      // Name the knowledge corpora the module will use — their labels only.
+      // The server path of each corpus is this machine's business, not the
+      // model host's: it went into the prompt sent to the provider.
+      if (libraryIds.length > 0) {
+        const placeholders = libraryIds.map(() => '?').join(',');
+        const entries = await db.all<{ label: string }>(`SELECT label FROM knowledge_library WHERE id IN (${placeholders})`, libraryIds);
+        const labels = entries.map((e) => (typeof e.label === 'string' ? e.label.trim() : '')).filter(Boolean);
+        if (labels.length > 0) {
+          fullSystem += `\n\n## KNOWLEDGE SOURCES\nThe following document corpora are available:\n${labels.map((l) => `- ${l}`).join('\n')}`;
         }
       }
 
-      if (referenceOutput?.trim()) {
+      if (typeof referenceOutput === 'string' && referenceOutput.trim()) {
         fullSystem += `\n\n## REFERENCE OUTPUT EXAMPLE\nMatch the structure, depth, and formatting of this example:\n<reference>\n${referenceOutput.trim()}\n</reference>`;
       }
 
@@ -346,7 +467,10 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         maxTokens: 2048,
         system: fullSystem,
         messages: [{ role: 'user', content: testQuery.trim() }],
+        db,
+        purpose: 'module-builder-test-run',
       });
+      await chargeMonthlyUsage(db, req.user, result.inputTokens, result.outputTokens);
 
       res.json({
         response: result.text,
@@ -354,8 +478,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         model: resolvedModel,
       });
     } catch (err) {
-      const msg = safeError(err);
-      res.status(500).json({ error: msg });
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 

@@ -20,6 +20,67 @@ import {
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 import { useExport } from '@/hooks/useExport';
 import RunRecordPanel from '@/components/shared/RunRecordPanel';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+
+/**
+ * True for a visitor on a public demo (DEMO_MODE): the server refuses the
+ * mission hand-off for them (the missions runner is off on a demo), so the page
+ * does not offer it, and it asks for made-up details only.
+ */
+function useDemoLimited(): boolean {
+  const cfg = useDemoStore((s) => s.config);
+  const role = useAuthStore((s) => s.user?.role);
+  return demoRestricted(cfg, role);
+}
+
+/**
+ * The server's own sentence for a refused request — the monthly budget's
+ * reason (429), the demo's upload limit (413) — else `fallback`.
+ */
+async function refusalMessage(res: Response, fallback: string): Promise<string> {
+  const body = await res.json().catch(() => null) as { error?: unknown; reason?: unknown } | null;
+  const error = typeof body?.error === 'string' ? body.error : '';
+  const reason = typeof body?.reason === 'string' ? body.reason : '';
+  if (error && reason) return `${error}: ${reason}.`;
+  return error || fallback;
+}
+
+/**
+ * The sentence of a frame in which a run says something about itself — a
+ * cut-off answer ({ type: 'warning', code: 'output_truncated', message }) or
+ * something it could not do ({ type: 'notice', message }) — else null. The
+ * page used to drop these, so a truncated deliverable looked complete.
+ */
+function runNoteOf(frame: { type?: unknown; message?: unknown }): string | null {
+  if (frame.type !== 'warning' && frame.type !== 'notice') return null;
+  const message = typeof frame.message === 'string' ? frame.message.trim() : '';
+  return message ? message.slice(0, 500) : null;
+}
+
+/** `notes` with `note` added once. */
+function withNote(notes: readonly string[], note: string): string[] {
+  return notes.includes(note) ? [...notes] : [...notes, note];
+}
+
+/** What a run said about itself, shown with what it produced (as EngagementExecution does). */
+function RunNotes({ notes, className = '' }: { notes: readonly string[] | undefined; className?: string }) {
+  if (!notes || notes.length === 0) return null;
+  return (
+    <div role="status" className={`space-y-1 rounded-lg border border-adv-gold/30 bg-adv-gold/10 px-4 py-3 ${className}`}>
+      {notes.map((note) => (
+        <p key={note} className="flex items-start gap-2 text-sm text-adv-gold">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {note}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/** Shown to a demo visitor where a task is described. */
+const DEMO_TASK_NOTICE ='This is a public demo. Describe a typical or made-up case: no real names of organisations, clients or people, and no health, HR or other personal details.';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -314,6 +375,7 @@ function StepResultCard({
   onExport,
   isExporting,
   defaultExpanded = false,
+  notes,
 }: {
   result: ExecutionResult;
   /** Wave 5: the step's run record lives under `<taskId>:<stepIndex>`. */
@@ -321,6 +383,8 @@ function StepResultCard({
   onExport: (format: string, content: string, filename: string) => void;
   isExporting: boolean;
   defaultExpanded?: boolean;
+  /** What this step's run said about itself (a cut-off answer, something it could not do). */
+  notes?: readonly string[];
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [activeTab, setActiveTab] = useState<'output' | 'thinking'>('output');
@@ -381,6 +445,9 @@ function StepResultCard({
           <ChevronDown className={`h-4 w-4 text-adv-gray transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
+
+      {/* What the run said about itself — shown whether or not the step is expanded */}
+      <RunNotes notes={notes} className="mx-5 my-2" />
 
       {/* Step description / purpose note */}
       {expanded && result.description && (
@@ -479,6 +546,8 @@ function ExecutionResultPanel({
   isStreaming,
   onExport,
   isExporting,
+  stepNotes = {},
+  streamingStep = null,
 }: {
   results: ExecutionResult[];
   /** Wave 5: for the per-step run record panel. */
@@ -491,6 +560,10 @@ function ExecutionResultPanel({
   isStreaming: boolean;
   onExport: (format: string, content: string, filename: string) => void;
   isExporting: boolean;
+  /** Warning and notice frames of each step's run, by step index. */
+  stepNotes?: Readonly<Record<number, readonly string[]>>;
+  /** The index of the step streaming now. */
+  streamingStep?: number | null;
 }) {
   return (
     <div className="border-t border-adv-teal/20 bg-adv-dark">
@@ -503,6 +576,8 @@ function ExecutionResultPanel({
           onExport={onExport}
           isExporting={isExporting}
           defaultExpanded={idx === results.length - 1 && !isStreaming}
+          // While a step re-runs, its notes belong to the run in progress.
+          notes={isStreaming && streamingStep === result.step ? undefined : stepNotes[result.step]}
         />
       ))}
 
@@ -550,6 +625,7 @@ function ExecutionResultPanel({
               <span className="inline-block w-2 h-4 bg-adv-teal/60 animate-pulse ml-0.5 align-middle" />
             </pre>
           </div>
+          <RunNotes notes={streamingStep != null ? stepNotes[streamingStep] : undefined} className="mx-5 mb-3" />
         </div>
       )}
 
@@ -656,6 +732,7 @@ function NewTaskModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const demoLimited = useDemoLimited();
 
   async function submit() {
     if (!title.trim() || !description.trim()) { setError('Title and description are required'); return; }
@@ -667,8 +744,8 @@ function NewTaskModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, priority, source, source_ref: sourceRef || undefined }),
       });
+      if (!res.ok) throw new Error(await refusalMessage(res, 'Failed to create task'));
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create task');
       onCreated(data.task);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
@@ -691,12 +768,17 @@ function NewTaskModal({
         </div>
 
         <div className="space-y-4 p-6">
+          {demoLimited && (
+            <p role="note" className="rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2 text-sm text-adv-off-white">
+              {DEMO_TASK_NOTICE}
+            </p>
+          )}
           <div>
             <label className="mb-1 block text-xs font-medium text-adv-gray">Task Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. AMLR gap analysis for Nordea"
+              placeholder="e.g. AMLR gap analysis for a mid-size Nordic bank"
               className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
@@ -735,7 +817,8 @@ function NewTaskModal({
                     <option value="low">Low</option>
                     <option value="normal">Normal</option>
                     <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    {/* The server's value is 'critical' (TaskCreateSchema); 'urgent' was refused with a 400. */}
+                    <option value="critical">Urgent</option>
                   </select>
                 </div>
                 <div>
@@ -801,6 +884,11 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
+  // What the last chat answer said about itself (a cut-off reply), and each
+  // step run's warnings and notices by step index: shown, never dropped.
+  const [chatNotes, setChatNotes] = useState<string[]>([]);
+  const [stepNotes, setStepNotes] = useState<Record<number, string[]>>({});
+  const [executingStepIdx, setExecutingStepIdx] = useState<number | null>(null);
   // Selected by index, not approach id: two proposals may share an approach
   // (both "tailored plan") and differ only in the plan they carry.
   const [selectedProposal, setSelectedProposal] = useState<number | null>(null);
@@ -826,6 +914,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const demoLimited = useDemoLimited();
 
   const loadTask = useCallback(async () => {
     try {
@@ -867,13 +956,18 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     setStreaming(true);
     setStreamText('');
     setSendError(null);
+    setChatNotes([]);
     try {
       const res = await fetchWithAuth(`/api/task-agent/tasks/${taskId}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
       });
-      if (!res.ok || !res.body) throw new Error('Stream failed');
+      if (!res.ok || !res.body) {
+        // A refusal the person can act on (the monthly budget) is shown as such.
+        setSendError(await refusalMessage(res, 'ANTON could not start automatically. Type your message below to begin.'));
+        return;
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
@@ -890,6 +984,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             if (parsed.type === 'text' || parsed.type === 'text_delta') { accumulated += (parsed.text ?? parsed.content ?? ''); setStreamText(accumulated); }
             else if (parsed.type === 'done') { await loadTask(); onStatusChange(); }
             else if (parsed.type === 'error') { setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.')); await loadTask(); }
+            else { const note = runNoteOf(parsed); if (note) setChatNotes((prev) => withNote(prev, note)); }
           } catch { /* skip */ }
         }
       }
@@ -909,6 +1004,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     setStreaming(true);
     setStreamText('');
     setSendError(null);
+    setChatNotes([]);
 
     // Optimistically add user message
     setTask((prev) => prev ? {
@@ -923,7 +1019,11 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         body: JSON.stringify({ content: msg }),
       });
 
-      if (!res.ok || !res.body) throw new Error('Stream failed');
+      if (!res.ok || !res.body) {
+        setSendError(await refusalMessage(res, 'Failed to send message. Please try again.'));
+        await loadTask();
+        return;
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -952,6 +1052,10 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               // retry is one click — the answer used to just vanish.
               setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.'));
               await loadTask();
+            } else {
+              // A cut-off reply ({ type: 'warning', code: 'output_truncated' }) or a notice.
+              const note = runNoteOf(parsed);
+              if (note) setChatNotes((prev) => withNote(prev, note));
             }
           } catch { /* skip */ }
         }
@@ -995,6 +1099,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
 
         setStreaming(true);
         setStreamText('');
+        setChatNotes([]);
 
         try {
           const streamRes = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/message`, {
@@ -1003,7 +1108,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             body: JSON.stringify({ content: intakeMsg }),
           });
 
-          if (streamRes.ok && streamRes.body) {
+          if (!streamRes.ok) {
+            setSendError(await refusalMessage(streamRes, 'ANTON could not start the intake — try again.'));
+          } else if (streamRes.body) {
             const reader = streamRes.body.getReader();
             const decoder = new TextDecoder();
             let accumulated = '';
@@ -1027,6 +1134,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                   } else if (parsed.type === 'error') {
                     setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not start the intake — try again.'));
                     await loadTask();
+                  } else {
+                    const note = runNoteOf(parsed);
+                    if (note) setChatNotes((prev) => withNote(prev, note));
                   }
                 } catch { /* skip */ }
               }
@@ -1084,6 +1194,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     setExecutingStepText('');
     setExecutingStepThinking('');
     setExecutingStepActivity([]);
+    setExecutingStepIdx(stepIdx);
+    // A new run of this step: its earlier notes no longer apply.
+    setStepNotes((prev) => ({ ...prev, [stepIdx]: [] }));
 
     try {
       const res = mode === 'start'
@@ -1094,8 +1207,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         })
         : await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step/stream`);
       if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({ error: 'Execution failed' }));
-        setSendError((err as { error?: string }).error ?? 'Execution failed');
+        setSendError(await refusalMessage(res, 'Execution failed'));
         return;
       }
       const reader = res.body.getReader();
@@ -1114,6 +1226,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             const parsed = JSON.parse(raw) as {
               type: string; text?: string; content?: string; hasMoreSteps?: boolean;
               id?: number; name?: string; input?: Record<string, unknown>; isError?: boolean; ms?: number;
+              message?: unknown;
             };
             if ((parsed.type === 'text' || parsed.type === 'text_delta') && (parsed.text || parsed.content)) {
               accumulated += (parsed.text ?? parsed.content ?? '');
@@ -1132,15 +1245,24 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             } else if (parsed.type === 'tool_result' && typeof parsed.id === 'number') {
               setExecutingStepActivity((prev) => prev.map((a) => (a.id === parsed.id ? { ...a, status: parsed.isError ? 'error' : 'done', ms: parsed.ms } : a)));
             } else if (parsed.type === 'quality_retry') {
-              // Reset text on retry — new attempt starts fresh
+              // Reset text on retry — new attempt starts fresh, and so do its notes
               accumulated = '';
               setExecutingStepText('');
               setExecutingStepActivity([]);
+              setStepNotes((prev) => ({ ...prev, [stepIdx]: [] }));
+            } else if (parsed.type === 'warning' || parsed.type === 'notice') {
+              // A cut-off deliverable ({ type: 'warning', code: 'output_truncated' }),
+              // or something the run could not do: shown beside the step.
+              const note = runNoteOf(parsed);
+              if (note) setStepNotes((prev) => ({ ...prev, [stepIdx]: withNote(prev[stepIdx] ?? [], note) }));
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
             } else if (parsed.type === 'error') {
-              setSendError('Execution error. Please try again.');
+              // The server's message where it wrote one for the person (today's
+              // budget, a model the server does not offer); generic otherwise.
+              const msg = (parsed as { error?: unknown }).error;
+              setSendError(typeof msg === 'string' && msg && msg !== 'An error occurred' ? msg : 'Execution error. Please try again.');
             }
           } catch { /* skip */ }
         }
@@ -1154,6 +1276,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       setExecutingStepName('');
       setExecutingStepThinking('');
       setExecutingStepActivity([]);
+      setExecutingStepIdx(null);
     }
   }
 
@@ -1313,7 +1436,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           {task.priority !== 'normal' && (
             <>
               <span>·</span>
-              <span className={task.priority === 'urgent' ? 'text-adv-red font-medium' : task.priority === 'high' ? 'text-adv-gold' : 'text-adv-gray'}>
+              <span className={(task.priority === 'urgent' || task.priority === 'critical') ? 'text-adv-red font-medium' : task.priority === 'high' ? 'text-adv-gold' : 'text-adv-gray'}>
                 {task.priority}
               </span>
             </>
@@ -1347,6 +1470,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             </div>
           </div>
         )}
+
+        {/* What the last reply said about itself (e.g. it was cut off) */}
+        <RunNotes notes={chatNotes} className="ml-11" />
 
         {/* Intake in progress — the human can end it; documents are optional */}
         {task.status === 'clarifying' && task.intake_ready !== 1 && !!task.chosen_approach_id && !streaming && !task.linked_mission_id && (
@@ -1384,8 +1510,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                 Run Step 1
               </button>
             </div>
-            {/* Wave 5.1 — alternative execution path: compile into a mission */}
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-adv-teal/15 pt-3">
+            {/* Wave 5.1 — alternative execution path: compile into a mission.
+                Not on a public demo for visitors: missions do not run there. */}
+            {!demoLimited && <div className="mt-3 flex items-center justify-between gap-2 border-t border-adv-teal/15 pt-3">
               <p className="text-xs text-adv-gray">
                 Or hand all {task.execution_steps?.length ?? 0} steps to Mission Control — runs in the background with review checkpoints between steps.
               </p>
@@ -1397,7 +1524,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                 {launchingMission ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
                 Run as Mission
               </button>
-            </div>
+            </div>}
           </div>
         )}
 
@@ -1495,6 +1622,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           isStreaming={executingStep}
           onExport={(fmt, content, filename) => doExport(fmt, content, { filename, title: task.title })}
           isExporting={isExporting}
+          stepNotes={stepNotes}
+          streamingStep={executingStepIdx}
         />
       )}
 
@@ -1517,6 +1646,12 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <span>{sendError}</span>
               <button onClick={() => setSendError(null)} className="ml-2 hover:text-red-300">✕</button>
             </div>
+          )}
+
+          {demoLimited && (
+            <p role="note" className="mb-2 text-sm text-adv-gray">
+              Public demo: attach only made-up or public documents (a published regulation, a template), and use no real names.
+            </p>
           )}
 
           {/* Attachment toolbar */}
@@ -1698,6 +1833,7 @@ function AntonTaskAgentPageInner() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const demoLimited = useDemoLimited();
 
   // Pick up ?task=ID from URL
   useEffect(() => {
@@ -1857,7 +1993,7 @@ function AntonTaskAgentPageInner() {
                 <div className="mt-1 flex items-center gap-2">
                   <StatusBadge status={task.status} />
                   {task.priority !== 'normal' && (
-                    <span className={`text-xs ${task.priority === 'urgent' ? 'text-adv-red' : task.priority === 'high' ? 'text-adv-gold' : 'text-adv-gray'}`}>
+                    <span className={`text-xs ${(task.priority === 'urgent' || task.priority === 'critical') ? 'text-adv-red' : task.priority === 'high' ? 'text-adv-gold' : 'text-adv-gray'}`}>
                       {task.priority}
                     </span>
                   )}
@@ -1909,6 +2045,11 @@ function AntonTaskAgentPageInner() {
                   Custom task
                 </button>
               </div>
+              {demoLimited && (
+                <p role="note" className="mt-4 rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2 text-sm text-adv-off-white">
+                  {DEMO_TASK_NOTICE}
+                </p>
+              )}
             </div>
 
             {/* Capabilities grid */}

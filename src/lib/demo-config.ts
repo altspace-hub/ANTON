@@ -19,28 +19,79 @@ export type Pillar = typeof PILLARS[number];
 export interface DemoConfig {
   demoMode: boolean;
   offeredModels: string[];
+  /** The server's default model id ('' when unknown); the legal texts name it. */
+  defaultModel: string;
   enabledPillars: Pillar[];
   signupOpen: boolean;
   signupCodeRequired: boolean;
+  /** Sign-up asks for an email address (the username) instead of a username. */
+  signupWithEmail: boolean;
   retentionDays: number;
   privacyPath: string;
-  /** Whether a quality score follows each answer (a demo leaves it out unless DEMO_POST_ANSWER_CALLS=all). */
+  /** The demo terms page. */
+  termsPath: string;
+  /** The terms version sign-up must send back (server DEMO_TERMS_VERSION); '' when unknown. */
+  termsVersion: string;
+  /** Who runs the demo, for "Operated by …" (DEMO_OPERATOR_NAME); '' when not set. */
+  operatorName: string;
+  /**
+   * Whether a quality score (the Trust Score) follows each answer. A demo
+   * leaves it out unless DEMO_POST_ANSWER_CALLS is 'scored' or 'all'.
+   */
   answersScored: boolean;
+  /**
+   * The full id of the model that scores answers (QUALITY_SCORER_MODEL, else
+   * the server's utility model) when answersScored; null otherwise, and when
+   * the server does not say. The Trust Score panel and the privacy notice name it.
+   */
+  scorerModel: string | null;
+  /**
+   * The area ids and module ids kept off the demo: the server's effective
+   * DEMO_HIDDEN_AREAS and DEMO_HIDDEN_MODULES, lower-cased. They invite health,
+   * employment, credit or criminal-offence data (privacy review H3). The
+   * server refuses to run them for a visitor, and the browser does not list
+   * them (demoModuleHiddenFor).
+   */
+  hiddenAreas: string[];
+  hiddenModules: string[];
 }
 
 /** An ordinary (non-demo) server. */
 export const DEMO_OFF: DemoConfig = {
   demoMode: false,
   offeredModels: [],
+  defaultModel: '',
   enabledPillars: [...PILLARS],
   signupOpen: false,
   signupCodeRequired: false,
+  signupWithEmail: false,
   retentionDays: 0,
   privacyPath: '/privacy',
+  termsPath: '/terms',
+  termsVersion: '',
+  operatorName: '',
   answersScored: true,
+  scorerModel: null,
+  hiddenAreas: [],
+  hiddenModules: [],
 };
 
 const isPillar = (v: unknown): v is Pillar => typeof v === 'string' && (PILLARS as readonly string[]).includes(v);
+
+/** Only a same-site path, never '//host' (which a browser reads as another site): the value becomes a link. */
+const sitePath = (v: unknown, fallback: string): string =>
+  typeof v === 'string' && /^\/(?!\/)[a-z0-9/-]*$/i.test(v) ? v : fallback;
+
+/** Area or module ids: strings of the id alphabet only, lower-cased, each once. */
+const idList = (v: unknown): string[] => (Array.isArray(v)
+  ? [...new Set(v
+    .filter((id): id is string => typeof id === 'string' && /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(id.trim()))
+    .map((id) => id.trim().toLowerCase()))]
+  : []);
+
+/** A model id as /api/config gives one: a short string of printable characters, or null. */
+const modelId = (v: unknown): string | null =>
+  typeof v === 'string' && v.length > 0 && v.length <= 200 && /^[!-~]+$/.test(v) ? v : null;
 
 /** Reads /api/config defensively: anything malformed means "not a demo". */
 export function parseDemoConfig(json: unknown): DemoConfig {
@@ -49,22 +100,61 @@ export function parseDemoConfig(json: unknown): DemoConfig {
   if (c.demoMode !== true) return DEMO_OFF;
   const pillars = Array.isArray(c.enabledPillars) ? c.enabledPillars.filter(isPillar) : [];
   const days = Number(c.retentionDays);
+  const answersScored = c.answersScored !== false;
   return {
     demoMode: true,
     offeredModels: Array.isArray(c.offeredModels) ? c.offeredModels.filter((m): m is string => typeof m === 'string' && m.length > 0) : [],
+    defaultModel: typeof c.defaultModel === 'string' && c.defaultModel.length <= 200 ? c.defaultModel : '',
     enabledPillars: pillars.includes('work') ? pillars : ['work', ...pillars],
     signupOpen: c.signupOpen === true,
     signupCodeRequired: c.signupCodeRequired === true,
+    signupWithEmail: c.signupWithEmail === true,
     retentionDays: Number.isFinite(days) && days > 0 ? Math.floor(days) : 30,
-    // Only a same-site path: the value becomes a link on the login page.
-    privacyPath: typeof c.privacyPath === 'string' && /^\/[a-z0-9/-]*$/i.test(c.privacyPath) ? c.privacyPath : '/privacy',
-    answersScored: c.answersScored !== false,
+    privacyPath: sitePath(c.privacyPath, '/privacy'),
+    termsPath: sitePath(c.termsPath, '/terms'),
+    termsVersion: typeof c.termsVersion === 'string' && /^[a-z0-9._-]{1,40}$/i.test(c.termsVersion) ? c.termsVersion : '',
+    // Shown as text; control characters and excess length are dropped.
+    operatorName: typeof c.operatorName === 'string'
+      ? Array.from(c.operatorName).filter((ch) => ch >= ' ' && ch !== '\u007f').join('').trim().slice(0, 200)
+      : '',
+    answersScored,
+    // Named only while answers are scored: a scorer the demo does not use is not shown.
+    scorerModel: answersScored ? modelId(c.scorerModel) : null,
+    hiddenAreas: idList(c.hiddenAreas),
+    hiddenModules: idList(c.hiddenModules),
   };
 }
 
 /** True when this person is held to the demo's reduced surface. */
 export function demoRestricted(cfg: DemoConfig, role: string | undefined): boolean {
   return cfg.demoMode && role !== 'admin';
+}
+
+/** Whether this area is kept from this person: a demo, not an admin, and the area in hiddenAreas. */
+export function demoAreaHiddenFor(cfg: DemoConfig, role: string | undefined, areaId: string | null | undefined): boolean {
+  if (!demoRestricted(cfg, role) || !areaId) return false;
+  return cfg.hiddenAreas.includes(areaId.trim().toLowerCase());
+}
+
+/**
+ * Whether this module is kept from this person: on a demo, for a non-admin,
+ * when its id is in hiddenModules or an area it belongs to is in hiddenAreas.
+ * The server applies the same rule (demoModuleHidden in
+ * server/middleware/demo-mode.ts). The browser's catalogue can list a module
+ * under more than one area; pass them all, and any hidden one hides it.
+ * Admins and ordinary servers: never.
+ */
+export function demoModuleHiddenFor(
+  cfg: DemoConfig,
+  role: string | undefined,
+  moduleId: string | null | undefined,
+  areaId?: string | null | readonly (string | null | undefined)[],
+): boolean {
+  if (!demoRestricted(cfg, role)) return false;
+  const mod = (moduleId ?? '').trim().toLowerCase();
+  if (mod !== '' && cfg.hiddenModules.includes(mod)) return true;
+  const areas: readonly (string | null | undefined)[] = Array.isArray(areaId) ? areaId : [areaId as string | null | undefined];
+  return areas.some((a) => demoAreaHiddenFor(cfg, role, a));
 }
 
 /** Whether a pillar is offered to this person. */
@@ -101,8 +191,10 @@ export interface DemoSignupInput {
 }
 
 /** What is wrong with the form before it is sent, or null. */
-export function demoSignupProblem(input: DemoSignupInput, codeRequired: boolean): string | null {
-  if (!DEMO_USERNAME_RE.test(input.username.trim())) return 'Choose a username of 3–50 letters, numbers, _ or -.';
+export function demoSignupProblem(input: DemoSignupInput, codeRequired: boolean, withEmail = false): string | null {
+  if (withEmail) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.username.trim())) return 'Enter your email address.';
+  } else if (!DEMO_USERNAME_RE.test(input.username.trim())) return 'Choose a username of 3–50 letters, numbers, _ or -.';
   if (input.password.length < DEMO_PASSWORD_MIN) return `Use a password of at least ${DEMO_PASSWORD_MIN} characters.`;
   if (input.password.length > 200) return 'That password is too long (200 characters at most).';
   if (codeRequired && !input.code.trim()) return 'Enter the invite code you were given.';
@@ -116,19 +208,34 @@ export function demoSignupErrorMessage(status: number, body: unknown): string {
   if (status === 400 && b.details) {
     if (b.details.password) return `Use a password of at least ${DEMO_PASSWORD_MIN} characters.`;
     if (b.details.username) return 'Choose a username of 3–50 letters, numbers, _ or -.';
+    if (b.details.email) return 'Enter your email address.';
   }
   if ([403, 409, 429].includes(status) && typeof b.error === 'string' && b.error.length < 200) return b.error;
   if (status === 404) return 'Sign-up is not available on this server.';
   return 'Sign-up could not be completed. Please try again.';
 }
 
-/** The Work entries a demo visitor keeps: home, where the module catalogue is. */
-export const DEMO_WORK_NAV_ITEMS: readonly string[] = ['home'];
+/**
+ * The Work entries a demo visitor keeps: home, where the module catalogue is,
+ * and the features whose routes the server opens to visitors (WORK_ROUTES in
+ * server/middleware/demo-mode.ts): My Work, Open Chat, the AI Council, the
+ * 5-minute Brief and Build Module (2026-10-01); Engagement Tasks, Discover,
+ * the ANTON Task Agent, Projects and the Knowledge Base, each holding the
+ * visitor's own rows only; Exchange (the unsigned download of a module the
+ * visitor built), and Orchestration, Intelligence and Horizon Radar, read
+ * only (2026-10-02). Coding, the App Gateway and the other tools stay with
+ * admins.
+ */
+export const DEMO_WORK_NAV_ITEMS: readonly string[] = [
+  'home', 'my-work', 'prompt', 'council', 'brief', 'build-module',
+  'engagements', 'discover', 'task-agent', 'projects', 'knowledge-base',
+  'exchange', 'orchestration', 'intelligence', 'radar',
+];
 
 /**
  * The sidebar entries to hide for this person: none on an ordinary server
- * or for an admin; on a demo, everything but the Work home and the entries
- * of the enabled pillars.
+ * or for an admin; on a demo, everything but DEMO_WORK_NAV_ITEMS and the
+ * entries of the enabled pillars.
  */
 export function demoHiddenNavItems(cfg: DemoConfig, role: string | undefined, allIds: readonly string[]): Set<string> {
   if (!demoRestricted(cfg, role)) return new Set();

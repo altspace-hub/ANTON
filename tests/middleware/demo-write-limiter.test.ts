@@ -67,7 +67,7 @@ describe('createDemoWriteLimiter (mounted as index.ts would)', () => {
     for (let i = 0; i < 3; i++) expect((await post(visitor)).status).toBe(200);
     const fourth = await post(visitor);
     expect(fourth.status).toBe(429);
-    expect(((await fourth.json()) as { error: string }).error).toMatch(/Too many uploads or exports/);
+    expect(((await fourth.json()) as { error: string }).error).toMatch(/Too many uploads, exports or AI requests/);
     // Another visitor has their own count.
     expect((await post(fresh('other'))).status).toBe(200);
   });

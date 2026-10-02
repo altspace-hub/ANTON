@@ -28,6 +28,7 @@ import {
   ChefHat, Palette, ShieldCheck, Building2,
 } from 'lucide-react';
 import { AREAS } from '../lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 // ── Area catalogue ──────────────────────────────────────────────────
 
@@ -386,6 +387,25 @@ type WizardStep = 'idle' | 'category' | 'need' | 'result';
 export default function NGOHubPage() {
   const navigate = useNavigate();
 
+  // Public demo: the areas, journeys and wizard answers that lead to a module
+  // the demo keeps off (health, workers' rights; privacy review H3) are left
+  // out for a visitor. Everyone else sees the whole hub.
+  const catalogue = useDemoCatalogue();
+  const shown = (areaId: string, moduleId?: string) =>
+    !catalogue.areaHidden(areaId) && !(moduleId && catalogue.moduleHidden(moduleId, areaId));
+  const ngoAreas = catalogue.filtered ? NGO_AREAS.filter((a) => shown(a.id, a.firstModuleId)) : NGO_AREAS;
+  const journeys = catalogue.filtered ? JOURNEYS.filter((j) => shown(j.areaId, j.firstModuleId)) : JOURNEYS;
+  const wizardCategories = catalogue.filtered
+    ? WIZARD_CATEGORIES
+      .map((c) => ({ ...c, needs: c.needs.filter((n) => shown(n.areaId, n.moduleId)) }))
+      .filter((c) => c.needs.length > 0)
+    : WIZARD_CATEGORIES;
+  const moduleCountOf = (areaId: string): number => {
+    if (!catalogue.filtered) return MODULE_COUNT_BY_AREA.get(areaId) ?? 0;
+    const area = catalogue.areas.find((a) => a.id === areaId);
+    return area ? (area.moduleIds as readonly string[]).filter((id) => !catalogue.moduleHidden(id, areaId)).length : 0;
+  };
+
   // Wizard state
   const [wizardStep, setWizardStep] = useState<WizardStep>('idle');
   const [selectedCategory, setSelectedCategory] = useState<WizardCategory | null>(null);
@@ -427,10 +447,10 @@ export default function NGOHubPage() {
   const byCluster = CLUSTER_ORDER.map((cluster) => ({
     label: cluster,
     icon: CLUSTER_ICONS[cluster],
-    areas: NGO_AREAS.filter((a) => a.clusterLabel === cluster),
+    areas: ngoAreas.filter((a) => a.clusterLabel === cluster),
   })).filter((g) => g.areas.length > 0);
 
-  const totalModules = NGO_AREAS.reduce((sum, a) => sum + (MODULE_COUNT_BY_AREA.get(a.id) ?? 0), 0);
+  const totalModules = ngoAreas.reduce((sum, a) => sum + moduleCountOf(a.id), 0);
 
   return (
     <div className="min-h-screen bg-adv-dark">
@@ -448,7 +468,7 @@ export default function NGOHubPage() {
           </h1>
           <p className="text-adv-gray max-w-2xl mb-6">
             AI-powered guidance for NGOs, community health workers, extension officers, legal aid
-            providers, and social enterprises. {NGO_AREAS.length} specialist areas, {totalModules}+ expert modules — all
+            providers, and social enterprises. {ngoAreas.length} specialist areas, {totalModules}+ expert modules — all
             designed for low-resource settings where the right information saves lives and livelihoods.
           </p>
 
@@ -457,7 +477,7 @@ export default function NGOHubPage() {
             {[
               { icon: Users, label: 'Focus: Communities in LMIC settings' },
               { icon: Globe, label: 'Coverage: Africa, South Asia, Southeast Asia' },
-              { icon: Leaf, label: `${NGO_AREAS.length} specialist areas · ${totalModules}+ modules` },
+              { icon: Leaf, label: `${ngoAreas.length} specialist areas · ${totalModules}+ modules` },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-sm text-adv-gray">
                 <Icon className="h-4 w-4 text-adv-teal shrink-0" />
@@ -504,7 +524,7 @@ export default function NGOHubPage() {
                   Step 1 of 2 — What is the main focus area?
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {WIZARD_CATEGORIES.map((cat) => {
+                  {wizardCategories.map((cat) => {
                     const Icon = cat.icon;
                     return (
                       <button
@@ -597,7 +617,7 @@ export default function NGOHubPage() {
             Common journeys
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {JOURNEYS.map((journey) => {
+            {journeys.map((journey) => {
               const Icon = journey.icon;
               return (
                 <button
@@ -639,7 +659,7 @@ export default function NGOHubPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {areas.map((area) => {
                 const Icon = area.icon;
-                const moduleCount = MODULE_COUNT_BY_AREA.get(area.id) ?? 0;
+                const moduleCount = moduleCountOf(area.id);
                 return (
                   <button
                     key={area.id}

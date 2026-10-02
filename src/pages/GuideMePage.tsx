@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MODULES, AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import {
   Compass,
   ArrowRight,
@@ -199,11 +200,13 @@ function scoreModules(
   description: string,
   selectedCategories: string[],
   selectedOutputs: string[],
-  selectedRoles: string[]
+  selectedRoles: string[],
+  /** The modules to choose from: on a public demo, without those kept off it. */
+  modules: readonly (typeof MODULES)[number][] = MODULES,
 ): ScoredModule[] {
   const descLower = description.toLowerCase();
 
-  return MODULES.map((mod) => {
+  return modules.map((mod) => {
     let score = 0;
     const modDescLower = mod.description.toLowerCase();
     const modLabelLower = mod.label.toLowerCase();
@@ -265,6 +268,7 @@ export default function GuideMePage() {
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
+  const catalogue = useDemoCatalogue();
 
   function handleIndustrySelect(industryId: string) {
     const next = selectedIndustry === industryId ? null : industryId;
@@ -282,7 +286,7 @@ export default function GuideMePage() {
     (step === 2 && selectedOutputs.length > 0) ||
     (step === 3 && selectedRoles.length > 0);
 
-  const results = step === 4 ? scoreModules(description, selectedCategories, selectedOutputs, selectedRoles) : [];
+  const results = step === 4 ? scoreModules(description, selectedCategories, selectedOutputs, selectedRoles, catalogue.modules) : [];
 
   const colorMap: Record<string, string> = {
     'adv-teal': 'bg-adv-teal/20 text-adv-teal border-adv-teal/30',

@@ -9,6 +9,9 @@ import { fetchWithAuth, API_BASE } from '@/lib/api';
 import { relativeTime } from '@/theme/hardware-status';
 import VoiceSymptomCapture from '@/components/hardware/VoiceSymptomCapture';
 import PhotoModuleId from '@/components/hardware/PhotoModuleId';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -292,6 +295,8 @@ function SymptomCaptureCard({ value, onChange, workingLanguage, hkpId, familyId,
   hkpId: string | null; familyId: string;
   onSubmit: () => void; running: boolean;
 }) {
+  // Public demo: VoiceSymptomCapture offers a visitor no voice input, so the hint does not promise it.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   return (
     <section className="space-y-4">
       <div className="p-4 rounded border border-adv-gray/20 bg-adv-card">
@@ -300,7 +305,9 @@ function SymptomCaptureCard({ value, onChange, workingLanguage, hkpId, familyId,
           Symptom capture
         </h2>
         <p className="text-xs text-adv-gray mb-3">
-          Describe what the device does, what changed, and what you have already tried. Voice is on by default in supported browsers — use it freely; the textarea stays editable.
+          {demoLimited
+            ? 'Describe what the device does, what changed, and what you have already tried.'
+            : 'Describe what the device does, what changed, and what you have already tried. Voice is on by default in supported browsers — use it freely; the textarea stays editable.'}
         </p>
         <VoiceSymptomCapture
           value={value}

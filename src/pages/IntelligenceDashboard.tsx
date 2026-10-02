@@ -26,6 +26,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { fetchAtomInjectionStatus, setAtomInjectionMode } from '../lib/api';
 import type { AtomInjectionStatus, AtomInjectionMode } from '../lib/types';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 // Wave 3.4 — atom-layer A/B experiment stats (GET /api/intelligence/atom-ab)
 interface AtomAbArmStats {
@@ -74,6 +77,10 @@ interface CodingAtomAbStats {
 
 export default function IntelligenceDashboard() {
   const navigate = useNavigate();
+  // On a public demo a visitor reads the views over their own and the shared
+  // knowledge. Learning is off there, the patterns, the A/B experiments and the
+  // memory-injection switch are the operator's, and the Knowledge Base is closed.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [activeView, setActiveView] = useState<'timeline' | 'heatmap' | 'temporal' | 'memory' | 'insights'>('insights');
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<IntelligenceSummary | null>(null);
@@ -100,7 +107,8 @@ export default function IntelligenceDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when the demo limits become known
+  }, [demoLimited]);
 
   async function loadDashboardData() {
     setLoading(true);
@@ -111,10 +119,11 @@ export default function IntelligenceDashboard() {
       const summaryData = await summaryRes.json();
       setSummary(summaryData);
 
-      // Build timeline from summary + patterns
+      // Build timeline from summary + patterns (patterns are admin-only on a demo)
       try {
-        const patternsRes = await fetch('/api/patterns?status=active&limit=50');
-        const patternsData = await patternsRes.json();
+        const patternsData = demoLimited
+          ? { patterns: [] }
+          : await (await fetch('/api/patterns?status=active&limit=50')).json();
         const patternsArray = Array.isArray(patternsData.patterns) ? patternsData.patterns : [];
         setPatterns(patternsArray);
 
@@ -148,8 +157,8 @@ export default function IntelligenceDashboard() {
       console.error('Failed to load entities:', err);
     }
 
-    // Load atom-layer A/B stats independently (Wave 3.4)
-    try {
+    // Load atom-layer A/B stats independently (Wave 3.4) — the operator's experiments, not a visitor's
+    if (!demoLimited) try {
       const abRes = await fetch('/api/intelligence/atom-ab');
       if (abRes.ok) {
         const abData = await abRes.json();
@@ -160,7 +169,7 @@ export default function IntelligenceDashboard() {
     }
 
     // Load coding-atoms loop A/B stats independently (ANTON Studio P4)
-    try {
+    if (!demoLimited) try {
       const cRes = await fetch('/api/intelligence/coding-atom-ab');
       if (cRes.ok) {
         const cData = await cRes.json();
@@ -170,8 +179,8 @@ export default function IntelligenceDashboard() {
       console.error('Failed to load coding-atom A/B stats:', err);
     }
 
-    // Load the memory-injection gate independently (Wave 4)
-    try {
+    // Load the memory-injection gate independently (Wave 4) — an operator setting
+    if (!demoLimited) try {
       setAtomGate(await fetchAtomInjectionStatus());
     } catch (err) {
       console.error('Failed to load memory injection status:', err);
@@ -181,14 +190,14 @@ export default function IntelligenceDashboard() {
     try {
       const [atomsRes, patternsRes2, activityRes, qualityRes] = await Promise.all([
         fetch('/api/intelligence/temporal/atoms-per-day?days=30'),
-        fetch('/api/intelligence/temporal/patterns-per-week?weeks=12'),
+        demoLimited ? null : fetch('/api/intelligence/temporal/patterns-per-week?weeks=12'),
         fetch('/api/intelligence/temporal/entity-activity?weeks=12'),
         fetch('/api/intelligence/temporal/quality-trend?weeks=12'),
       ]);
 
       const atomsData = await atomsRes.json();
       setAtomsPerDay(Array.isArray(atomsData) ? atomsData : []);
-      const patternsData = await patternsRes2.json();
+      const patternsData = patternsRes2 ? await patternsRes2.json() : [];
       setPatternsPerWeek(Array.isArray(patternsData) ? patternsData : []);
       const activityData = await activityRes.json();
       setEntityActivity(Array.isArray(activityData) ? activityData : []);
@@ -244,12 +253,12 @@ export default function IntelligenceDashboard() {
     }
   }
 
-  function handleInvestigatePattern(pattern: DetectedPattern) {
+  function handleInvestigatePattern(_pattern: DetectedPattern) {
     // Navigate to pattern detail or knowledge view
     navigate(`/knowledge`);
   }
 
-  function handleEntityClick(entity: EntityNode) {
+  function handleEntityClick(_entity: EntityNode) {
     navigate(`/knowledge`);
   }
 
@@ -292,8 +301,18 @@ export default function IntelligenceDashboard() {
             <h1 className="text-2xl font-bold text-adv-off-white">Cross-Workflow Intelligence</h1>
           </div>
 
+          {demoLimited && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-card p-3 text-sm text-adv-off-white" role="note">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-adv-gold" />
+              <span>
+                Learning is switched off on this demo: ANTON keeps no knowledge from your runs here, so these views stay
+                empty unless the operator has added shared knowledge. On your own ANTON they fill up as you work.
+              </span>
+            </div>
+          )}
+
           {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className={`grid ${demoLimited ? 'grid-cols-2' : 'grid-cols-4'} gap-4 mb-4`}>
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Atom className="w-4 h-4 text-adv-teal" />
@@ -310,15 +329,15 @@ export default function IntelligenceDashboard() {
               <div className="text-2xl font-bold text-adv-off-white">{summary?.totalEntities || 0}</div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-4">
+            {!demoLimited && <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="w-4 h-4 text-adv-teal" />
                 <span className="text-sm text-adv-gray">Active Patterns</span>
               </div>
               <div className="text-2xl font-bold text-adv-off-white">{summary?.totalPatterns || 0}</div>
-            </div>
+            </div>}
 
-            <div className="bg-card border border-border rounded-lg p-4">
+            {!demoLimited && <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className={`w-4 h-4 ${(summary?.criticalPatterns || 0) > 0 ? 'text-red-500' : 'text-adv-gray'}`} />
                 <span className="text-sm text-adv-gray">Critical Alerts</span>
@@ -326,7 +345,7 @@ export default function IntelligenceDashboard() {
               <div className={`text-2xl font-bold ${(summary?.criticalPatterns || 0) > 0 ? 'text-red-400' : 'text-adv-off-white'}`}>
                 {summary?.criticalPatterns || 0}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Memory injection gate (Wave 4 — inject only when it earns its place) */}
@@ -566,9 +585,9 @@ export default function IntelligenceDashboard() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {activeView === 'insights' && <InsightsTab />}
+        {activeView === 'insights' && <InsightsTab demoLimited={demoLimited} />}
 
-        {activeView === 'memory' && <InstitutionalMemoryTab />}
+        {activeView === 'memory' && <InstitutionalMemoryTab learningOff={demoLimited} />}
 
         {activeView === 'timeline' && (
           <div className="space-y-4">
@@ -586,7 +605,7 @@ export default function IntelligenceDashboard() {
                 >
                   All
                 </button>
-                <button
+                {!demoLimited && <button
                   onClick={() => setTimelineFilter('patterns')}
                   className={`px-3 py-1 text-sm rounded ${
                     timelineFilter === 'patterns'
@@ -595,7 +614,7 @@ export default function IntelligenceDashboard() {
                   }`}
                 >
                   Patterns Only
-                </button>
+                </button>}
                 <button
                   onClick={() => setTimelineFilter('atoms')}
                   className={`px-3 py-1 text-sm rounded ${
@@ -687,7 +706,7 @@ export default function IntelligenceDashboard() {
                   key={idx}
                   entity={entity}
                   size={Math.min(10, entity.interaction_count)}
-                  onClick={() => handleEntityClick(entity)}
+                  onClick={demoLimited ? undefined : () => handleEntityClick(entity)}
                 />
               ))}
             </div>
@@ -702,12 +721,14 @@ export default function IntelligenceDashboard() {
               color="#2DD4A8"
               valueKey="count"
             />
-            <TemporalChart
-              title="Patterns Detected per Week (Last 12 Weeks)"
-              data={patternsPerWeek}
-              color="#F5A623"
-              valueKey="count"
-            />
+            {!demoLimited && (
+              <TemporalChart
+                title="Patterns Detected per Week (Last 12 Weeks)"
+                data={patternsPerWeek}
+                color="#F5A623"
+                valueKey="count"
+              />
+            )}
             <TemporalChart
               title="Entity Activity (Entities per Week)"
               data={entityActivity}

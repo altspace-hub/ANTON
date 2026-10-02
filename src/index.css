@@ -334,14 +334,16 @@ html[data-accent="gold"] {
   --color-accent-dim:  #EADFBE;
 }
 
-/* Montserrat headings in corporate mode */
+/* Montserrat headings in corporate mode. Montserrat is not bundled (no page
+   loads a font from another website), so it is used only where the system has
+   it installed; otherwise the bundled Inter. */
 html.corporate h1,
 html.corporate h2,
 html.corporate h3,
 html.corporate h4,
 html.corporate h5,
 html.corporate h6 {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
   color: oklch(0.25 0.08 265);
 }
 
@@ -437,23 +439,27 @@ html.corporate .prose-output tbody tr:hover { background: oklch(0.96 0.008 250);
    Applied when SchoolLayout sets lang attribute based on UI language.
    Urdu uses Nastaliq (RTL calligraphic script).
    Hindi uses Devanagari.
-   Arabic uses Naskh (already loaded, supplement with Noto Naskh). */
+   Arabic uses Naskh.
+   The Noto families are not bundled (no page loads a font from another
+   website): they are used where the system has them (macOS, iOS, Android ship
+   several), then each platform's own font for the script — Windows: Urdu
+   Typesetting, Nirmala UI, Segoe UI; Apple: Kohinoor Devanagari, Geeza Pro. */
 
 :lang(ur),
 [lang="ur"] {
-  font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;
+  font-family: 'Noto Nastaliq Urdu', 'Urdu Typesetting', 'Noto Naskh Arabic', 'Geeza Pro', 'Segoe UI', serif;
   line-height: 2;      /* Nastaliq needs more vertical space */
   letter-spacing: 0;
 }
 
 :lang(hi),
 [lang="hi"] {
-  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+  font-family: 'Noto Sans Devanagari', 'Nirmala UI', 'Kohinoor Devanagari', 'Devanagari Sangam MN', 'Mangal', 'Inter', sans-serif;
 }
 
 :lang(ar),
 [lang="ar"] {
-  font-family: 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif;
+  font-family: 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', 'Segoe UI', Tahoma, sans-serif;
 }
 
 /* School Mode RTL utilities — complement Tailwind rtl: prefix */

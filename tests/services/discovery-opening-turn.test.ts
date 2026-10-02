@@ -87,9 +87,9 @@ function fakeStore(): DatabaseAdapter & { writes: string[] } {
 async function newEngine() {
   const { createDiscoveryEngine } = await import('../../server/services/discovery-engine.js');
   const db = fakeStore();
-  // The engine only uses `anthropic` as an "is a provider configured" flag; every
-  // actual call goes through the mocked provider-router.
-  const engine = await createDiscoveryEngine(db, {} as never);
+  // Every call goes through the mocked provider-router (the engine no longer
+  // takes an Anthropic client: it gated on one and refused on a compat-only server).
+  const engine = await createDiscoveryEngine(db);
   return { db, engine };
 }
 

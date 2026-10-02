@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AntonMark from '@/components/shared/AntonMark';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3, Search,
@@ -57,6 +58,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted, demoHiddenNavItems } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { fetchSessions, fetchProfile, fetchSessionStats, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import type { Session } from '@/lib/types';
 import AreaDashboard from './AreaDashboard';
@@ -418,10 +420,14 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   });
   const [userHiddenNavItems] = useState<Set<string>>(loadHiddenNavItems);
   // Public demo (DEMO_MODE=true): a visitor keeps the Work home, the module
-  // catalogue and the enabled pillars; the rest answers 404 on the server, so
-  // it is not offered here. Admins keep everything.
+  // catalogue, the features the server opens to visitors (DEMO_WORK_NAV_ITEMS)
+  // and the enabled pillars; the rest answers 404 on the server, so it is not
+  // offered here. Admins keep everything.
   const demoConfig = useDemoStore((s) => s.config);
   const demoLimited = demoRestricted(demoConfig, authUser?.role);
+  // Nor does a visitor see the modules and areas the demo keeps off (health,
+  // HR, credit, criminal matters; privacy review H3).
+  const catalogue = useDemoCatalogue();
   const hiddenNavItems = useMemo(() => new Set([
     ...userHiddenNavItems,
     ...demoHiddenNavItems(demoConfig, authUser?.role, ALL_NAV_ITEMS.map((item) => item.id)),
@@ -534,9 +540,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     >
       {/* Logo */}
       <div className={`flex h-16 items-center border-b border-border ${mini ? 'justify-center px-2' : 'gap-3 px-6'}`}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0D7D6C]">
-          <span className="text-sm font-bold text-white">A</span>
-        </div>
+        <AntonMark size={32} className="shrink-0" />
         {!sidebarCollapsed && (
           <div className="flex-1">
             <div className="text-sm font-semibold text-adv-white">Anton</div>
@@ -2056,10 +2060,118 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.aiCouncil')}
         </NavLinkWithStar>
 
+        {/* Build Module, Projects, the Knowledge Base, Exchange, Orchestration,
+            Intelligence and Horizon Radar live under Tools & Features, which a
+            demo visitor does not get (Coding, the App Gateway and the rest stay
+            with admins). These are the visitor's features (DEMO_WORK_NAV_ITEMS),
+            so they show here. */}
+        {demoLimited && (<>
+          <NavLinkWithStar
+            to="/build-module"
+            navId="build-module"
+            title={sidebarCollapsed ? t('nav.buildModule') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('build-module')}
+            isHidden={hiddenNavItems.has('build-module')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Puzzle className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.buildModule')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/projects"
+            navId="projects"
+            title={sidebarCollapsed ? t('nav.projects') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('projects')}
+            isHidden={hiddenNavItems.has('projects')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <FolderOpen className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.projects')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/knowledge-base"
+            navId="knowledge-base"
+            title={sidebarCollapsed ? t('nav.knowledgeBase') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('knowledge-base')}
+            isHidden={hiddenNavItems.has('knowledge-base')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <DatabaseIcon className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.knowledgeBase')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/exchange"
+            navId="exchange"
+            title={sidebarCollapsed ? t('nav.exchange') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('exchange')}
+            isHidden={hiddenNavItems.has('exchange')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.exchange')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/orchestration"
+            navId="orchestration"
+            title={sidebarCollapsed ? 'Orchestration' : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('orchestration')}
+            isHidden={hiddenNavItems.has('orchestration')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && 'Orchestration'}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/intelligence"
+            navId="intelligence"
+            title={sidebarCollapsed ? t('nav.intelligenceDashboard') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('intelligence')}
+            isHidden={hiddenNavItems.has('intelligence')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Brain className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.intelligence')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/radar"
+            navId="radar"
+            title={sidebarCollapsed ? t('nav.regulatoryRadar') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('radar')}
+            isHidden={hiddenNavItems.has('radar')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Radar className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.radar')}
+          </NavLinkWithStar>
+        </>)}
+
         </>)}
 
         {/* ── Tools & Features section (collapsed by default) ──── */}
-        {/* Not on a public demo: none of these is a Work route the server lets a visitor reach. */}
+        {/* Not on a public demo: the visitor's tools from this section are drawn
+            above (Build Module, Projects, the Knowledge Base, Exchange,
+            Orchestration, Intelligence, Horizon Radar); the server answers 404
+            to a visitor for the rest. */}
         {!sidebarCollapsed && !demoLimited && (
           <button
             onClick={() => toggleSection('tools')}
@@ -2588,7 +2700,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         )}
 
         {/* Collapsed: flat module icon list */}
-        {sidebarCollapsed && MODULES.map((mod) => {
+        {sidebarCollapsed && catalogue.modules.map((mod) => {
           const Icon = iconMap[mod.icon] || Search;
           return (
             <NavLink
@@ -2605,7 +2717,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {/* UX-04: Filtered module results — replaces area tree when search is active */}
         {!sidebarCollapsed && sectionsExpanded.modules && moduleSearch.trim() && (() => {
           const q = moduleSearch.trim().toLowerCase();
-          const matched = MODULES.filter(
+          const matched = catalogue.modules.filter(
             (m) => m.id.includes(q) || m.shortLabel.toLowerCase().includes(q) || m.label?.toLowerCase().includes(q)
           );
           if (matched.length === 0) {
@@ -2615,7 +2727,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <div className="mb-2">
               {matched.map((mod) => {
                 const Icon = iconMap[mod.icon] || Search;
-                const area = AREAS.find((a) => (a.moduleIds as readonly string[]).includes(mod.id as string));
+                const area = catalogue.areas.find((a) => (a.moduleIds as readonly string[]).includes(mod.id as string));
                 return (
                   <NavLink
                     key={mod.id}
@@ -2635,7 +2747,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
         {/* ── My Modules section — appears before domain areas for quick access ── */}
         {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && (() => {
-          const myModules = customModules.filter(() => true);
+          const myModules = customModules.filter((cm) => !catalogue.moduleHidden(cm.id, cm.area));
           if (myModules.length === 0) return null;
           const isExpanded = expandedAreas.has('my-modules');
           return (
@@ -2683,15 +2795,15 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         })()}
 
         {/* Expanded: modules grouped by area — hidden when search is active */}
-        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && AREAS.map((area) => {
+        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && catalogue.areas.map((area) => {
           const isExpanded = expandedAreas.has(area.id);
           const colors = AREA_COLORS[area.id] ?? DEFAULT_AREA_COLOR;
           const AreaIcon = iconMap[area.icon] || Search;
           const areaModules = area.moduleIds
-            .map((id) => MODULES.find((m) => m.id === id))
+            .map((id) => catalogue.modules.find((m) => m.id === id))
             .filter(Boolean) as typeof MODULES;
           // Custom modules assigned to this area
-          const areaCustomModules = customModules.filter((cm) => cm.area === area.id);
+          const areaCustomModules = customModules.filter((cm) => cm.area === area.id && !catalogue.moduleHidden(cm.id, cm.area));
           const totalCount = areaModules.length + areaCustomModules.length;
 
           return (
@@ -2721,7 +2833,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <AreaDashboard
                     areaId={area.id}
                     areaLabel={area.label}
-                    moduleIds={area.moduleIds as unknown as string[]}
+                    moduleIds={(area.moduleIds as readonly string[]).filter((id) => !catalogue.moduleHidden(id, area.id))}
                     topModules={topModules}
                     areaSessions={areaSessionCounts[area.id] ?? 0}
                   />

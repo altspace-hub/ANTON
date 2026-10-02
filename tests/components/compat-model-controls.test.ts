@@ -315,7 +315,7 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
 
     const body = JSON.parse(textareaByLabel('Extra request body (JSON)').value);
     expect(body).toEqual({
-      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' },
+      provider: { only: ['inceptron'], zdr: true, data_collection: 'deny' },
     });
     const headers = JSON.parse(textareaByLabel('Extra headers (JSON)').value);
     expect(headers).toEqual({ 'HTTP-Referer': window.location.origin, 'X-OpenRouter-Title': 'ANTON by openEXPERT' });
@@ -330,14 +330,14 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
     expect(sent[0]).toMatchObject({
       slug: 'openrouter',
       defaultModel: 'z-ai/glm-5.3-flash',
-      allowedModels: ['z-ai/glm-5.3-flash'],
+      allowedModels: ['z-ai/glm-5.3-flash', 'deepseek/deepseek-v4-flash-0731', 'moonshotai/kimi-k2.6', 'z-ai/glm-5.3'],
       extraBody: body,
       extraHeaders: headers,
       maxOutputTokens: null,
-      // The pinned providers' price, not /models' promotional one: it prices the
-      // worst-case reservation made before each call.
-      inputPricePerMillion: 0.165,
-      outputPricePerMillion: 0.55,
+      // The dearest offered model's price on the pinned provider (Inceptron),
+      // not /models' promotional one: it prices the worst-case reservation.
+      inputPricePerMillion: 0.6,
+      outputPricePerMillion: 3.39,
     });
   });
 

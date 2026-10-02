@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mic, MicOff, Loader2, Languages } from 'lucide-react';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 /**
  * Voice-first symptom capture.
@@ -48,6 +51,10 @@ export default function VoiceSymptomCapture({ value, onChange, workingLanguage, 
 
   const langTag = workingLanguage ? mapToBcp47(workingLanguage) : 'en-US';
   const supported = !!RecognitionCtor;
+  // Public demo (DEMO_MODE=true): no voice for a visitor (privacy review M5,
+  // D9) — the browser's speech recognition may send the audio to the
+  // browser's maker. Only the text box stays. Admins keep it.
+  const voiceOffered = !demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
 
   const start = () => {
     if (!RecognitionCtor) return;
@@ -106,6 +113,7 @@ export default function VoiceSymptomCapture({ value, onChange, workingLanguage, 
           }}
           className="flex-1 bg-adv-card border border-adv-gray/30 rounded p-2 text-sm leading-snug"
         />
+        {voiceOffered && (
         <button
           type="button"
           onClick={listening ? stop : start}
@@ -122,7 +130,9 @@ export default function VoiceSymptomCapture({ value, onChange, workingLanguage, 
         >
           {listening ? <Loader2 className="w-5 h-5 animate-spin" /> : supported ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
         </button>
+        )}
       </div>
+      {voiceOffered && (
       <div className="flex items-center justify-between text-xs text-adv-gray">
         <span className="flex items-center gap-1">
           <Languages className="w-3 h-3" />
@@ -133,6 +143,7 @@ export default function VoiceSymptomCapture({ value, onChange, workingLanguage, 
         )}
         {error && <span className="text-red-400">{error}</span>}
       </div>
+      )}
     </div>
   );
 }

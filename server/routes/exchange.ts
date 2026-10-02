@@ -6,6 +6,7 @@ import { safeError } from '../lib/error-response.js';
 import { isTeamMode, requireRole } from '../middleware/role-guards.js';
 import { canReadCustomModule } from './custom-modules.js';
 import type { OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 import { inspectModuleBundle } from '../services/anton-importer.js';
 import { preloadInstalledSkills } from '../services/skills-manager.js';
 import {
@@ -45,16 +46,33 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 
 const analystOrAbove = requireRole('analyst');
 
 /**
+ * A public-demo visitor (DEMO_MODE=true, not an admin). Demo accounts are
+ * analysts, so the role checks below would let one through; the demo is
+ * stricter. The route allowlist (middleware/demo-mode.ts) opens only POST
+ * /exchange/export/:moduleId to them; these checks hold without it.
+ */
+export function isExchangeDemoVisitor(req: { user?: { role?: string } }): boolean {
+  return isDemoMode() && req.user?.role !== 'admin';
+}
+
+/**
  * Wave 6: who may change this instance through the exchange — install a
  * bundle, or validate one (validation records the signer for trust-on-first-
  * use, which decides whether a later bundle shows as "known signer").
  * TEAM mode: an authenticated analyst or admin; a viewer is refused.
  * SOLO mode: the operator (authMiddleware stamps them) always passes.
+ * DEMO mode: an admin only. An import installs a module's skills and personas
+ * for the whole instance and records its signer for everyone, so a visitor
+ * gets the allowlist's 404.
  * Mounted BEFORE multer so a refused upload is never buffered.
  */
 export function requireExchangeContributor(req: Request, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  if (isExchangeDemoVisitor(req)) {
+    res.status(404).json({ error: 'Not available in this demo' });
     return;
   }
   if (!isTeamMode()) {
@@ -68,10 +86,12 @@ export function requireExchangeContributor(req: Request, res: Response, next: Ne
  * Wave 6: a viewer may still export (a download is a read), but never AS the
  * instance — an export route that signs would otherwise sign body-supplied
  * content (audience profiles, review panels) with the instance identity key.
- * In team mode a viewer's export is forced unsigned.
+ * In team mode a viewer's export is forced unsigned, and so is every export
+ * by a public-demo visitor: a stranger's module prompt must never verify as
+ * signed by the showcase.
  */
 function viewersExportUnsigned(req: Request, _res: Response, next: NextFunction): void {
-  if (isTeamMode() && req.user?.role !== 'analyst' && req.user?.role !== 'admin') {
+  if (isExchangeDemoVisitor(req) || (isTeamMode() && req.user?.role !== 'analyst' && req.user?.role !== 'admin')) {
     const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
     body.sign = false;
     req.body = body;
@@ -127,6 +147,19 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         effective_date: typeof effectiveDate === 'string' ? effectiveDate : undefined,
         content_confirmed: typeof contentConfirmed === 'boolean' ? contentConfirmed : undefined,
       };
+
+      // A public-demo visitor exports only a custom module of their own: not a
+      // built-in (its author and organisation are typed into the request) and
+      // not one someone else shared. Same 404 as a missing module.
+      if (isExchangeDemoVisitor(req)) {
+        const own = type === 'custom' && req.user?.id
+          ? await db.get('SELECT 1 AS ok FROM custom_modules WHERE id = ? AND user_id = ?', [String(moduleId), req.user.id])
+          : undefined;
+        if (!own) {
+          res.status(404).json({ error: 'Module not found' });
+          return;
+        }
+      }
 
       if (type === 'custom') {
         // A custom module has an owner (migration 290): export only one the caller

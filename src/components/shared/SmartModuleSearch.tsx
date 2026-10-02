@@ -2,8 +2,8 @@
  * SmartModuleSearch.tsx
  *
  * AI-powered natural-language module finder for the Dashboard.
- * User describes their need in plain English; Claude Haiku picks
- * the 3 most relevant modules and explains why.
+ * User describes their need in plain English; the server's utility model
+ * picks the 3 most relevant modules and explains why.
  */
 
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import { getAuthHeader } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 interface ModuleMatch {
   moduleId: string;
@@ -46,10 +47,11 @@ export default function SmartModuleSearch() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
-  // Public demo (DEMO_MODE=true): a visitor may not call /modules/smart-search
-  // (it is outside the demo's Work routes and spends model budget), and the
-  // failure advice points to Settings they cannot open. Admins keep it.
+  // Public demo (DEMO_MODE=true): a visitor may use the finder (POST
+  // /modules/smart-search is one of the demo's Work routes), but is never
+  // pointed to a module the demo keeps off, nor to Settings they cannot open.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
+  const catalogue = useDemoCatalogue();
 
   async function handleSearch() {
     const q = query.trim();
@@ -67,11 +69,15 @@ export default function SmartModuleSearch() {
         body: JSON.stringify({ query: q }),
       });
       if (!res.ok) {
-        setError('Could not reach the AI engine — check Settings → Execution engines, then try again.');
+        setError(demoLimited
+          ? 'The module finder could not answer just now. Try again, or pick a module from the list below.'
+          : 'Could not reach the AI engine — check Settings → Execution engines, then try again.');
         return;
       }
       const data = await res.json() as ModuleMatch[];
-      setMatches(Array.isArray(data) ? data.slice(0, 3) : []);
+      setMatches(Array.isArray(data)
+        ? data.filter((m) => m && typeof m.moduleId === 'string' && !catalogue.moduleHidden(m.moduleId)).slice(0, 3)
+        : []);
     } catch {
       setError('Network error — please try again.');
     } finally {
@@ -100,9 +106,6 @@ export default function SmartModuleSearch() {
     'Analyse ESG risks in our supply chain',
     'Build a cash flow forecast for my market stall',
   ];
-
-  // The module catalogue in the sidebar is the visitor's way in.
-  if (demoLimited) return null;
 
   return (
     <div className="mb-8 rounded-xl border border-adv-teal/20 bg-adv-card">

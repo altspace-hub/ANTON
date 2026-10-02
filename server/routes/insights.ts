@@ -7,6 +7,8 @@ import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { createProactiveIntelligenceService } from '../services/proactive-intelligence.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
+import { searchScopeForRequest } from '../services/hybrid-search.js';
 
 export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -46,10 +48,16 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
     }
   });
 
+  // An insight is its user's (user_id). In team mode a non-admin marks and
+  // dismisses only their own; the owner check is inside the UPDATE, and a
+  // colleague's insight answers the same 404 as a missing one. Until 2026-10-02
+  // these took any id, and were not awaited.
+
   // ── Mark as read ───────────────────────────────────────────────────────────
   router.patch('/insights/:id/read', async (req: Request, res: Response) => {
     try {
-      intelService.markRead(String(req.params.id));
+      const done = await intelService.markRead(String(req.params.id), ownerFilter(req as unknown as OwnedRequest, 'user_id'));
+      if (!done) return res.status(404).json({ error: 'Insight not found' });
       res.json({ read: true });
     } catch (err) {
       res.status(500).json({ error: 'Failed to mark as read' });
@@ -59,8 +67,10 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
   // ── Dismiss insight ────────────────────────────────────────────────────────
   router.patch('/insights/:id/dismiss', async (req: Request, res: Response) => {
     try {
-      const { action_taken } = req.body as { action_taken?: string };
-      intelService.dismissInsight(String(req.params.id), action_taken);
+      const { action_taken } = (req.body ?? {}) as { action_taken?: unknown };
+      const action = typeof action_taken === 'string' ? action_taken.slice(0, 500) : undefined;
+      const done = await intelService.dismissInsight(String(req.params.id), action, ownerFilter(req as unknown as OwnedRequest, 'user_id'));
+      if (!done) return res.status(404).json({ error: 'Insight not found' });
       res.json({ dismissed: true });
     } catch (err) {
       res.status(500).json({ error: 'Failed to dismiss insight' });
@@ -68,10 +78,11 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
   });
 
   // ── Run insight generation (background job trigger) ────────────────────────
+  // Reads only the atoms the caller may read (own + shared in team mode).
   router.post('/insights/generate', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const result = await intelService.runInsightGeneration(userId);
+      const result = await intelService.runInsightGeneration(userId, searchScopeForRequest(req as unknown as OwnedRequest));
       res.json(result);
     } catch (err) {
       console.error('[insights] generate error:', err);

@@ -16,6 +16,14 @@
  * Negative controls: an admin and the solo user still go through; reads, and
  * the triage of an item's status, stay open to every user; a valid interval
  * and an hourly cron are accepted.
+ *
+ * Public demo (2026-10-02): the feed is shared by strangers, so a visitor's
+ * triage would change it for everyone — a demo visitor gets 404 and nothing
+ * changes (an admin still triages). A status outside the table's CHECK list
+ * is refused before the database sees it, an unknown item is a 404, and a
+ * team user who may not run the radar does not see who dismissed an item.
+ * The single-item score route finds the item by id (it used to search the
+ * newest item only) and reads a fenced or prose-wrapped reply.
  */
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import express from 'express';
@@ -28,12 +36,14 @@ const radarSvc = vi.hoisted(() => ({
   createSource: vi.fn(async () => 'src_1'),
   updateSource: vi.fn(async () => undefined),
   deleteSource: vi.fn(async () => undefined),
-  getItems: vi.fn(async () => [{ id: 'ri_1', title: 'EBA guideline', summary: 'text' }]),
+  getItems: vi.fn(async () => [{ id: 'ri_1', title: 'EBA guideline', summary: 'text', dismissed_by: 'u_admin_7' }]),
+  getItem: vi.fn(async (id: string) => (id === 'ri_1' || id === 'ri_2' ? { id, title: 'EBA guideline', summary: 'text' } : undefined)),
   ingestManualItem: vi.fn(async () => 'ri_2'),
-  updateItemStatus: vi.fn(async () => undefined),
+  updateItemStatus: vi.fn(async (id: string) => id !== 'ri_missing'),
   scoreItem: vi.fn(async () => undefined),
 }));
-vi.mock('../../server/services/regulatory-radar.js', () => ({
+vi.mock('../../server/services/regulatory-radar.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../server/services/regulatory-radar.js')>()),
   createRegulatoryRadar: async () => radarSvc,
 }));
 
@@ -80,6 +90,7 @@ const fakeDb = {
 };
 
 const originalMode = process.env.DEPLOYMENT_MODE;
+const originalDemo = process.env.DEMO_MODE;
 let server: Server;
 let base = '';
 
@@ -100,11 +111,13 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (originalMode === undefined) delete process.env.DEPLOYMENT_MODE; else process.env.DEPLOYMENT_MODE = originalMode;
+  if (originalDemo === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = originalDemo;
   await new Promise<void>((resolve) => { server?.close(() => resolve()); });
 });
 
 afterEach(() => {
   settingsWrites.length = 0;
+  delete process.env.DEMO_MODE;
   vi.clearAllMocks();
 });
 
@@ -216,5 +229,91 @@ describe('radar settings: no background scan more often than hourly', () => {
     const off = await send('PUT', '/api/radar/settings', SOLO, { autoScanEnabled: true, autoScanIntervalHours: 24 });
     expect(off.status).toBe(200);
     expect(off.body.autoScanActive).toBe(false);
+  });
+});
+
+describe('radar on a public demo: visitors read, the operator triages', () => {
+  it('a demo visitor\'s status change is a 404 and changes nothing', async () => {
+    mode('team');
+    process.env.DEMO_MODE = 'true';
+    const r = await send('PUT', '/api/radar/items/ri_1/status', ANALYST, { status: 'dismissed' });
+    expect(r.status).toBe(404);
+    expect(radarSvc.updateItemStatus).not.toHaveBeenCalled();
+  });
+
+  it('negative control: the admin of the demo still triages', async () => {
+    mode('team');
+    process.env.DEMO_MODE = 'true';
+    expect((await send('PUT', '/api/radar/items/ri_1/status', ADMIN, { status: 'dismissed' })).status).toBe(200);
+    expect(radarSvc.updateItemStatus).toHaveBeenCalledWith('ri_1', 'dismissed', 'root');
+  });
+
+  it('a demo visitor still reads the feed', async () => {
+    mode('team');
+    process.env.DEMO_MODE = 'true';
+    for (const url of ['/api/radar/summary', '/api/radar/sources', '/api/radar/items', '/api/radar/scan-status']) {
+      expect((await send('GET', url, ANALYST)).status, url).toBe(200);
+    }
+  });
+});
+
+describe('radar item status: checked before it is written', () => {
+  for (const bad of ['deleted', '', 42, null]) {
+    it(`refuses status=${JSON.stringify(bad)} with 400 and writes nothing`, async () => {
+      mode('team');
+      const r = await send('PUT', '/api/radar/items/ri_1/status', ANALYST, { status: bad });
+      expect(r.status).toBe(400);
+      expect(radarSvc.updateItemStatus).not.toHaveBeenCalled();
+    });
+  }
+
+  it('an unknown item is a 404', async () => {
+    mode('team');
+    expect((await send('PUT', '/api/radar/items/ri_missing/status', ANALYST, { status: 'reviewed' })).status).toBe(404);
+  });
+});
+
+describe('radar items: who dismissed an item is not shown to every user', () => {
+  async function items(who: Who): Promise<Array<Record<string, unknown>>> {
+    const r = await fetch(`${base}/api/radar/items`, { headers: { 'x-test-user': who.id, 'x-test-role': who.role } });
+    return await r.json() as Array<Record<string, unknown>>;
+  }
+
+  it('a team analyst or viewer gets the items without dismissed_by', async () => {
+    mode('team');
+    for (const who of [ANALYST, VIEWER]) {
+      const list = await items(who);
+      expect(list[0].title).toBe('EBA guideline');
+      expect(list[0]).not.toHaveProperty('dismissed_by');
+    }
+  });
+
+  it('negative control: the admin and the solo user see it', async () => {
+    mode('team');
+    expect((await items(ADMIN))[0].dismissed_by).toBe('u_admin_7');
+    mode('solo');
+    expect((await items(SOLO))[0].dismissed_by).toBe('u_admin_7');
+  });
+});
+
+describe('scoring one item', () => {
+  it('finds the item by id, not only the newest one, and reads a fenced reply', async () => {
+    mode('solo');
+    chat.callChat.mockResolvedValueOnce({
+      text: 'Here is the score:\n```json\n{"relevance_score": 0.9, "urgency_score": "0.4", "ai_summary": "s", "impact_areas": ["AML"]}\n```',
+      inputTokens: 1, outputTokens: 1,
+    });
+    const r = await send('POST', '/api/radar/items/ri_2/score', SOLO, {});
+    expect(r.status).toBe(200);
+    expect(radarSvc.getItem).toHaveBeenCalledWith('ri_2');
+    expect(radarSvc.scoreItem).toHaveBeenCalledWith('ri_2', 0.9, 0.4, 's', ['AML']);
+  });
+
+  it('a reply with no score is a 502 and scores nothing; an unknown item is a 404', async () => {
+    mode('solo');
+    chat.callChat.mockResolvedValueOnce({ text: 'I cannot score this.', inputTokens: 1, outputTokens: 1 });
+    expect((await send('POST', '/api/radar/items/ri_1/score', SOLO, {})).status).toBe(502);
+    expect((await send('POST', '/api/radar/items/ri_unknown/score', SOLO, {})).status).toBe(404);
+    expect(radarSvc.scoreItem).not.toHaveBeenCalled();
   });
 });

@@ -8,9 +8,21 @@
 
 import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { callChat, streamChat } from './provider-router.js';
+import { callChat, streamChat, mapModelToProvider } from './provider-router.js';
 import { createAgentService } from './agent-service.js';
 import { atomOwnerSql, strictOwnerSql, NO_OWNED_CONTENT } from './hybrid-search.js';
+
+/**
+ * The model an agent runs on: its default_model, a bare Claude id following
+ * the configured engine (mapModelToProvider) as every specialty route's does —
+ * on a server whose only engine is an OpenAI-compatible endpoint a profile
+ * saved with claude-sonnet-4-6 ran on the Anthropic API and failed.
+ * Undefined when the agent names none: the caller then asks for the medium tier.
+ */
+export function agentModel(defaultModel: string | null | undefined): string | undefined {
+  const m = typeof defaultModel === 'string' ? defaultModel.trim() : '';
+  return m ? mapModelToProvider(m) : undefined;
+}
 
 export async function createAgentProcessor(db: DatabaseAdapter) {
   const agentService = await createAgentService(db);
@@ -209,8 +221,8 @@ ${toolDescriptions}`;
 
     // ── Call LLM ─────────────────────────────────────────────────────
     const result = await callChat({
-      model: agent.default_model ?? undefined,
-      tier: agent.default_model ? undefined : 'medium',
+      model: agentModel(agent.default_model),
+      tier: agentModel(agent.default_model) ? undefined : 'medium',
       system: systemPrompt,
       messages,
       maxTokens: agent.max_tokens,
@@ -241,8 +253,8 @@ ${toolDescriptions}`;
 
         // Re-prompt with tool results so AI can incorporate them
         const followUp = await callChat({
-          model: agent.default_model ?? undefined,
-          tier: agent.default_model ? undefined : 'medium',
+          model: agentModel(agent.default_model),
+          tier: agentModel(agent.default_model) ? undefined : 'medium',
           system: systemPrompt,
           messages: [
             ...messages,
@@ -334,8 +346,8 @@ ${toolDescriptions}`;
 
       const { systemPrompt, messages } = await buildContext(agent, userMessage, conversationHistory);
       const result = await streamChat({
-        model: agent.default_model ?? undefined,
-        tier: agent.default_model ? undefined : 'medium',
+        model: agentModel(agent.default_model),
+        tier: agentModel(agent.default_model) ? undefined : 'medium',
         system: systemPrompt,
         messages,
         maxTokens: agent.max_tokens,

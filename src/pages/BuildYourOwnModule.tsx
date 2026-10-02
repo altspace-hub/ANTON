@@ -4,7 +4,13 @@ import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Spark
 import { fetchCustomModules, createCustomModule, patchCustomModule, deleteCustomModule, shareModuleWithCommunity, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import { AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { useSessionStore } from '@/stores/useSessionStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+import { demoDefaultModel } from '@/lib/demo-model-names';
+import { modelLabel } from '@/lib/model-labels';
 
 interface SkillDef {
   id: string;
@@ -64,10 +70,30 @@ const MODEL_OPTIONS = [
   { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (budget)' },
 ];
 
+/**
+ * Public demo: sharing a module with the community is outside a visitor's
+ * routes (a shared module would show one visitor's instructions to every other
+ * visitor). The module itself is the visitor's, and so is its .anton download:
+ * POST /exchange/export/:id answers a visitor for their own module only, and
+ * always unsigned (routes/exchange.ts), so the page asks for an unsigned file
+ * and says so.
+ */
+function useBuilderDemo(): { demoMode: boolean; demoLimited: boolean; defaultModel: string | null } {
+  const cfg = useDemoStore((s) => s.config);
+  const role = useAuthStore((s) => s.user?.role);
+  return { demoMode: cfg.demoMode, demoLimited: demoRestricted(cfg, role), defaultModel: demoDefaultModel(cfg) };
+}
+
+/** What to tell the person when the module was saved but sharing it was refused. */
+const SHARE_REFUSED = 'Module saved. It could not be shared with the community, so it stays private to you.';
+
 // ── Save As Dialog ──────────────────────────────────────────────────────────
 
-function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (notice?: string) => void }) {
   const { systemPrompt, selectedOutputFormats, selectedPersonas, selectedSkills, thinking, creativity, model, knowledgeSources } = useSessionStore();
+  const { demoLimited } = useBuilderDemo();
+  // On a public demo the area list leaves out the areas kept off it.
+  const { areas: visibleAreas } = useDemoCatalogue();
   const [name, setName] = useState('');
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
@@ -98,8 +124,10 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           knowledgeSources,
         },
       });
-      if (shareWithCommunity && created.id) {
-        await shareModuleWithCommunity(created.id);
+      // The module exists now; a refused share must not hide that.
+      let notice: string | undefined;
+      if (shareWithCommunity && created.id && !demoLimited) {
+        try { await shareModuleWithCommunity(created.id); } catch { notice = SHARE_REFUSED; }
       }
       // Save initial version snapshot
       if (created.id) {
@@ -115,7 +143,7 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           }),
         }).catch(() => {});
       }
-      onSaved();
+      onSaved(notice);
       onClose();
     } catch {
       setError('Failed to save module');
@@ -160,7 +188,7 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               <select className={inputCls} value={area} onChange={(e) => setArea(e.target.value)}>
                 <option value="my-modules">⭐ My Modules (default)</option>
                 <optgroup label="────────────">
-                  {AREAS.map((a) => (
+                  {visibleAreas.map((a) => (
                     <option key={a.id} value={a.id}>{a.label}</option>
                   ))}
                 </optgroup>
@@ -173,13 +201,14 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           <div className="rounded-lg bg-adv-dark-2 p-3 text-xs text-adv-gray space-y-1">
             <div className="text-adv-off-white text-[11px] font-medium mb-2">Will save:</div>
             <div>System prompt: {systemPrompt ? `${systemPrompt.slice(0, 60)}...` : '(empty)'}</div>
-            <div>Thinking: {thinking} · Creativity: {creativity} · Model: {model.split('-')[1] || model}</div>
+            <div>Thinking: {thinking} · Creativity: {creativity} · Model: {modelLabel(model)}</div>
             <div>Output formats: {selectedOutputFormats.length || 0} selected</div>
             <div>Personas: {selectedPersonas.map(id => EXPERT_ROLES.find(r => r.id === id)?.label || id).join(', ') || 'none'}</div>
             <div>Skills: {selectedSkills.join(', ') || 'none'}</div>
           </div>
 
-          {/* Share with Community toggle */}
+          {/* Share with Community toggle (not on a public demo: modules stay private there) */}
+          {!demoLimited && (
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -192,6 +221,7 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               <p className="text-[11px] text-adv-gray">Shared modules are visible to other openEXPERT users on this device</p>
             </div>
           </label>
+          )}
 
           {error && <p className="text-xs text-adv-red">{error}</p>}
         </div>
@@ -504,15 +534,22 @@ function AiSuggestInputsButton({ name, description, systemPrompt, onSuggest }: {
   );
 }
 
-function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () => void; initialData?: Partial<WizardData>; editingModuleId?: string }) {
+function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: (notice?: string) => void; initialData?: Partial<WizardData>; editingModuleId?: string }) {
+  // On a public demo the area list leaves out the areas kept off it.
+  const { areas: visibleAreas } = useDemoCatalogue();
+  // On a demo the module's runs use the model picked on the module page (the
+  // offered ones), so there is no Claude model list to pick a default from.
+  const { demoMode, demoLimited, defaultModel: demoModel } = useBuilderDemo();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [shareWithCommunity, setShareWithCommunity] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<SkillDef[]>([]);
 
   const [libraryEntries, setLibraryEntries] = useState<Array<{id: string; label: string; category: string; file_count: number; indexed_at: string | null}>>([]);
   const [testRunResult, setTestRunResult] = useState<string | null>(null);
   const [testRunTokens, setTestRunTokens] = useState<number | null>(null);
+  const [testRunModel, setTestRunModel] = useState<string | null>(null);
   const [testRunLoading, setTestRunLoading] = useState(false);
   const [testRunError, setTestRunError] = useState<string | null>(null);
   const [generatingExample, setGeneratingExample] = useState(false);
@@ -526,7 +563,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
     system_prompt: initialData?.system_prompt || '',
     thinking: initialData?.thinking || 'think_hard',
     creativity: initialData?.creativity || 'balanced',
-    model: 'claude-opus-5-5',
+    model: demoMode ? (demoModel ?? '') : 'claude-opus-5-5',
     transparencyLevel: 1,
     personas: initialData?.personas || [],
     skills: initialData?.skills || [],
@@ -569,6 +606,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
   async function handleSave() {
     if (!data.name.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const payload = {
         name: data.name.trim(),
@@ -596,15 +634,17 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
       };
 
       let savedId: string;
+      let notice: string | undefined;
       if (editingModuleId) {
         // Edit mode — PATCH existing module
         const updated = await patchCustomModule(editingModuleId, payload);
         savedId = updated.id;
       } else {
-        // Create mode — POST new module
+        // Create mode — POST new module. The module exists once this returns;
+        // a refused share is reported, never allowed to hide the save.
         const created = await createCustomModule(payload);
-        if (shareWithCommunity && created.id) {
-          await shareModuleWithCommunity(created.id);
+        if (shareWithCommunity && created.id && !demoLimited) {
+          try { await shareModuleWithCommunity(created.id); } catch { notice = SHARE_REFUSED; }
         }
         savedId = created.id;
       }
@@ -620,9 +660,9 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
           }),
         }).catch(() => {});
       }
-      onSaved();
-    } catch {
-      // ignore
+      onSaved(notice);
+    } catch (err) {
+      setSaveError(err instanceof Error && err.message ? err.message : 'The module could not be saved. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -690,12 +730,19 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                   {CREATIVITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+              {demoMode ? (
+                <div>
+                  <span className={labelCls}>Model</span>
+                  <p className="mt-1.5 text-xs text-adv-gray">Runs use the model chosen on the module page.</p>
+                </div>
+              ) : (
               <div>
                 <label className={labelCls}>Default model</label>
                 <select className={inputCls} value={data.model} onChange={(e) => set('model', e.target.value)}>
                   {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
+              )}
               <div>
                 <label className={labelCls}>Thinking display</label>
                 <div className="flex gap-3 mt-1.5">
@@ -720,7 +767,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               <select className={inputCls} value={data.area} onChange={(e) => set('area', e.target.value)}>
                 <option value="my-modules">⭐ My Modules (default)</option>
                 <optgroup label="────────────">
-                  {AREAS.map((a) => (
+                  {visibleAreas.map((a) => (
                     <option key={a.id} value={a.id}>{a.label}</option>
                   ))}
                 </optgroup>
@@ -1020,7 +1067,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-adv-off-white">Test Your Module</h3>
-              <p className="text-xs text-adv-gray mt-1">Run a quick preview with Haiku (fast, cheap). Check the response format before saving.</p>
+              <p className="text-xs text-adv-gray mt-1">Run a quick preview on the server&apos;s fast utility model. Check the response format before saving.</p>
             </div>
 
             <div>
@@ -1037,7 +1084,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
             <button
               onClick={async () => {
                 if (!data.testQuery.trim() || !data.system_prompt.trim()) return;
-                setTestRunLoading(true); setTestRunError(null); setTestRunResult(null);
+                setTestRunLoading(true); setTestRunError(null); setTestRunResult(null); setTestRunModel(null);
                 try {
                   const r = await fetch('/api/custom-modules/test-run', {
                     method: 'POST',
@@ -1053,6 +1100,8 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                   const result = await r.json();
                   setTestRunResult(result.response);
                   setTestRunTokens(result.tokens_used);
+                  // The model that ran the test, as the server reports it.
+                  setTestRunModel(typeof result.model === 'string' && result.model ? result.model : null);
                 } catch (e) {
                   setTestRunError(e instanceof Error ? e.message : 'Test run failed');
                 } finally { setTestRunLoading(false); }
@@ -1075,7 +1124,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                   <span className="text-xs text-adv-gray">Response preview</span>
                   {testRunTokens !== null && (
                     <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-xs text-adv-teal">
-                      Haiku &middot; {testRunTokens.toLocaleString()} tokens
+                      {testRunModel ? `${modelLabel(testRunModel)} · ` : ''}{testRunTokens.toLocaleString()} tokens
                     </span>
                   )}
                 </div>
@@ -1106,7 +1155,8 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               </div>
             </div>
 
-            {/* Share with Community toggle */}
+            {/* Share with Community toggle (not on a public demo: modules stay private there) */}
+            {!demoLimited && (
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -1119,8 +1169,11 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 <p className="text-[11px] text-adv-gray">Shared modules are visible to other openEXPERT users on this device</p>
               </div>
             </label>
+            )}
           </div>
         )}
+
+        {saveError && <p role="alert" className="mt-4 text-xs text-adv-red">{saveError}</p>}
 
         {/* Navigation */}
         <div className="mt-6 flex gap-3">
@@ -1388,6 +1441,8 @@ export default function BuildYourOwnModule() {
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const { demoLimited } = useBuilderDemo();
   const [guidedConfig, setGuidedConfig] = useState<GeneratedModuleConfig | null>(null);
   const [editingModule, setEditingModule] = useState<CustomModuleData | null>(null);
 
@@ -1413,6 +1468,9 @@ export default function BuildYourOwnModule() {
       const res = await fetch(`/api/exchange/export/${m.id}?type=custom`, {
         method: 'POST',
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        // A demo visitor's export is unsigned (the server forces it too): nothing
+        // a visitor wrote may verify as vouched for by the showcase.
+        ...(demoLimited ? { body: JSON.stringify({ sign: false }) } : {}),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -1436,10 +1494,12 @@ export default function BuildYourOwnModule() {
     }
   }
 
-  function handleSaved() {
+  function handleSaved(notice?: string) {
     loadModules();
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSavedNotice(notice ?? null);
+    // A notice stays long enough to be read.
+    setTimeout(() => { setSaved(false); setSavedNotice(null); }, notice ? 8000 : 2000);
     setMode('list');
   }
 
@@ -1455,9 +1515,9 @@ export default function BuildYourOwnModule() {
           <p className="mt-1 text-sm text-adv-gray">Create custom AI modules tailored to your specific tasks and workflows.</p>
         </div>
         {saved && (
-          <div className="flex items-center gap-1.5 rounded-lg bg-adv-green/10 border border-adv-green/30 px-3 py-1.5 text-xs text-adv-green">
+          <div role="status" className="flex items-center gap-1.5 rounded-lg bg-adv-green/10 border border-adv-green/30 px-3 py-1.5 text-xs text-adv-green">
             <Check className="h-3 w-3" />
-            Module saved
+            {savedNotice ?? 'Module saved'}
           </div>
         )}
       </div>
@@ -1581,6 +1641,13 @@ export default function BuildYourOwnModule() {
             <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{modules.length}</span>
           </h2>
 
+          {demoLimited && modules.length > 0 && (
+            <p role="note" className="mb-3 text-sm text-adv-gray">
+              A module you download as .anton from this demo is unsigned: the file is your module, and nothing in it is
+              vouched for by this server. No copy is kept here.
+            </p>
+          )}
+
           {modules.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
               <Puzzle className="h-8 w-8 text-adv-gray mx-auto mb-3" />
@@ -1622,13 +1689,15 @@ export default function BuildYourOwnModule() {
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
+                    {/* On a public demo a visitor's download is unsigned (see useBuilderDemo). */}
                     <button
                       onClick={() => handleExportAnton(m)}
                       disabled={exporting === m.id}
-                      title="Export as .anton"
+                      title={demoLimited ? 'Export as .anton (unsigned)' : 'Export as .anton'}
+                      aria-label={demoLimited ? 'Export as .anton (unsigned)' : 'Export as .anton'}
                       className="rounded-lg border border-border p-1.5 text-adv-gray hover:border-adv-teal/40 hover:text-adv-teal transition-colors disabled:opacity-50"
                     >
-                      <Download className="h-3.5 w-3.5" />
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => handleDelete(m.id)}

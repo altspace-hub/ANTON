@@ -35,7 +35,9 @@
 //     ends, aborted and failed part-way included (CompatSpend);
 //   - the abort signal passed to fetch, a mid-stream `error` object or
 //     finish_reason 'error' raised as an error, 'length' reported, and a 402
-//     turned into a plain "budget used up" message.
+//     turned into a plain "budget used up" message;
+//   - on a public demo, no request to OpenRouter unless the extra body carries
+//     the privacy pin: zdr, data_collection 'deny', provider.only (2026-09-26).
 // Tools are no longer sent: tool_calls in the reply were never read back, so a
 // model that chose to call one produced an empty answer.
 // ═══════════════════════════════════════════════════════════
@@ -50,7 +52,14 @@ import {
   type ClaudeToolLike,
 } from './provider-extras.js';
 import { compatReasoningParam, compatReasoningAllowance, type CompatReasoningParam } from '../thinking-map.js';
-import { modelAcceptsImages, parseModelsListing, type CompatModelMeta } from '../compat-endpoint.js';
+import {
+  assertDemoPrivacyPin,
+  isOpenRouterBaseUrl,
+  modelAcceptsImages,
+  parseCompatModelId,
+  parseModelsListing,
+  type CompatModelMeta,
+} from '../compat-endpoint.js';
 import {
   recordSpend,
   reserveSpend,
@@ -118,6 +127,9 @@ export interface OpenAICompatibleStreamParams {
 
 // ── End-user id ─────────────────────────────────────────────────
 
+// LLM_USER_HASH_SECRET keys the HMAC. Outside demo mode it falls back on
+// JWT_SECRET, then on a per-boot random key; a demo refuses to start unless it
+// is set and differs from JWT_SECRET (demoModeStartupProblem).
 let bootSecret: string | null = null;
 function userHashSecret(): string {
   const configured = process.env.LLM_USER_HASH_SECRET || process.env.JWT_SECRET;
@@ -449,6 +461,17 @@ function isOptionalFieldRejection(status: number, bodyText: string): boolean {
   return /stream_options|include_usage|reasoning|\buser\b|unrecognized request argument|extra.?(fields|inputs).*not permitted/i.test(bodyText);
 }
 
+/** The endpoint's slug, from the compat:<slug>:<model> id the spend row names; null when the caller gave none. */
+function endpointSlugOf(params: OpenAICompatibleStreamParams): string | null {
+  const modelId = params.spend?.modelId;
+  if (!modelId) return null;
+  try {
+    return parseCompatModelId(modelId).slug;
+  } catch {
+    return null;
+  }
+}
+
 function compatHeaders(params: OpenAICompatibleStreamParams): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -468,6 +491,10 @@ async function postCompatChat(
   params: OpenAICompatibleStreamParams,
   stream: boolean,
 ): Promise<globalThis.Response> {
+  // Every compat request leaves through here. On a demo, nothing goes to
+  // OpenRouter without the privacy pin in the extra body; the resolver
+  // (compat-endpoint.ts) refuses first, this covers any other caller.
+  assertDemoPrivacyPin({ slug: endpointSlugOf(params), baseUrl: params.baseUrl, extraBody: params.extraBody });
   const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
   let withExtras = true;
   let retriedInFlight = false;
@@ -635,13 +662,7 @@ export function setCompatReconcileForTests(opts: { delaysMs?: number[]; anyHost?
 }
 
 function servesGenerationCosts(baseUrl: string): boolean {
-  if (reconcileAnyHost) return true;
-  try {
-    const host = new URL(baseUrl).hostname.toLowerCase();
-    return host === 'openrouter.ai' || host.endsWith('.openrouter.ai');
-  } catch {
-    return false;
-  }
+  return reconcileAnyHost || isOpenRouterBaseUrl(baseUrl);
 }
 
 interface GenerationCost {

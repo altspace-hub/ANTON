@@ -8,26 +8,50 @@
  * GET /api/modules                      — flat list of all modules (legacy + sidebar)
  * GET /api/modules/:id                  — single module config
  * GET /api/modules/:id/prompt           — system prompt for a module (legacy)
+ *
+ * In demo mode a visitor (a non-admin) does not see the modules kept off the
+ * demo (DEMO_HIDDEN_AREAS / DEMO_HIDDEN_MODULES): the listings leave them out
+ * and each single read answers 404, as for a module that does not exist.
  */
 
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { getAreas, getArea, getModule, getAllModules, getModuleSystemPrompt } from '../services/module-loader.js';
+import { isDemoMode, demoModuleHidden } from '../middleware/demo-mode.js';
 import { listServerPersonaIds, resolvePersonaInstruction } from '../services/prompt-builder.js';
 import { EXPERT_ROLES } from '../../src/lib/expert-roles.js';
 import { getAllSkills } from '../services/skills-manager.js';
 
 const router = Router();
 
+/**
+ * Demo mode: whether this caller is kept from the hidden modules. They invite
+ * health, employment, credit or criminal-offence data, which the demo must not
+ * receive (privacy review H3); the run route refuses them too (claude.ts).
+ * Admins, and every caller outside demo mode, see all of them.
+ */
+function hidesDemoModules(req: Request): boolean {
+  return isDemoMode() && req.user?.role !== 'admin';
+}
+
+/** Whether the caller must not see this module, or this area (moduleId ''). */
+function hiddenFor(req: Request, moduleId: string, areaId: string | null | undefined): boolean {
+  return hidesDemoModules(req) && demoModuleHidden(moduleId, areaId);
+}
+
 // ── Areas ────────────────────────────────────────────────────
 
-router.get('/areas', async (_req, res) => {
+router.get('/areas', async (req, res) => {
   try {
     const areas = await getAreas();
     // Strip systemPrompt from the response (large field, not needed in listing)
-    const safe = areas.map((area) => ({
-      ...area,
-      modules: area.modules.map(({ systemPrompt: _sp, ...m }) => m),
-    }));
+    const safe = areas
+      .filter((area) => !hiddenFor(req, '', area.id))
+      .map((area) => ({
+        ...area,
+        modules: area.modules
+          .filter((m) => !hiddenFor(req, m.id, m.areaId ?? area.id))
+          .map(({ systemPrompt: _sp, ...m }) => m),
+      }));
     res.json(safe);
   } catch {
     res.status(500).json({ error: 'Failed to load areas' });
@@ -37,13 +61,15 @@ router.get('/areas', async (_req, res) => {
 router.get('/areas/:areaId', async (req, res) => {
   try {
     const area = await getArea(req.params.areaId);
-    if (!area) {
+    if (!area || hiddenFor(req, '', area.id)) {
       res.status(404).json({ error: 'Area not found' });
       return;
     }
     const safe = {
       ...area,
-      modules: area.modules.map(({ systemPrompt: _sp, ...m }) => m),
+      modules: area.modules
+        .filter((m) => !hiddenFor(req, m.id, m.areaId ?? area.id))
+        .map(({ systemPrompt: _sp, ...m }) => m),
     };
     res.json(safe);
   } catch {
@@ -54,7 +80,7 @@ router.get('/areas/:areaId', async (req, res) => {
 router.get('/areas/:areaId/modules/:moduleId', async (req, res) => {
   try {
     const mod = await getModule(req.params.moduleId);
-    if (!mod || mod.areaId !== req.params.areaId) {
+    if (!mod || mod.areaId !== req.params.areaId || hiddenFor(req, mod.id, mod.areaId)) {
       res.status(404).json({ error: 'Module not found' });
       return;
     }
@@ -66,10 +92,12 @@ router.get('/areas/:areaId/modules/:moduleId', async (req, res) => {
 
 // ── Flat module endpoints (used by existing frontend code) ───
 
-router.get('/modules', async (_req, res) => {
+router.get('/modules', async (req, res) => {
   try {
     const modules = await getAllModules();
-    const safe = modules.map(({ systemPrompt: _sp, ...m }) => m);
+    const safe = modules
+      .filter((m) => !hiddenFor(req, m.id, m.areaId))
+      .map(({ systemPrompt: _sp, ...m }) => m);
     res.json(safe);
   } catch {
     res.status(500).json({ error: 'Failed to load modules' });
@@ -79,7 +107,7 @@ router.get('/modules', async (_req, res) => {
 router.get('/modules/:id', async (req, res) => {
   try {
     const mod = await getModule(req.params.id);
-    if (!mod) {
+    if (!mod || hiddenFor(req, mod.id, mod.areaId)) {
       res.status(404).json({ error: 'Module not found' });
       return;
     }
@@ -92,7 +120,10 @@ router.get('/modules/:id', async (req, res) => {
 // Legacy prompt endpoint — used by ModulePage.tsx
 router.get('/modules/:id/prompt', async (req, res) => {
   try {
-    const prompt = await getModuleSystemPrompt(req.params.id);
+    // A legacy prompt (server/prompts/<id>.md) has no area; its id still counts.
+    const hidden = hidesDemoModules(req)
+      && demoModuleHidden(req.params.id, (await getModule(req.params.id))?.areaId);
+    const prompt = hidden ? null : await getModuleSystemPrompt(req.params.id);
     if (!prompt) {
       res.status(404).json({ error: 'Prompt not found' });
       return;

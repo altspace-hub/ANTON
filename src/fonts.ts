@@ -7,6 +7,12 @@
  * bold; @fontsource ships every unicode subset (latin/-ext/cyrillic/greek/
  * vietnamese), matching the CDN's coverage, and the browser only loads the
  * subsets a given locale needs.
+ *
+ * The desktop web app (src/main.tsx) imports it too, since its index.html no
+ * longer links Google Fonts (the public demo's privacy notice says no page loads
+ * a font from another website). Montserrat (corporate headings) and the Noto
+ * script families (School) are not bundled: src/index.css falls back to Inter
+ * and to the system's own script fonts for them.
  */
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';

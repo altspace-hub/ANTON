@@ -328,11 +328,15 @@ export function createRendererRegistry(db: DatabaseAdapter, deps: RendererRegist
           );
           if (!artifactRow) throw new Error('Failed to insert rendered_artifacts row');
 
-          // Lock current max version for this session to avoid version-number
-          // collisions under concurrent runRenderer calls.
+          // One numbering at a time per session, so concurrent runRenderer
+          // calls cannot take the same version number. A transaction-scoped
+          // advisory lock: PostgreSQL refuses FOR UPDATE beside an aggregate
+          // ("FOR UPDATE is not allowed with aggregate functions"), which made
+          // every render fail at persist.
+          await tx.run('SELECT pg_advisory_xact_lock(hashtext(?))', `output-versions:${sessionId}`);
           const maxRow = await tx.get<{ maxv: number | string | null }>(
             `SELECT COALESCE(MAX(version_number), 0) AS maxv
-             FROM output_versions WHERE session_id = ? FOR UPDATE`,
+             FROM output_versions WHERE session_id = ?`,
             sessionId,
           );
           const nextVersion = Number(maxRow?.maxv ?? 0) + 1;

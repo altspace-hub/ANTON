@@ -12,6 +12,7 @@ import {
   GitBranch, Play, Search, ShieldCheck, Clock, Link2
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { useEngagementDemo } from '@/components/engagement/engagement-demo';
 import EngagementSetup from '@/components/engagement/EngagementSetup';
 import EngagementScopeAgreement from '@/components/engagement/EngagementScopeAgreement';
 import EngagementClientIntelligence from '@/components/engagement/EngagementClientIntelligence';
@@ -244,13 +245,17 @@ export default function EngagementWorkspacePage() {
   const [activePhase, setActivePhase] = useState('setup');
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [showProjectLink, setShowProjectLink] = useState(false);
+  // Public demo: projects are not offered to visitors (the server answers 404),
+  // so the page neither asks for them nor offers to link one.
+  const demo = useEngagementDemo();
 
   useEffect(() => {
-    if (id) {
-      loadEngagement();
-      loadProjects();
-    }
+    if (id) loadEngagement();
   }, [id]);
+
+  useEffect(() => {
+    if (id && !demo.restricted) loadProjects();
+  }, [id, demo.restricted]);
 
   async function loadProjects() {
     try {

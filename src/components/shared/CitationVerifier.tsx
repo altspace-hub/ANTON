@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight, ShieldCheck, Loader2, BookOpen, Globe } from 'lucide-react';
+import { fetchWithAuth, errorMessageOf } from '@/lib/api';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -38,23 +39,23 @@ export default function CitationVerifier({ text, embedded, sourceManifest }: Cit
     setCitations([]);
 
     try {
-      const res = await fetch('/api/claude/verify-citations', {
+      const res = await fetchWithAuth('/api/claude/verify-citations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, sourceManifest }),
       });
 
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
+        throw new Error(await errorMessageOf(res, `Verification failed (HTTP ${res.status}).`));
       }
 
-      const data = (await res.json()) as { citations: CitationResult[] };
-      setCitations(data.citations);
+      const data = (await res.json()) as { citations?: unknown };
+      const found = Array.isArray(data.citations) ? (data.citations as CitationResult[]) : [];
+      setCitations(found);
       setStatus('done');
 
       // Auto-expand the list if there are flagged citations
-      if (data.citations.some((c) => !c.verified)) {
+      if (found.some((c) => !c.verified)) {
         setExpanded(true);
       }
     } catch (err) {

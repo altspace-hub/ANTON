@@ -7,10 +7,14 @@
  *         compliance, versions, projects, skills, apprentice, analytics, workflows.
  */
 
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
+import { chargeMonthlyUsage } from '../services/budget-manager.js';
 import { Router, Request, Response } from 'express';
 import { callChat } from '../services/provider-router.js';
+import { modelCallErrorStatus } from '../services/side-route-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
+import { findCandidateModules, formatCandidatesForPrompt, type CandidateModule } from '../services/module-recommendation.js';
+import { isDemoMode, demoModuleHidden } from '../middleware/demo-mode.js';
 
 /** Set by the factory; lets an azure:/compat: default resolve its endpoint. */
 let routesDb: DatabaseAdapter | undefined;
@@ -24,7 +28,16 @@ function stripAndParseJson(text: string): unknown {
   return JSON.parse(match[0]);
 }
 
-async function ai(system: string, user: string): Promise<string> {
+interface AiOptions {
+  /** Ask for one JSON object (response_format json_object where the provider has it). Not for a JSON array. */
+  jsonMode?: boolean;
+  /** Names the call in the audit log (callChat purpose). */
+  purpose?: string;
+  /** Charge the tokens to this person's monthly budget (a route open to demo visitors). */
+  chargeUser?: { id?: string | null } | null;
+}
+
+async function ai(system: string, user: string, opts: AiOptions = {}): Promise<string> {
   // Medium tier (was a literal Sonnet). The db passed to the factory lets an
   // azure:/compat: default resolve its endpoint on these routes.
   const result = await callChat({
@@ -34,13 +47,114 @@ async function ai(system: string, user: string): Promise<string> {
     messages: [{ role: 'user', content: user }],
     maxTokens: 8192,
     db: routesDb,
+    ...(opts.jsonMode ? { jsonMode: true } : {}),
+    ...(opts.purpose ? { purpose: opts.purpose } : {}),
   });
+  if (opts.chargeUser && routesDb) await chargeMonthlyUsage(routesDb, opts.chargeUser, result.inputTokens, result.outputTokens);
   return result.text;
 }
 
-async function aiJson(system: string, user: string): Promise<unknown> {
-  const text = await ai(system, user);
+async function aiJson(system: string, user: string, opts: AiOptions = {}): Promise<unknown> {
+  const text = await ai(system, user, opts);
   return stripAndParseJson(text);
+}
+
+/** A string field of a request body, trimmed and cut to `max` characters; '' when absent. */
+function bodyText(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+
+export interface ProjectScaffold {
+  description: string;
+  recommendedModules: Array<{ id: string; reason: string }>;
+  suggestedDeadlines: Array<{ title: string; dayOffset: number }>;
+  phases: Array<{ name: string; duration: string; tasks: string[] }>;
+  successCriteria: string[];
+}
+
+const asText = (v: unknown, max = 500): string => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+
+/**
+ * The scaffold the Projects page reads, whatever shape the model gave it:
+ * recommended modules as { id, reason } (a bare id string becomes one with no
+ * reason) and only ids from `allowedIds` when that list is given, milestones as
+ * { title, dayOffset } with a whole, non-negative day, phases and criteria as
+ * lists. Every field is present, so the page never reads a missing array.
+ */
+export function normaliseProjectScaffold(raw: unknown, allowedIds: readonly string[] = []): ProjectScaffold {
+  const obj = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  const allowed = new Set(allowedIds);
+  const seen = new Set<string>();
+  const recommendedModules: ProjectScaffold['recommendedModules'] = [];
+  for (const entry of asList(obj.recommendedModules)) {
+    const id = typeof entry === 'string' ? entry.trim()
+      : entry && typeof entry === 'object' ? asText((entry as Record<string, unknown>).id ?? (entry as Record<string, unknown>).moduleId, 200) : '';
+    if (!id || seen.has(id) || (allowed.size > 0 && !allowed.has(id))) continue;
+    seen.add(id);
+    const reason = entry && typeof entry === 'object' ? asText((entry as Record<string, unknown>).reason) : '';
+    recommendedModules.push({ id, reason });
+  }
+  const suggestedDeadlines: ProjectScaffold['suggestedDeadlines'] = [];
+  for (const entry of asList(obj.suggestedDeadlines)) {
+    const d = entry && typeof entry === 'object' ? entry as Record<string, unknown> : null;
+    const title = typeof entry === 'string' ? entry.trim().slice(0, 200) : asText(d?.title, 200);
+    if (!title) continue;
+    const day = Number(d?.dayOffset);
+    suggestedDeadlines.push({ title, dayOffset: Number.isFinite(day) ? Math.max(0, Math.round(day)) : 0 });
+  }
+  const phases: ProjectScaffold['phases'] = [];
+  for (const entry of asList(obj.phases)) {
+    const p = entry && typeof entry === 'object' ? entry as Record<string, unknown> : null;
+    const name = typeof entry === 'string' ? entry.trim().slice(0, 200) : asText(p?.name, 200);
+    if (!name) continue;
+    phases.push({
+      name,
+      duration: asText(p?.duration, 100),
+      tasks: asList(p?.tasks).map((t) => asText(t)).filter(Boolean),
+    });
+  }
+  return {
+    description: asText(obj.description, 2000),
+    recommendedModules: recommendedModules.slice(0, 8),
+    suggestedDeadlines: suggestedDeadlines.slice(0, 12),
+    phases: phases.slice(0, 12),
+    successCriteria: asList(obj.successCriteria).map((c) => asText(c)).filter(Boolean).slice(0, 12),
+  };
+}
+
+/** How many modules the project scaffold puts in front of the model. */
+export const PROJECT_SCAFFOLD_CANDIDATES = 30;
+
+const MODULE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,99}$/i;
+
+/**
+ * The modules the project scaffold may recommend, chosen on the server: the
+ * catalogue ranked against the project's name and goal (findCandidateModules,
+ * the keyword pre-filter Discover and the Task Agent use), so the list is
+ * relevant rather than the first 30 in catalogue order. `offeredIds` is the
+ * page's own catalogue (the modules this person is shown): when given, only
+ * those stay. On a public demo a visitor never gets a module the demo keeps
+ * off (demoModuleHidden: DEMO_HIDDEN_MODULES / DEMO_HIDDEN_AREAS), whatever
+ * the page sent; an admin, as everywhere on the demo, gets every module.
+ */
+export async function projectScaffoldCandidates(
+  req: { user?: { role?: string } },
+  text: string,
+  offeredIds: unknown,
+  limit: number = PROJECT_SCAFFOLD_CANDIDATES,
+): Promise<CandidateModule[]> {
+  const offered = new Set(
+    (Array.isArray(offeredIds) ? offeredIds : [])
+      .slice(0, 5000)
+      .filter((id): id is string => typeof id === 'string' && MODULE_ID_RE.test(id)),
+  );
+  const visitor = isDemoMode() && req.user?.role !== 'admin';
+  const ranked = await findCandidateModules(text, Number.MAX_SAFE_INTEGER);
+  return ranked
+    .filter((m) => offered.size === 0 || offered.has(m.id))
+    .filter((m) => !visitor || !demoModuleHidden(m.id, m.areaId))
+    .slice(0, Math.max(0, limit));
 }
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -53,10 +167,12 @@ export async function createAiAssistRoutes(db?: DatabaseAdapter): Promise<Router
   // POST /api/ai-assist/module-prompt
   router.post('/ai-assist/module-prompt', async (req: Request, res: Response) => {
     try {
-      const { name, description, area, thinking, creativity } = req.body as {
-        name: string; description?: string; area?: string; thinking?: string; creativity?: string;
-      };
-      if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+      const name = bodyText(req.body?.name, 200);
+      const description = bodyText(req.body?.description, 2000);
+      const area = bodyText(req.body?.area, 100);
+      const thinking = bodyText(req.body?.thinking, 40);
+      const creativity = bodyText(req.body?.creativity, 40);
+      if (!name) return res.status(400).json({ error: 'name required' });
 
       const text = await ai(
         `You are an expert prompt engineer for AI compliance and professional services tools.
@@ -74,12 +190,13 @@ Return ONLY the system prompt text — no explanation, no JSON, no preamble.`,
         `Write a system prompt for a module called "${name}".
 ${description ? `Description: ${description}` : ''}
 ${area ? `Area/domain: ${area}` : ''}
-Make Claude the ideal specialist for this module's purpose.`
+Make Claude the ideal specialist for this module's purpose.`,
+        { purpose: 'module-builder-prompt', chargeUser: req.user },
       );
       res.json({ prompt: text });
     } catch (err) {
-      console.error('[ai-assist/module-prompt]', err);
-      res.status(500).json({ error: safeError(err) });
+      console.error('[ai-assist/module-prompt]', err instanceof Error ? err.message : 'error');
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 
@@ -87,10 +204,10 @@ Make Claude the ideal specialist for this module's purpose.`
   // POST /api/ai-assist/module-inputs
   router.post('/ai-assist/module-inputs', async (req: Request, res: Response) => {
     try {
-      const { name, description, systemPrompt } = req.body as {
-        name: string; description?: string; systemPrompt?: string;
-      };
-      if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+      const name = bodyText(req.body?.name, 200);
+      const description = bodyText(req.body?.description, 2000);
+      const systemPrompt = bodyText(req.body?.systemPrompt, 400);
+      if (!name) return res.status(400).json({ error: 'name required' });
 
       const data = await aiJson(
         `You are a UX designer for AI-powered professional tools.
@@ -109,13 +226,18 @@ Return a JSON array of 3-5 field definitions:
 For select/chips types include 3-6 options. Return ONLY valid JSON array.`,
         `Suggest guided inputs for module: "${name}"
 ${description ? `Description: ${description}` : ''}
-${systemPrompt ? `System prompt excerpt: ${systemPrompt.slice(0, 400)}` : ''}
-What 3-5 inputs would most improve Claude's output quality?`
+${systemPrompt ? `System prompt excerpt: ${systemPrompt}` : ''}
+What 3-5 inputs would most improve Claude's output quality?`,
+        { purpose: 'module-builder-inputs', chargeUser: req.user },
       );
-      res.json({ fields: data });
+      // An array as asked, or an object wrapping one ({ fields: [...] }).
+      const fields = Array.isArray(data) ? data
+        : data && typeof data === 'object' && Array.isArray((data as { fields?: unknown }).fields) ? (data as { fields: unknown[] }).fields
+          : [];
+      res.json({ fields });
     } catch (err) {
-      console.error('[ai-assist/module-inputs]', err);
-      res.status(500).json({ error: safeError(err) });
+      console.error('[ai-assist/module-inputs]', err instanceof Error ? err.message : 'error');
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 
@@ -333,30 +455,42 @@ What are the meaningful differences?`
   // POST /api/ai-assist/project-scaffold
   router.post('/ai-assist/project-scaffold', async (req: Request, res: Response) => {
     try {
-      const { name, goal, availableModuleIds } = req.body as {
-        name: string; goal?: string; availableModuleIds?: string[];
-      };
-      if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+      const name = bodyText(req.body?.name, 200);
+      const goal = bodyText(req.body?.goal, 2000);
+      if (!name) return res.status(400).json({ error: 'name required' });
+      // The modules to choose from: the catalogue ranked against the project
+      // (not the first 30 ids the page sent), limited to the ones the page
+      // offers, and on a demo never one kept off it for a visitor. The model
+      // may recommend only these; with none, it recommends nothing.
+      const candidates = await projectScaffoldCandidates(req, `${name}\n${goal}`, req.body?.availableModuleIds);
+      const candidateIds = candidates.map((m) => m.id);
 
+      // The shape ProjectsPage reads (recommended modules with a reason, and
+      // milestones), normalised whatever the model returns: the page crashed
+      // on the bare id list and the missing milestones this used to ask for.
       const data = await aiJson(
         `You are a compliance project manager. Scaffold projects for financial crime prevention professionals.
-Return JSON:
+Return one JSON object:
 {
   "description": "1-2 sentence project description",
-  "recommendedModules": ["module-id-1", "module-id-2"],
+  "recommendedModules": [{ "id": "module-id", "reason": "why this module helps, one sentence" }],
+  "suggestedDeadlines": [{ "title": "Milestone", "dayOffset": 14 }],
   "phases": [{ "name": "Phase name", "duration": "e.g. 1-2 weeks", "tasks": ["Task 1", "Task 2"] }],
   "successCriteria": ["Criterion 1", "Criterion 2"]
 }
-Return ONLY valid JSON. Pick recommendedModules from the available list only.`,
+dayOffset is the number of days from today. Return ONLY the JSON object. Pick recommendedModules from the available list only.`,
         `Project: "${name}"
 ${goal ? `Goal: ${goal}` : ''}
-${availableModuleIds?.length ? `Available modules: ${availableModuleIds.slice(0, 30).join(', ')}` : ''}
-Suggest project structure, phases, and up to 4 relevant modules.`
+${candidates.length ? `Available modules (id: name — description):\n${formatCandidatesForPrompt(candidates)}` : 'No modules are available: return an empty recommendedModules list.'}
+Suggest project structure, phases, 3-6 milestones, and up to 4 relevant modules.`,
+        { jsonMode: true, purpose: 'project-scaffold', chargeUser: req.user },
       );
-      res.json(data);
+      const scaffold = normaliseProjectScaffold(data, candidateIds);
+      // normaliseProjectScaffold keeps any id when the allowed list is empty.
+      res.json(candidateIds.length > 0 ? scaffold : { ...scaffold, recommendedModules: [] });
     } catch (err) {
-      console.error('[ai-assist/project-scaffold]', err);
-      res.status(500).json({ error: safeError(err) });
+      console.error('[ai-assist/project-scaffold]', err instanceof Error ? err.message : 'error');
+      res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });
     }
   });
 

@@ -9,6 +9,22 @@ import {
 import * as LucideIcons from 'lucide-react';
 import { CreateCollectionModal } from '../components/knowledge/CreateCollectionModal';
 import { DocumentUploader } from '../components/knowledge/DocumentUploader';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+
+/**
+ * Public demo (DEMO_MODE=true), for a visitor: their own collections only,
+ * searched by keyword (nothing is embedded); the Regulatory Packs are read
+ * only (installing and switching packs is the administrator's); Semantic
+ * Search over memory atoms is not shown — a visitor's runs are never learned
+ * from, so it would always be empty. Admins see everything.
+ */
+function useDemoVisitor(): { limited: boolean; retentionDays: number } {
+  const config = useDemoStore((s) => s.config);
+  const role = useAuthStore((s) => s.user?.role);
+  return { limited: demoRestricted(config, role), retentionDays: config.retentionDays };
+}
 
 // ── Shared types ─────────────────────────────────────────────────────────────
 
@@ -21,6 +37,10 @@ interface Collection {
   color: string;
   documentCount: number;
   chunkCount: number;
+  /** How runs search this collection for the signed-in person (server-decided). */
+  searchMethod?: 'keyword' | 'hybrid';
+  /** Whether the signed-in person may delete it (their own, or any for an admin). */
+  canManage?: boolean;
 }
 
 interface Document {
@@ -88,10 +108,12 @@ const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('opene
 // ── Collections Tab ───────────────────────────────────────────────────────────
 
 function CollectionsTab() {
+  const demo = useDemoVisitor();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => { loadCollections(); }, []);
   useEffect(() => { if (selectedCollection) loadDocuments(selectedCollection); }, [selectedCollection]);
@@ -101,11 +123,28 @@ function CollectionsTab() {
       const res = await fetch('/api/collections', { headers: authHeader() });
       if (!res.ok) return;
       const data = await res.json();
-      setCollections(data.collections || []);
-      if (data.collections?.length && !selectedCollection) {
-        setSelectedCollection(data.collections[0].id);
-      }
+      const list: Collection[] = data.collections || [];
+      setCollections(list);
+      setSelectedCollection((current) => (current && list.some((c) => c.id === current) ? current : list[0]?.id ?? null));
     } catch (e) { console.error('Failed to load collections:', e); }
+  };
+
+  const handleDeleteCollection = async (collection: Collection) => {
+    if (!confirm(`Delete the collection "${collection.display_name}"?\n\nEvery document in it, its indexed passages and the uploaded files are removed.`)) return;
+    setActionError(null);
+    try {
+      const res = await fetchWithAuth(`/api/collections/${encodeURIComponent(collection.id)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: unknown };
+        setActionError(typeof body.error === 'string' && body.error.length < 200 ? body.error : 'The collection could not be deleted.');
+        return;
+      }
+      setSelectedCollection(null);
+      setDocuments([]);
+      await loadCollections();
+    } catch {
+      setActionError('The collection could not be deleted.');
+    }
   };
 
   const loadDocuments = async (collectionId: string) => {
@@ -118,10 +157,11 @@ function CollectionsTab() {
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('Delete this document? This will remove all indexed chunks.')) return;
+    if (!confirm('Delete this document? Its indexed passages and the uploaded file are removed.')) return;
     try {
-      await fetchWithAuth(`/api/documents/${documentId}`, { method: 'DELETE' });
+      await fetchWithAuth(`/api/documents/${encodeURIComponent(documentId)}`, { method: 'DELETE' });
       if (selectedCollection) loadDocuments(selectedCollection);
+      loadCollections();
     } catch (e) { console.error('Failed to delete document:', e); }
   };
 
@@ -139,8 +179,10 @@ function CollectionsTab() {
           <button
             onClick={() => setShowCreateModal(true)}
             className="p-2 text-adv-teal hover:bg-adv-teal/10 rounded transition-colors"
+            aria-label="Create collection"
+            title="Create collection"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -176,6 +218,26 @@ function CollectionsTab() {
 
       {/* Documents Area */}
       <div className="flex-1 overflow-auto p-6">
+        {demo.limited && (
+          <div className="mb-6 flex items-start gap-2 rounded-lg border border-adv-blue/30 bg-adv-blue/10 p-3 text-sm text-adv-off-white" role="note">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-adv-blue" aria-hidden="true" />
+            <p>
+              Your collections and documents are private to your demo account. Uploads count toward its upload limit
+              and are deleted with the account{demo.retentionDays > 0 ? ` after ${demo.retentionDays} days` : ''}.
+              To use a collection in a run, switch on Knowledge Collections under Knowledge Sources on a module page and
+              pick it: the passages that match your question are sent to the model with it. In this demo, documents
+              are searched by keyword only: a run finds passages that use the words of your question, not passages
+              that only mean the same thing.
+            </p>
+          </div>
+        )}
+        {actionError && (
+          <div className="mb-4 flex items-center gap-2 rounded border border-adv-red/30 bg-adv-red/10 p-3 text-sm text-adv-red" role="alert">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+            {actionError}
+            <button onClick={() => setActionError(null)} className="ml-auto text-adv-gray hover:text-adv-off-white" aria-label="Dismiss error">×</button>
+          </div>
+        )}
         {selectedCollectionData ? (
           <>
             <div className="mb-6">
@@ -185,10 +247,28 @@ function CollectionsTab() {
                     <IconComponent className="h-6 w-6" style={{ color: selectedCollectionData.color }} />
                   </div>
                 )}
-                <div>
+                <div className="min-w-0 flex-1">
                   <h1 className="text-2xl font-bold text-adv-off-white">{selectedCollectionData.display_name}</h1>
                   <p className="text-sm text-adv-gray">{selectedCollectionData.description}</p>
+                  {selectedCollectionData.searchMethod && (
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-adv-gray">
+                      <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                      {selectedCollectionData.searchMethod === 'hybrid'
+                        ? 'Searched by meaning and by keyword.'
+                        : 'Searched by keyword only: no embedding model indexes these documents.'}
+                    </p>
+                  )}
                 </div>
+                {selectedCollectionData.canManage && (
+                  <button
+                    onClick={() => handleDeleteCollection(selectedCollectionData)}
+                    className="flex items-center gap-1.5 rounded border border-adv-gray-med px-3 py-1.5 text-sm text-adv-gray transition-colors hover:border-adv-red/40 hover:text-adv-red"
+                    aria-label={`Delete collection ${selectedCollectionData.display_name}`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Delete collection
+                  </button>
+                )}
               </div>
             </div>
 
@@ -243,8 +323,9 @@ function CollectionsTab() {
                     <button
                       onClick={() => handleDeleteDocument(doc.id)}
                       className="p-2 text-adv-gray hover:text-adv-red transition-colors"
+                      aria-label={`Delete ${doc.filename}`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -317,7 +398,7 @@ function ActivateConfirmModal({ pack, onConfirm, onCancel }: ActivateConfirmProp
         </div>
         <p className="text-sm text-adv-gray mb-4">
           This will make <span className="text-adv-off-white font-medium">{pack.display_name}</span>'s structured
-          regulatory data available to Claude across all sessions.
+          regulatory data available to the AI across all sessions.
         </p>
         <div className="grid grid-cols-3 gap-3 mb-5 p-3 bg-adv-dark rounded-lg text-center">
           <div>
@@ -362,7 +443,8 @@ function ActivateConfirmModal({ pack, onConfirm, onCancel }: ActivateConfirmProp
 interface PreviewModalProps {
   pack: KnowledgePack;
   onClose: () => void;
-  onActivate: (pack: KnowledgePack) => void;
+  /** Absent for a read-only viewer (a demo visitor): no Activate button. */
+  onActivate?: (pack: KnowledgePack) => void;
 }
 
 function PreviewModal({ pack, onClose, onActivate }: PreviewModalProps) {
@@ -498,7 +580,7 @@ function PreviewModal({ pack, onClose, onActivate }: PreviewModalProps) {
         </div>
 
         {/* Modal footer */}
-        {pack.status !== 'active' && (
+        {pack.status !== 'active' && onActivate && (
           <div className="p-4 border-t border-adv-gray-med flex justify-end">
             <button
               onClick={() => { onClose(); onActivate(pack); }}
@@ -517,6 +599,10 @@ function PreviewModal({ pack, onClose, onActivate }: PreviewModalProps) {
 // ── Regulatory Packs Tab ──────────────────────────────────────────────────────
 
 function RegulatoryPacksTab() {
+  // A demo visitor browses the packs; installing, importing, switching and
+  // deleting them change every visitor's runs, so they stay the administrator's
+  // (the server refuses them too: requireAdminOrSolo).
+  const readOnly = useDemoVisitor().limited;
   const [packs, setPacks] = useState<KnowledgePack[]>([]);
   const [bundledPacks, setBundledPacks] = useState<BundledPackInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -635,8 +721,8 @@ function RegulatoryPacksTab() {
     );
   }
 
-  // Bundled packs that haven't been installed yet
-  const availableBundled = bundledPacks.filter((b) => b.status === 'available');
+  // Bundled packs that haven't been installed yet (only someone who can install them sees them)
+  const availableBundled = readOnly ? [] : bundledPacks.filter((b) => b.status === 'available');
 
   return (
     <div className="flex-1 overflow-auto p-6">
@@ -645,9 +731,15 @@ function RegulatoryPacksTab() {
         <div>
           <h1 className="text-2xl font-bold text-adv-off-white">Regulatory Knowledge Packs</h1>
           <p className="text-sm text-adv-gray mt-1">
-            Pre-structured regulatory entity graphs that enrich Claude's context with structured knowledge about regulations, obligations, and authorities.
+            Pre-structured regulatory entity graphs that enrich the AI's context with structured knowledge about regulations, obligations, and authorities.
           </p>
+          {readOnly && (
+            <p className="text-sm text-adv-gray mt-2">
+              In this demo the packs are chosen by the administrator. You can look inside each one; the active packs are used in your runs.
+            </p>
+          )}
         </div>
+        {!readOnly && (
         <div className="flex items-center gap-3">
           <input
             ref={fileInputRef}
@@ -665,6 +757,7 @@ function RegulatoryPacksTab() {
             {importing ? 'Importing…' : 'Import .anton Pack'}
           </button>
         </div>
+        )}
       </div>
 
       {/* Error */}
@@ -770,7 +863,7 @@ function RegulatoryPacksTab() {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        {pack.status === 'active' ? (
+                        {readOnly ? null : pack.status === 'active' ? (
                           <button
                             onClick={() => handleDeactivate(pack.id)}
                             aria-label={`Deactivate ${pack.display_name}`}
@@ -789,6 +882,7 @@ function RegulatoryPacksTab() {
                             Activate
                           </button>
                         )}
+                        {!readOnly && (
                         <button
                           onClick={() => handleDelete(pack.id, pack.display_name)}
                           aria-label={`Delete ${pack.display_name}`}
@@ -796,6 +890,7 @@ function RegulatoryPacksTab() {
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </button>
+                        )}
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : pack.id)}
                           aria-label={isExpanded ? 'Collapse pack details' : 'Expand pack details'}
@@ -853,16 +948,24 @@ function RegulatoryPacksTab() {
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Package className="h-16 w-16 text-adv-gray mb-4" />
           <h2 className="text-xl font-semibold text-adv-off-white mb-2">No Knowledge Packs</h2>
-          <p className="text-sm text-adv-gray mb-6 max-w-md">
-            Import a Regulatory Knowledge Pack (.anton file) to provide Claude with structured knowledge about regulations, articles, and compliance obligations.
-          </p>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-adv-teal text-white rounded hover:bg-adv-teal-dark transition-colors flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Import First Pack
-          </button>
+          {readOnly ? (
+            <p className="text-sm text-adv-gray mb-6 max-w-md">
+              No regulatory knowledge packs are installed on this demo.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-adv-gray mb-6 max-w-md">
+                Import a Regulatory Knowledge Pack (.anton file) to provide the AI with structured knowledge about regulations, articles, and compliance obligations.
+              </p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-adv-teal text-white rounded hover:bg-adv-teal-dark transition-colors flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Import First Pack
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -874,14 +977,14 @@ function RegulatoryPacksTab() {
             <div className="text-sm text-adv-gray">
               <span className="text-adv-teal font-medium">Active packs</span> inject structured regulatory entity context into every prompt.
               Deactivated packs remain installed but don't affect AI responses.
-              Active packs must be deactivated before deletion.
+              {!readOnly && ' Active packs must be deactivated before deletion.'}
             </div>
           </div>
         </div>
       )}
 
       {/* Modals */}
-      {confirmActivate && (
+      {confirmActivate && !readOnly && (
         <ActivateConfirmModal
           pack={confirmActivate}
           onConfirm={() => handleActivate(confirmActivate)}
@@ -892,7 +995,7 @@ function RegulatoryPacksTab() {
         <PreviewModal
           pack={previewPack}
           onClose={() => setPreviewPack(null)}
-          onActivate={(p) => { setPreviewPack(null); confirmAndActivate(p); }}
+          onActivate={readOnly ? undefined : (p) => { setPreviewPack(null); confirmAndActivate(p); }}
         />
       )}
     </div>
@@ -1136,14 +1239,17 @@ type Tab = 'collections' | 'regulatory-packs' | 'semantic-search';
 
 export default function KnowledgeBasePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get('tab') as Tab) ?? 'collections';
-  const setActiveTab = (tab: Tab) => setSearchParams({ tab });
-
+  // A demo visitor has no Semantic Search: it searches the memory the demo
+  // never builds from visitors' runs, so it would only ever be empty.
+  const { limited: demoLimited } = useDemoVisitor();
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'collections', label: 'Collections', icon: <DatabaseIcon className="h-4 w-4" /> },
     { id: 'regulatory-packs', label: 'Regulatory Packs', icon: <Package className="h-4 w-4" /> },
-    { id: 'semantic-search', label: 'Semantic Search', icon: <Brain className="h-4 w-4" /> },
+    ...(demoLimited ? [] : [{ id: 'semantic-search' as const, label: 'Semantic Search', icon: <Brain className="h-4 w-4" /> }]),
   ];
+  const requested = searchParams.get('tab') as Tab | null;
+  const activeTab: Tab = requested && tabs.some((t) => t.id === requested) ? requested : 'collections';
+  const setActiveTab = (tab: Tab) => setSearchParams({ tab });
 
   return (
     <div className="flex flex-col h-screen bg-adv-dark">

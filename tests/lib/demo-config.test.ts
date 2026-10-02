@@ -29,12 +29,20 @@ describe('parseDemoConfig', () => {
     expect(parseDemoConfig(DEMO)).toEqual({
       demoMode: true,
       offeredModels: ['compat:openrouter:z-ai/glm-5.3-flash'],
+      defaultModel: '',
       enabledPillars: ['work', 'pathfinder'],
       signupOpen: true,
       signupCodeRequired: true,
+      signupWithEmail: false,
       retentionDays: 30,
       privacyPath: '/privacy',
+      termsPath: '/terms',
+      termsVersion: '',
+      operatorName: '',
       answersScored: true,
+      scorerModel: null,
+      hiddenAreas: [],
+      hiddenModules: [],
     });
   });
 
@@ -42,6 +50,17 @@ describe('parseDemoConfig', () => {
     expect(parseDemoConfig({ ...DEMO, answersScored: false }).answersScored).toBe(false);
     expect(parseDemoConfig({ ...DEMO, answersScored: true }).answersScored).toBe(true);
     expect(DEMO_OFF.answersScored).toBe(true);
+  });
+
+  it('scorerModel: the scorer is named while answers are scored, and only a plain model id', () => {
+    const kimi = 'compat:openrouter:moonshotai/kimi-k2.6';
+    expect(parseDemoConfig({ ...DEMO, answersScored: true, scorerModel: kimi }).scorerModel).toBe(kimi);
+    // A scorer the demo does not use is not shown.
+    expect(parseDemoConfig({ ...DEMO, answersScored: false, scorerModel: kimi }).scorerModel).toBeNull();
+    for (const bad of ['', 'has space', 'x'.repeat(201), 7, null, { id: kimi }]) {
+      expect(parseDemoConfig({ ...DEMO, answersScored: true, scorerModel: bad }).scorerModel, String(bad)).toBeNull();
+    }
+    expect(DEMO_OFF.scorerModel).toBeNull();
   });
 
   it('treats anything but demoMode === true as an ordinary server', () => {
@@ -77,15 +96,19 @@ describe('who is held to the demo surface', () => {
     expect(PILLARS.filter((p) => pillarVisible(DEMO_OFF, 'analyst', p))).toEqual([...PILLARS]);
   });
 
-  it('hides every sidebar entry but home and the enabled pillars\' entries from a visitor', () => {
+  it('hides every sidebar entry but the visitor\'s Work features and the enabled pillars\' entries from a visitor', () => {
     const hidden = demoHiddenNavItems(cfg, 'analyst', ALL_IDS);
-    expect(hidden.has('home')).toBe(false);
-    expect(hidden.has('pathfinder')).toBe(false);
-    expect(hidden.has('pathfinder-history')).toBe(false);
-    for (const id of ['agents', 'markets', 'coding', 'workflows', 'prompt', 'council', 'school', 'task-agent', 'my-work']) {
+    const visitorWork = ['home', 'my-work', 'prompt', 'council', 'brief', 'build-module',
+      // Opened 2026-10-02: each holds the visitor's own rows only, or is read only.
+      'engagements', 'discover', 'task-agent', 'projects', 'knowledge-base', 'exchange', 'orchestration', 'intelligence', 'radar'];
+    for (const id of [...visitorWork, 'pathfinder', 'pathfinder-history']) expect(hidden.has(id), id).toBe(false);
+    // What stays with admins (C8), and the other tools.
+    for (const id of ['agents', 'markets', 'coding', 'workflows', 'school', 'app-gateway', 'knowledge', 'graph',
+      'patterns', 'datasets', 'coworkers', 'skills', 'governance', 'audit']) {
       expect(hidden.has(id), id).toBe(true);
     }
-    expect(hidden.size).toBe(ALL_IDS.filter((id) => id !== 'pathfinder' && id !== 'pathfinder-history').length);
+    const shown = new Set([...visitorWork, 'pathfinder', 'pathfinder-history']);
+    expect(hidden.size).toBe(ALL_IDS.filter((id) => !shown.has(id)).length);
   });
 
   it('hides nothing for an admin or on an ordinary server', () => {

@@ -12,6 +12,9 @@ import {
   Clock, TrendingUp, Activity, ArrowRight, Settings,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,7 +31,9 @@ interface Insight {
   id: string;
   insight_type: string;
   title: string;
-  summary: string;
+  /** The server sends `body`; older rows were read as `summary`. */
+  summary?: string;
+  body?: string;
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   is_read: number;
   created_at: string;
@@ -52,10 +57,14 @@ interface TriggerSummary {
 
 interface RecentSession {
   id: string;
-  name: string | null;
-  module: string | null;
-  updated_at: string;
-  has_snapshot: boolean;
+  name?: string | null;
+  title?: string | null;
+  module?: string | null;
+  module_id?: string | null;
+  moduleId?: string | null;
+  updated_at?: string;
+  updatedAt?: string;
+  has_snapshot?: boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -76,8 +85,10 @@ const severityIcon: Record<string, React.ReactNode> = {
   info:     <Bell className="h-4 w-4" />,
 };
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string | undefined): string {
+  if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff)) return '';
   const m = Math.floor(diff / 60000);
   if (m < 1) return 'just now';
   if (m < 60) return `${m}m ago`;
@@ -120,6 +131,10 @@ function StatPill({ label, value, color = 'teal' }: { label: string; value: numb
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function OrchestrationDashboard() {
+  // On a public demo a visitor sees their own sessions, insights and profiles
+  // and the shared organisation context, read-only. Event triggers are
+  // admin-only, and the pages the links lead to are closed to visitors.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [orgCtx, setOrgCtx] = useState<OrgContext | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -137,7 +152,7 @@ export default function OrchestrationDashboard() {
         fetch('/api/insights?limit=5').then(r => r.json()),
         fetch('/api/insights/unread-count').then(r => r.json()),
         fetch('/api/continuity/profiles').then(r => r.json()),
-        fetch('/api/triggers/metrics/summary').then(r => r.json()),
+        demoLimited ? Promise.reject(new Error('admin only')) : fetch('/api/triggers/metrics/summary').then(r => r.json()),
         fetch('/api/sessions?limit=5').then(r => r.json()),
       ]);
 
@@ -168,7 +183,7 @@ export default function OrchestrationDashboard() {
       setLoading(false);
       setLastRefresh(new Date());
     }
-  }, []);
+  }, [demoLimited]);
 
   useEffect(() => { void fetchAll(); }, [fetchAll]);
 
@@ -203,9 +218,17 @@ export default function OrchestrationDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <StatPill label="Unread Insights" value={unreadCount} color={unreadCount > 0 ? 'gold' : 'teal'} />
         <StatPill label="Active Profiles" value={profiles.filter(p => p.status === 'active').length} color="teal" />
-        <StatPill label="Active Triggers" value={triggerSummary?.active ?? '—'} color="teal" />
-        <StatPill label="Events (24h)" value={triggerSummary?.events_24h ?? '—'} color="gray" />
+        {!demoLimited && <StatPill label="Active Triggers" value={triggerSummary?.active ?? '—'} color="teal" />}
+        {!demoLimited && <StatPill label="Events (24h)" value={triggerSummary?.events_24h ?? '—'} color="gray" />}
+        {demoLimited && <StatPill label="Recent Sessions" value={recentSessions.length} color="gray" />}
       </div>
+
+      {demoLimited && (
+        <p className="mb-5 text-sm text-gray-400">
+          This demo shows your own sessions, insights and continuity profiles, and the organisation context the operator
+          set for every run. It is read-only here: event triggers, workflows and the settings stay with the operator.
+        </p>
+      )}
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -214,7 +237,7 @@ export default function OrchestrationDashboard() {
         <SectionCard
           title="Organisation Context"
           icon={<Building2 className="h-4 w-4" />}
-          linkTo="/settings/org-context"
+          linkTo={demoLimited ? undefined : '/settings/org-context'}
           linkLabel="Edit"
         >
           {orgCtx && (orgCtx.org_name || orgCtx.jurisdiction) ? (
@@ -258,9 +281,11 @@ export default function OrchestrationDashboard() {
             <div className="flex flex-col items-center gap-2 py-4 text-center">
               <Building2 className="h-8 w-8 text-gray-600" />
               <p className="text-sm text-gray-400">No organisation context set.</p>
-              <Link to="/settings/org-context" className="text-xs text-[#2DD4A8] hover:underline">
-                Configure now <ArrowRight className="inline h-3 w-3" />
-              </Link>
+              {!demoLimited && (
+                <Link to="/settings/org-context" className="text-xs text-[#2DD4A8] hover:underline">
+                  Configure now <ArrowRight className="inline h-3 w-3" />
+                </Link>
+              )}
             </div>
           )}
         </SectionCard>
@@ -269,7 +294,7 @@ export default function OrchestrationDashboard() {
         <SectionCard
           title="Proactive Insights"
           icon={<Brain className="h-4 w-4" />}
-          linkTo="/insights"
+          linkTo={demoLimited ? undefined : '/insights'}
           linkLabel={unreadCount > 0 ? `${unreadCount} unread` : 'View all'}
         >
           {insights.length > 0 ? (
@@ -282,7 +307,7 @@ export default function OrchestrationDashboard() {
                   <span className="mt-0.5 shrink-0">{severityIcon[ins.severity]}</span>
                   <div className="min-w-0">
                     <p className={`font-medium truncate ${ins.is_read ? 'opacity-70' : ''}`}>{ins.title}</p>
-                    <p className="text-gray-400 line-clamp-1 mt-0.5">{ins.summary}</p>
+                    <p className="text-gray-400 line-clamp-1 mt-0.5">{ins.body ?? ins.summary ?? ''}</p>
                   </div>
                   <span className="text-gray-500 shrink-0 ml-auto">{timeAgo(ins.created_at)}</span>
                 </div>
@@ -292,7 +317,11 @@ export default function OrchestrationDashboard() {
             <div className="flex flex-col items-center gap-2 py-4 text-center">
               <TrendingUp className="h-8 w-8 text-gray-600" />
               <p className="text-sm text-gray-400">No insights yet.</p>
-              <p className="text-xs text-gray-500">Insights are generated as you use modules across sessions.</p>
+              <p className="text-xs text-gray-500">
+                {demoLimited
+                  ? 'Proactive insights are drawn from what ANTON learns across sessions, and learning is switched off on this demo.'
+                  : 'Insights are generated as you use modules across sessions.'}
+              </p>
             </div>
           )}
         </SectionCard>
@@ -301,7 +330,7 @@ export default function OrchestrationDashboard() {
         <SectionCard
           title="Continuity Profiles"
           icon={<Users className="h-4 w-4" />}
-          linkTo="/continuity"
+          linkTo={demoLimited ? undefined : '/continuity'}
           linkLabel="Manage"
         >
           {profiles.length > 0 ? (
@@ -324,13 +353,17 @@ export default function OrchestrationDashboard() {
             <div className="flex flex-col items-center gap-2 py-4 text-center">
               <Users className="h-8 w-8 text-gray-600" />
               <p className="text-sm text-gray-400">No continuity profiles.</p>
-              <p className="text-xs text-gray-500">Create profiles to preserve key-person knowledge across transitions.</p>
+              <p className="text-xs text-gray-500">
+                {demoLimited
+                  ? 'Continuity profiles keep key-person knowledge across staff changes. Creating them is not part of this demo.'
+                  : 'Create profiles to preserve key-person knowledge across transitions.'}
+              </p>
             </div>
           )}
         </SectionCard>
 
-        {/* ── Event Triggers ───────────────────────────────────────────────── */}
-        <SectionCard
+        {/* ── Event Triggers (admin-only: not shown on a demo) ─────────────── */}
+        {!demoLimited && <SectionCard
           title="Event Triggers"
           icon={<Zap className="h-4 w-4" />}
           linkTo="/workflows/triggers"
@@ -372,13 +405,13 @@ export default function OrchestrationDashboard() {
               </Link>
             </div>
           )}
-        </SectionCard>
+        </SectionCard>}
 
         {/* ── Recent Sessions with Resume ──────────────────────────────────── */}
         <SectionCard
           title="Sessions with Resume Points"
           icon={<Clock className="h-4 w-4" />}
-          linkTo="/sessions"
+          linkTo="/my-work"
           linkLabel="All sessions"
         >
           {recentSessions.length > 0 ? (
@@ -387,9 +420,9 @@ export default function OrchestrationDashboard() {
                 <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg bg-[#0F1B2D] group">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-white truncate">
-                      {s.name || `Session ${s.id.slice(0, 8)}`}
+                      {s.name || s.title || `Session ${s.id.slice(0, 8)}`}
                     </p>
-                    <p className="text-xs text-gray-400">{s.module ?? 'No module'} · {timeAgo(s.updated_at)}</p>
+                    <p className="text-xs text-gray-400">{s.module ?? s.module_id ?? s.moduleId ?? 'No module'} · {timeAgo(s.updated_at ?? s.updatedAt)}</p>
                   </div>
                   {s.has_snapshot && (
                     <span className="text-xs bg-[#144D3C] text-[#2DD4A8] px-2 py-0.5 rounded-full shrink-0">
@@ -419,14 +452,23 @@ export default function OrchestrationDashboard() {
           icon={<Settings className="h-4 w-4" />}
         >
           <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Configure Org Context', icon: <Building2 className="h-4 w-4" />, to: '/settings/org-context' },
-              { label: 'New Continuity Profile', icon: <Users className="h-4 w-4" />, to: '/continuity' },
-              { label: 'New Event Trigger', icon: <Zap className="h-4 w-4" />, to: '/workflows/triggers' },
-              { label: 'Generate Insights', icon: <Brain className="h-4 w-4" />, to: '/insights' },
-              { label: 'New Workflow', icon: <Activity className="h-4 w-4" />, to: '/workflows' },
-              { label: 'Start Session', icon: <ArrowRight className="h-4 w-4" />, to: '/prompt' },
-            ].map(({ label, icon, to }) => (
+            {(demoLimited
+              ? [
+                  // The pages a visitor can open.
+                  { label: 'Start Session', icon: <ArrowRight className="h-4 w-4" />, to: '/prompt' },
+                  { label: 'My Work', icon: <Clock className="h-4 w-4" />, to: '/my-work' },
+                  { label: 'Intelligence', icon: <Brain className="h-4 w-4" />, to: '/intelligence' },
+                  { label: 'Horizon Radar', icon: <Activity className="h-4 w-4" />, to: '/radar' },
+                ]
+              : [
+                  { label: 'Configure Org Context', icon: <Building2 className="h-4 w-4" />, to: '/settings/org-context' },
+                  { label: 'New Continuity Profile', icon: <Users className="h-4 w-4" />, to: '/continuity' },
+                  { label: 'New Event Trigger', icon: <Zap className="h-4 w-4" />, to: '/workflows/triggers' },
+                  { label: 'Generate Insights', icon: <Brain className="h-4 w-4" />, to: '/insights' },
+                  { label: 'New Workflow', icon: <Activity className="h-4 w-4" />, to: '/workflows' },
+                  { label: 'Start Session', icon: <ArrowRight className="h-4 w-4" />, to: '/prompt' },
+                ]
+            ).map(({ label, icon, to }) => (
               <Link
                 key={to}
                 to={to}

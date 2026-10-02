@@ -7,24 +7,29 @@
  * human picks one → ANTON asks clarifying questions → execution begins.
  */
 
-import { safeError } from '../lib/error-response.js';
-import { Router, Request, Response } from 'express';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
+import { Router, Request, Response, type NextFunction } from 'express';
 import { validate } from '../lib/validate.js';
 import { TaskCreateSchema, TaskMessageSchema, TaskSelectApproachSchema, TaskIngestSchema } from '../lib/schemas.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { SOLO_USER_ID } from '../middleware/user-constants.js';
+import { requireAdminOrSolo, isTeamMode } from '../middleware/role-guards.js';
+import { isDemoMode, demoModuleHidden, demoQualityScoreOn, demoUserUploadQuota, type UploadQuota } from '../middleware/demo-mode.js';
+import { accountStoredUsage, overQuota, quotaMessage, UPLOAD_QUOTA_CODE } from '../services/rag/demo-storage.js';
+import { uploadContentRefusal } from '../services/demo-upload-guard.js';
+import { checkBudgetBeforeApiCall, chargeMonthlyUsage } from '../services/budget-manager.js';
+import { sideRouteModel } from '../services/side-route-model.js';
+import { extractJsonReply, isJsonObject } from '../services/coding-workspace.js';
 import { randomUUID } from 'crypto';
-import type Anthropic from '@anthropic-ai/sdk';
-import AnthropicSDK from '@anthropic-ai/sdk';
-import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'fs';
-import { join, dirname } from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
+import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
-import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
+import { streamChat, callChat } from '../services/provider-router.js';
 import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { findCandidateModules, type CandidateModule } from '../services/module-recommendation.js';
@@ -169,6 +174,55 @@ function getUserId(req: Request): string {
 function parseJson<T>(raw: string | null | undefined, fallback: T): T {
   try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
 }
+
+// ── Public demo (DEMO_MODE=true) ─────────────────────────────────────────────
+
+/**
+ * Seeded capabilities a demo visitor is not offered, besides those whose
+ * module the demo hides (sanctions advisory, investigation support: see
+ * demoModuleHidden). The Dow Jones screening and the Roaring registry search
+ * look up named people (PEP, sanctions and adverse-media hits; directors and
+ * beneficial owners) through services a demo does not connect, so a task on
+ * them would only get invented results about real people.
+ */
+export const DEMO_HIDDEN_CAPABILITY_IDS: readonly string[] = ['cap-dj-screening', 'cap-roaring'];
+
+/** A non-admin on a public demo: held to what the demo offers. Admins never are. */
+function isDemoVisitor(req: Request): boolean {
+  return isDemoMode() && req.user?.role !== 'admin';
+}
+
+/**
+ * The JSON object inside one of the reply's tags (<approaches>, <clarifying>,
+ * <intake_complete>), or null. Read tolerantly: GLM, DeepSeek and Kimi often
+ * fence it or put a sentence before it, which JSON.parse refused, and the
+ * proposals were then silently lost. `tag` is always one of those literals.
+ */
+export function readTaggedJson(text: string, tag: 'approaches' | 'clarifying' | 'intake_complete'): Record<string, unknown> | null {
+  const m = text.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+  if (!m) return null;
+  const reply = extractJsonReply(m[1], isJsonObject);
+  return reply && isJsonObject(reply.value) ? reply.value : null;
+}
+
+/**
+ * What the intake tells the model on a public demo, for a visitor. The demo
+ * must not receive real names or special-category data (the privacy notice
+ * says so), and a visitor who offers them is told so plainly.
+ */
+export const DEMO_TASK_RULES = `## PUBLIC DEMO RULES (these override everything above)
+This task runs on a public demo server.
+- Never ask for the real name of an organisation, a client, a colleague or any other person, nor for personal, health, HR, employment, credit or criminal-offence details. Ask for the kind of entity ("a mid-size Nordic bank"), never its name.
+- If the person gives such details anyway, do not repeat them: say plainly that this demo should not receive them, and continue with a typical or made-up example instead.
+- Documents attached here must be made-up or public texts (a published regulation, a template). Never ask for a client's or an employer's own documents.
+- Plan only with the capabilities and modules listed above. Health, HR, workers' rights, credit scoring, CV writing, criminal investigations, screening of named people and sanctions cases are not offered on this demo.`;
+
+/**
+ * Every step is told it has no web access, which is true on every engine
+ * this route uses (no search tool is sent), so a deliverable that depends on
+ * a page it was never given says so instead of presenting it as checked.
+ */
+export const NO_WEB_ACCESS_NOTE = 'You cannot open links or search the web in this step: work from the text given here and your own knowledge. Where the task depends on a source you were not given (a linked page, a recent development), say so plainly in the deliverable rather than presenting it as checked.';
 
 /** Build the self-knowledge context string injected into ANTON's system prompt */
 function buildSelfKnowledgeContext(
@@ -324,10 +378,110 @@ ${intakeSection}
 ${selfKnowledge}`;
 }
 
-export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined): Promise<Router> {
+/**
+ * Every model call here goes through provider-router on the configured engine.
+ * The second parameter is unused: the route once built an Anthropic client from
+ * it (or from ANTHROPIC_API_KEY) and never called it. It stays so the mount in
+ * index.ts is unchanged.
+ */
+export async function createTaskAgentRoutes(db: DatabaseAdapter, _unusedAnthropicClient?: unknown): Promise<Router> {
   const router = Router();
-  const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // ── Per-caller rules: the demo's hidden modules, the monthly budget, uploads ──
+
+  /** Whether this caller may not be offered or run this module (a demo visitor and a hidden module). */
+  async function moduleHiddenFor(req: Request, moduleId: string | null | undefined): Promise<boolean> {
+    if (!moduleId || !isDemoVisitor(req)) return false;
+    const mod = await getModule(moduleId).catch(() => undefined);
+    return demoModuleHidden(moduleId, (mod as { areaId?: string } | undefined)?.areaId);
+  }
+
+  /**
+   * The seeded capabilities this caller is not offered: for a demo visitor,
+   * those running a hidden module (cap-sanctions-advisory runs
+   * sanctions-advisory, cap-investigation runs investigation-support) and
+   * DEMO_HIDDEN_CAPABILITY_IDS. Empty for everyone else.
+   */
+  async function hiddenCapabilityIds(req: Request, caps?: Array<Pick<CapabilityRow, 'id' | 'module_id'>>): Promise<Set<string>> {
+    const hidden = new Set<string>();
+    if (!isDemoVisitor(req)) return hidden;
+    const rows = caps ?? await db.all('SELECT id, module_id FROM anton_capabilities') as Array<Pick<CapabilityRow, 'id' | 'module_id'>>;
+    for (const c of rows) {
+      if (DEMO_HIDDEN_CAPABILITY_IDS.includes(c.id) || await moduleHiddenFor(req, c.module_id)) hidden.add(c.id);
+    }
+    return hidden;
+  }
+
+  /** An approach template built only on capabilities the caller is not offered (app-sar-investigation, app-sanctions-review on a demo). */
+  function approachHidden(approach: Pick<ApproachRow, 'capability_ids'>, hiddenCaps: Set<string>): boolean {
+    if (hiddenCaps.size === 0) return false;
+    const ids = parseJson<string[]>(approach.capability_ids, []);
+    return ids.length > 0 && ids.every((id) => hiddenCaps.has(id));
+  }
+
+  /** A plan's steps without the module and capability ids this caller is not offered; such a step runs on the generic prompt. */
+  async function withoutHiddenIds(req: Request, steps: ExecutionStep[], hiddenCaps: Set<string>): Promise<ExecutionStep[]> {
+    if (!isDemoVisitor(req)) return steps;
+    const out: ExecutionStep[] = [];
+    for (const s of steps) {
+      const { module_id: moduleId, capability_id: capabilityId, ...rest } = s;
+      const keepModule = typeof moduleId === 'string' && moduleId && !(await moduleHiddenFor(req, moduleId));
+      const keepCapability = typeof capabilityId === 'string' && capabilityId && !hiddenCaps.has(capabilityId);
+      out.push({ ...rest, ...(keepModule ? { module_id: moduleId } : {}), ...(keepCapability ? { capability_id: capabilityId } : {}) } as ExecutionStep);
+    }
+    return out;
+  }
+
+  /**
+   * The monthly token budget (users.monthly_token_budget; a demo account gets
+   * DEMO_USER_MONTHLY_TOKENS): a reason to refuse this call, or null. The
+   * estimate is the prompt's length / 3, as the Work route's budget check
+   * reckons it. Solo mode has no per-user budget.
+   */
+  async function budgetRefusal(req: Request, promptChars: number): Promise<string | null> {
+    const userId = req.user?.id;
+    if (!isTeamMode() || !userId || userId === SOLO_USER_ID) return null;
+    const check = await checkBudgetBeforeApiCall(db, userId, Math.ceil(promptChars / 3));
+    return check.allowed ? null : (check.reason ?? 'Monthly budget exceeded');
+  }
+
+  /** Adds a call's tokens to the caller's monthly usage (team mode). Never throws. */
+  async function charge(req: Request, usage: { inputTokens?: number; outputTokens?: number } | null | undefined): Promise<void> {
+    await chargeMonthlyUsage(db, req.user, usage?.inputTokens ?? 0, usage?.outputTokens ?? 0);
+  }
+
+  /** The demo's upload limit for this caller (DEMO_USER_UPLOAD_MB / _FILES), or null: admins and ordinary servers have none. */
+  function uploadQuotaFor(req: Request): UploadQuota | null {
+    if (!isDemoVisitor(req) || !req.user) return null;
+    const quota = demoUserUploadQuota();
+    return quota.maxBytes > 0 || quota.maxFiles > 0 ? quota : null;
+  }
+
+  /**
+   * Refused before multer reads the body: what the account keeps plus this
+   * request's size must fit. What it keeps is counted over every store
+   * (rag/demo-storage.ts accountStoredUsage): run attachments, Engagement
+   * Task files, Knowledge Base documents, project files and the documents
+   * attached to its tasks (the extracted text is stored on the task, the file
+   * itself is not kept; counted at the size uploaded). One quota covers them
+   * all, so no store is a way around it.
+   */
+  async function uploadQuotaPrecheck(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const quota = uploadQuotaFor(req);
+    if (!quota) { next(); return; }
+    try {
+      const used = await accountStoredUsage(db, req.user!.id);
+      const incoming = Number(req.headers['content-length']) || 0;
+      if (overQuota(quota, used.bytes + incoming, used.files + 1)) {
+        res.status(413).json({ error: quotaMessage(quota), code: UPLOAD_QUOTA_CODE });
+        return;
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  }
 
   // The approach whose plan the model authors per task. Seeded here, once,
   // so an existing install gets it without a migration; the init seeds run
@@ -363,6 +517,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
   /** Create a workflow_output row and fire-and-forget atom extraction */
   async function emitTaskAtoms(task: TaskRow, output: string, stepName: string, stepIndex: number) {
+    // A public demo learns from no one's work (output-store skips it there),
+    // so the copy would only be one more store of a visitor's deliverable.
+    if (isDemoMode()) return;
     try {
       const outputId = `wo_task_${task.id}_${Date.now()}`;
       const outputData = JSON.stringify({
@@ -400,7 +557,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
   }
 
   // ── GET /api/task-agent/capabilities — list self-knowledge ──────────────
-  router.get('/capabilities', async (_req: Request, res: Response) => {
+  router.get('/capabilities', async (req: Request, res: Response) => {
     try {
       const caps = await db.all(
         'SELECT * FROM anton_capabilities WHERE active=1 ORDER BY capability_type, name'
@@ -408,7 +565,12 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       const approaches = await db.all(
         'SELECT * FROM anton_approaches WHERE active=1 ORDER BY times_used DESC'
       ) as ApproachRow[];
-      res.json({ capabilities: caps, approaches });
+      // A demo visitor is not offered what the demo keeps off.
+      const hiddenCaps = await hiddenCapabilityIds(req);
+      res.json({
+        capabilities: caps.filter((c) => !hiddenCaps.has(c.id)),
+        approaches: approaches.filter((a) => !approachHidden(a, hiddenCaps)),
+      });
     } catch (err) {
       res.status(500).json({ error: 'Failed to load capabilities', detail: safeError(err) });
     }
@@ -425,10 +587,10 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         `SELECT id, title, description, status, source, source_ref, priority, tags, due_date,
                 created_at, updated_at, chosen_approach_id, completed_at
          FROM anton_tasks ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
-      , ...params, Math.min(parseInt(limit) || 20, 100), Math.max(parseInt(offset) || 0, 0)) as Partial<TaskRow>[];
+      , [...params, Math.min(parseInt(limit) || 20, 100), Math.max(parseInt(offset) || 0, 0)]) as Partial<TaskRow>[];
       const countRow = await db.get(
         `SELECT COUNT(*) as count FROM anton_tasks ${where}`
-      , ...params) as { count: number };
+      , params) as { count: number };
       const { count } = countRow;
       res.json({
         tasks: tasks.map((t) => ({ ...t, tags: parseJson(t.tags, []) })),
@@ -521,11 +683,19 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     // Load self-knowledge: the seeded capabilities and approaches, plus the
     // catalogue modules that match THIS task — so an NDA or a redline gets a
     // real plan instead of stranding in intake with "no approach matches".
-    const caps = await db.all('SELECT * FROM anton_capabilities WHERE active=1') as CapabilityRow[];
-    const approaches = await db.all('SELECT * FROM anton_approaches WHERE active=1') as ApproachRow[];
+    // A demo visitor is shown none of what the demo keeps off: not the
+    // capabilities and approach templates that run a hidden module, not a
+    // hidden catalogue module — so the model cannot plan a step on one.
+    const allCaps = await db.all('SELECT * FROM anton_capabilities WHERE active=1') as CapabilityRow[];
+    const hiddenCaps = await hiddenCapabilityIds(req, allCaps);
+    const caps = allCaps.filter((c) => !hiddenCaps.has(c.id));
+    const approaches = (await db.all('SELECT * FROM anton_approaches WHERE active=1') as ApproachRow[])
+      .filter((a) => !approachHidden(a, hiddenCaps));
     let catalogue: CandidateModule[] = [];
     try {
-      catalogue = await findCandidateModules(`${task.title}\n${task.description}`, 14);
+      const demoVisitor = isDemoVisitor(req);
+      const found = await findCandidateModules(`${task.title}\n${task.description}`, demoVisitor ? 40 : 14);
+      catalogue = demoVisitor ? found.filter((m) => !demoModuleHidden(m.id, m.areaId)).slice(0, 14) : found;
     } catch { /* catalogue unavailable — the seeded capabilities still apply */ }
     const selfKnowledge = buildSelfKnowledgeContext(caps, approaches, catalogue);
 
@@ -555,12 +725,12 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
           currentStep: task.current_step ?? 0,
           attachedFileNames: parseJson<TaskFile[]>(task.task_files ?? '[]', []).map((f) => f.name),
           activePackNames: await (async () => {
-            const packIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);
+            const packIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []).filter((p) => typeof p === 'string');
             if (packIds.length === 0) return [];
             try {
               const packRows = await db.all(
                 `SELECT display_name FROM knowledge_packs WHERE id IN (${packIds.map(() => '?').join(',')}) AND status='active'`
-              , ...packIds) as Array<{ display_name: string }>;
+              , packIds) as Array<{ display_name: string }>;
               return packRows.map((r) => r.display_name);
             } catch { return []; }
           })(),
@@ -568,7 +738,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       }
     }
 
-    const systemPrompt = buildSystemPrompt(selfKnowledge, taskCtx);
+    const systemPrompt = buildSystemPrompt(selfKnowledge, taskCtx) + (isDemoVisitor(req) ? `\n\n${DEMO_TASK_RULES}` : '');
 
     // Build conversation history — cap at last 30 messages to prevent token overflow
     const MAX_HISTORY = 30;
@@ -577,6 +747,14 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       ? rawHistory.slice(-MAX_HISTORY)
       : rawHistory;
     history.push({ role: 'user', content: content.trim() });
+
+    // The monthly token budget, before anything streams (the Work route's rule).
+    try {
+      const refusal = await budgetRefusal(req, systemPrompt.length + history.reduce((n, m) => n + m.content.length, 0));
+      if (refusal) return res.status(429).json({ error: 'Budget limit exceeded', reason: refusal });
+    } catch (err) {
+      return res.status(500).json({ error: safeError(err) });
+    }
 
     // Set up SSE stream
     res.setHeader('Content-Type', 'text/event-stream');
@@ -587,55 +765,57 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
     try {
       const streamResult = await streamChat({
-        model: mapModelToProvider('claude-sonnet-4-6'),
+        // The server default; on a demo, a visitor runs only an offered model.
+        model: sideRouteModel(req, undefined, 'claude-sonnet-4-6'),
         system: systemPrompt,
         messages: history.map((m) => ({ role: m.role, content: m.content })),
         maxTokens: 4096,
+        db,
       }, res);
+      await charge(req, streamResult);
       assistantText = streamResult.text;
 
       // Persist updated conversation
       history.push({ role: 'assistant', content: assistantText });
 
-      // Extract proposals if present
+      // Extract proposals if present. A demo visitor's are cleared of the
+      // approach templates, modules and capabilities the demo keeps off.
       let proposals = parseJson<unknown[]>(task.proposals, []);
       let newStatus = task.status;
-      const proposalsMatch = assistantText.match(/<approaches>([\s\S]*?)<\/approaches>/);
-      if (proposalsMatch) {
-        try {
-          const parsed = JSON.parse(proposalsMatch[1].trim());
-          if (parsed.ready && parsed.proposals?.length) {
-            proposals = parsed.proposals;
-            newStatus = 'awaiting_selection';
-          }
-        } catch { /* ignore parse errors */ }
+      const proposalsJson = readTaggedJson(assistantText, 'approaches');
+      if (proposalsJson && proposalsJson.ready && Array.isArray(proposalsJson.proposals) && proposalsJson.proposals.length > 0) {
+        const hiddenApproachIds = new Set(
+          (await db.all('SELECT id, capability_ids FROM anton_approaches') as Array<Pick<ApproachRow, 'id' | 'capability_ids'>>)
+            .filter((a) => approachHidden(a, hiddenCaps)).map((a) => a.id),
+        );
+        const kept: unknown[] = [];
+        for (const p of proposalsJson.proposals as unknown[]) {
+          if (!isJsonObject(p)) continue;
+          if (typeof p.approach_id === 'string' && hiddenApproachIds.has(p.approach_id)) continue;
+          const steps = Array.isArray(p.execution_steps) ? (p.execution_steps as ExecutionStep[]).filter(isJsonObject) as ExecutionStep[] : undefined;
+          kept.push(steps ? { ...p, execution_steps: await withoutHiddenIds(req, steps, hiddenCaps) } : p);
+        }
+        if (kept.length > 0) {
+          proposals = kept;
+          newStatus = 'awaiting_selection';
+        }
       }
 
       // Extract clarifying questions if present
       let clarifyingQs = parseJson<unknown[]>(task.clarifying_questions, []);
-      const clarifyMatch = assistantText.match(/<clarifying>([\s\S]*?)<\/clarifying>/);
-      if (clarifyMatch) {
-        try {
-          const parsed = JSON.parse(clarifyMatch[1].trim());
-          if (parsed.questions?.length) {
-            clarifyingQs = parsed.questions;
-            newStatus = 'clarifying';
-          }
-        } catch { /* ignore */ }
+      const clarifyJson = readTaggedJson(assistantText, 'clarifying');
+      if (clarifyJson && Array.isArray(clarifyJson.questions) && clarifyJson.questions.length > 0) {
+        clarifyingQs = clarifyJson.questions;
+        newStatus = 'clarifying';
       }
 
       // Parse <intake_complete> if present
       let intakeReady = task.intake_ready ?? 0;
       let intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
-      const intakeCompleteMatch = assistantText.match(/<intake_complete>([\s\S]*?)<\/intake_complete>/);
-      if (intakeCompleteMatch) {
-        try {
-          const parsed = JSON.parse(intakeCompleteMatch[1].trim());
-          if (parsed.ready && parsed.answers && typeof parsed.answers === 'object') {
-            intakeAnswers = { ...intakeAnswers, ...parsed.answers };
-            intakeReady = 1;
-          }
-        } catch { /* ignore malformed JSON */ }
+      const intakeJson = readTaggedJson(assistantText, 'intake_complete');
+      if (intakeJson && intakeJson.ready && isJsonObject(intakeJson.answers)) {
+        intakeAnswers = { ...intakeAnswers, ...(intakeJson.answers as Record<string, string>) };
+        intakeReady = 1;
       }
 
       await db.run(`
@@ -662,7 +842,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       try {
         await db.run('UPDATE anton_tasks SET conversation=?, updated_at=NOW() WHERE id=?', JSON.stringify(history), task.id);
       } catch { /* best-effort */ }
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+      // publicErrorMessage: a refusal written for the person (today's budget,
+      // a model the server does not offer) is shown; anything else stays generic.
+      res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(err) })}\n\n`);
       res.end();
     }
   });
@@ -710,11 +892,15 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
     const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
+    // A demo visitor cannot pick a template built on what the demo keeps off;
+    // it answers as an unknown approach does.
+    const hiddenCaps = await hiddenCapabilityIds(req);
+    if (approachHidden(approach, hiddenCaps)) return res.status(404).json({ error: 'Approach not found' });
 
     // Keep the plan the model wrote for this task — it is what the user just
     // approved. A module id the catalogue does not know is dropped from its
     // step (the step still runs on the generic prompt) so an invented id can
-    // never break execution.
+    // never break execution. So is one the demo keeps from this visitor.
     const authored: ExecutionStep[] = [];
     for (const [i, s] of (execution_steps ?? []).entries()) {
       const wanted = typeof s.module_id === 'string' && s.module_id.trim() ? s.module_id.trim() : undefined;
@@ -722,7 +908,8 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       const { module_id: _dropped, ...rest } = s;
       authored.push({ ...rest, step: i + 1, ...(known ? { module_id: known.id } : {}) });
     }
-    const storedConfig = authored.length > 0 ? { ...config, execution_steps: authored } : config;
+    const allowed = await withoutHiddenIds(req, authored, hiddenCaps);
+    const storedConfig = allowed.length > 0 ? { ...config, execution_steps: allowed } : config;
 
     await db.run(`
       UPDATE anton_tasks
@@ -731,15 +918,23 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       WHERE id=?
     `, approach_id, JSON.stringify(storedConfig), task.id);
 
-    // Update usage stats
-    await db.run('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?', approach_id);
+    // Update usage stats — instance-wide counters, which a demo visitor does not move.
+    if (!isDemoVisitor(req)) {
+      await db.run('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?', approach_id);
+    }
 
-    const steps = authored.length > 0 ? authored : parseJson<unknown[]>(approach.execution_steps, []);
+    const steps = allowed.length > 0 ? allowed : await withoutHiddenIds(req, parseJson<ExecutionStep[]>(approach.execution_steps, []), hiddenCaps);
     res.json({ success: true, approach, steps });
   });
 
   // ── POST /api/task-agent/tasks/:id/upload — attach a document ───────────
-  router.post('/tasks/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
+  // A demo visitor's attachments count against the demo's upload quota
+  // (uploadQuotaPrecheck before the body is read, again below with the real
+  // size), and their content is checked before the text extractor opens them
+  // (services/demo-upload-guard.ts: the bytes match the extension, a
+  // .docx/.xlsx does not expand past the ZIP limit). The file itself is not
+  // kept: its extracted text is stored on the task and deleted with it.
+  router.post('/tasks/:id/upload', uploadQuotaPrecheck, upload.single('file'), async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -750,10 +945,35 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (existingFiles.length >= MAX_FILES) {
       return res.status(400).json({ error: `Maximum ${MAX_FILES} files per task` });
     }
+    const quota = uploadQuotaFor(req);
+    if (quota) {
+      try {
+        const used = await accountStoredUsage(db, userId);
+        if (overQuota(quota, used.bytes + req.file.size, used.files + 1)) {
+          return res.status(413).json({ error: quotaMessage(quota), code: UPLOAD_QUOTA_CODE });
+        }
+      } catch (err) {
+        // Fails closed: a quota that cannot be read keeps nothing.
+        return res.status(500).json({ error: safeError(err) });
+      }
+    }
+
+    // The extractor goes by this extension; the check below by the same one.
+    // Anything but a plain extension is no type the extractor reads.
+    const rawExt = extname(req.file.originalname).toLowerCase();
+    const ext = /^\.[a-z0-9]{1,10}$/.test(rawExt) ? rawExt : '.bin';
+    if (isDemoVisitor(req)) {
+      // Before the extractor opens it: mammoth and SheetJS inflate a whole
+      // archive in memory, in the process every visitor shares.
+      const refusal = await uploadContentRefusal(
+        { originalname: req.file.originalname, size: req.file.size, buffer: req.file.buffer, extension: ext },
+        { visitor: true },
+      );
+      if (refusal) return res.status(400).json(refusal);
+    }
 
     // Write buffer to temp file, extract text, clean up
-    const ext = req.file.originalname.split('.').pop()?.toLowerCase() ?? 'bin';
-    const tempPath = join(tmpdir(), `task-${randomUUID()}.${ext}`);
+    const tempPath = join(tmpdir(), `task-${randomUUID()}${ext}`);
     let extractedText = '';
     try {
       writeFileSync(tempPath, req.file.buffer);
@@ -795,8 +1015,10 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const userId = getUserId(req);
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
-    const { pack_ids } = req.body as { pack_ids: string[] };
-    if (!Array.isArray(pack_ids)) return res.status(400).json({ error: 'pack_ids must be an array' });
+    const { pack_ids } = req.body as { pack_ids: unknown };
+    if (!Array.isArray(pack_ids) || pack_ids.length > 20 || !pack_ids.every((p) => typeof p === 'string' && p.length > 0 && p.length <= 200)) {
+      return res.status(400).json({ error: 'pack_ids must be an array of at most 20 pack ids' });
+    }
     await db.run("UPDATE anton_tasks SET active_knowledge_packs=?, updated_at=NOW() WHERE id=?", JSON.stringify(pack_ids), task.id);
     res.json({ active_knowledge_packs: pack_ids });
   });
@@ -824,12 +1046,15 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       : undefined;
 
     // The step's prompt: the plan's catalogue module first (server/areas), then
-    // the capability's file-based prompt, then the generic consultant.
+    // the capability's file-based prompt, then the generic consultant. A module
+    // the demo keeps from this visitor is never run, however the plan names it
+    // (the seeded cap-sanctions-advisory points at sanctions-advisory): the step
+    // falls back to the generic prompt, as for an unknown id.
     let modulePrompt = '';
-    if (step.module_id) {
+    if (step.module_id && !(await moduleHiddenFor(req, step.module_id))) {
       try { modulePrompt = (await getModuleSystemPrompt(step.module_id)) ?? ''; } catch { modulePrompt = ''; }
     }
-    if (!modulePrompt && capability?.module_id) {
+    if (!modulePrompt && capability?.module_id && !(await moduleHiddenFor(req, capability.module_id))) {
       // Same resolver as the step module: the live server/areas prompt first,
       // then the server/prompts ghost fallback for ids with no module dir — so
       // a capability whose module has moved into server/areas no longer needs
@@ -896,9 +1121,21 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       }
     } catch { /* non-fatal — proceed without grounding injection */ }
 
-    contextParts.push(`## WHAT TO PRODUCE\nYou are executing **Step ${step.step}: ${step.name}**\n${step.description ?? ''}\n\nProduce the complete deliverable now. This is real work for a client — apply your full expertise.`);
+    contextParts.push(`## WHAT TO PRODUCE\nYou are executing **Step ${step.step}: ${step.name}**\n${step.description ?? ''}\n\nProduce the complete deliverable now. This is real work for a client — apply your full expertise.\n\n${NO_WEB_ACCESS_NOTE}`);
 
     const fullSystemPrompt = `${modulePrompt}\n\n---\n\n${contextParts.join('\n\n')}`;
+
+    // The monthly token budget, before the job starts (a running step for this
+    // task is re-attached below whatever the budget says: it is already paid for).
+    if (getStepJob(`task-step:${task.id}`)?.status !== 'running') {
+      try {
+        const refusal = await budgetRefusal(req, fullSystemPrompt.length);
+        if (refusal) return res.status(429).json({ error: 'Budget limit exceeded', reason: refusal });
+      } catch (err) {
+        return res.status(500).json({ error: safeError(err) });
+      }
+    }
+    const demoVisitor = isDemoVisitor(req);
 
     // Wave 3 (2026-09-08): the run is a job that outlives this request. A
     // reload re-attaches (GET /tasks/:id/execute-step/stream); a second click
@@ -915,7 +1152,13 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     // Quality gate thresholds — FCP compliance demands high accuracy
     const DELIVERY_THRESHOLD = 8.5;  // warn if final score is below this
     const RETRY_THRESHOLD = 8.0;     // retry if score is below this (anything less than "Good")
-    const MAX_RETRIES = 2;
+    // A demo visitor's low-scoring step is re-run once, not twice: each re-run
+    // is a full large-tier call on the owner's budget.
+    const MAX_RETRIES = demoVisitor ? 1 : 2;
+    // The quality score is an after-answer call: on a demo it runs only when
+    // DEMO_POST_ANSWER_CALLS is 'scored' or 'all' (the privacy notice says
+    // which), and without it nothing is re-run. Always on elsewhere.
+    const gateOn = demoQualityScoreOn();
 
     // Thinking level progression for retries: default → think_hard → investigate.
     // `label` is the ANTON thinking level and is what streamChat takes; `effort`
@@ -934,14 +1177,22 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
      * any failure — the gate never blocks delivery.
      */
     async function scoreOutput(output: string, taskTitle: string, stepName: string): Promise<GateResult | null> {
+      if (!gateOn) return null;
       return scoreWithGate(async (prompt) => {
         const response = await callChat({
-          model: await getRoutedUtilityModel(db),
+          // On a demo, the model the privacy notice names as the scorer
+          // (QUALITY_SCORER_MODEL, else the utility model), as for Work answers.
+          model: isDemoMode()
+            ? await (await import('../services/quality-ratchet.js')).qualityScorerModel(db)
+            : await getRoutedUtilityModel(db),
           system: '',
           messages: [{ role: 'user', content: prompt }],
           maxTokens: 500,
           jsonMode: true,
+          db,
+          purpose: 'task-quality-gate',
         });
+        await charge(req, response);
         return response.text;
       }, output, taskTitle, stepName);
     }
@@ -952,7 +1203,8 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     // full, search the regulatory packs, and consult ANTON's expert modules
     // for a specialist view, over several turns, before writing the
     // deliverable. Every call is streamed to the page and kept on the step.
-    const stepModel = mapModelToProvider(CLAUDE_LARGE);
+    // The server's large tier; on a demo, a visitor runs only an offered model.
+    const stepModel = sideRouteModel(req, undefined, CLAUDE_LARGE);
     const useAgentic = isSdkModel(stepModel);
     let lastToolCalls: AgenticToolCall[] = [];
     /** Wave 5: attempt counter for the step's run records (a retry is a second record under the same parent). */
@@ -986,7 +1238,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         description: "Find ANTON expert modules (550+ specialist prompts across compliance, legal, risk, finance, HR and more) relevant to a topic, to consult via consult_expert_module.",
         schema: { topic: z.string().describe('The topic or task to find specialists for') },
         handler: async (args) => {
-          const found = await findCandidateModules(String(args.topic ?? ''), 8);
+          const found = (await findCandidateModules(String(args.topic ?? ''), demoVisitor ? 24 : 8))
+            .filter((m) => !demoVisitor || !demoModuleHidden(m.id, m.areaId))
+            .slice(0, 8);
           if (found.length === 0) return 'No matching expert modules.';
           return found.map((m) => `- ${m.id} — ${m.label} (${m.areaId}): ${m.description}`).join('\n');
         },
@@ -1000,7 +1254,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         },
         handler: async (args) => {
           const moduleId = String(args.module_id ?? '');
-          const prompt = await getModuleSystemPrompt(moduleId);
+          const prompt = (await moduleHiddenFor(req, moduleId)) ? null : await getModuleSystemPrompt(moduleId);
           if (!prompt) return `No expert module with id "${moduleId}".`;
           const answer = await callChat({
             model: stepModel,
@@ -1009,6 +1263,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
             maxTokens: 4000,
             thinkingLevel: 'think',
           });
+          await charge(req, answer);
           return answer.text || '(the specialist returned nothing)';
         },
       },
@@ -1035,6 +1290,7 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
           maxTurns: 12,
         };
         const run = await runAgentic(agenticConfig, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        await charge(req, run.usage);
         lastThinkingContent = run.thinking;
         lastToolCalls = run.toolCalls;
         // Wave 5: the run record for this attempt — prompt as sent, hashes,
@@ -1066,7 +1322,9 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
         // With attempt 1 already at think_hard the first retry re-ran at the
         // same effort and only the label changed.
         thinkingLevel: thinkingLevel ?? 'think',
+        db,
       }, res);
+      await charge(req, result);
       lastThinkingContent = result.thinking;
       return { output: result.text, thinking: result.thinking };
     }
@@ -1093,6 +1351,9 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
         qualityScore < RETRY_THRESHOLD &&
         retryCount < MAX_RETRIES
       ) {
+        // A re-run is another full call: not past the monthly budget. The
+        // step then delivers what it has, with the quality warning below.
+        if (await budgetRefusal(req, fullSystemPrompt.length).catch(() => 'budget unavailable')) break;
         const retryConfig = RETRY_THINKING[retryCount];
         thinkingLabel = retryConfig.label;
         retryCount++;
@@ -1170,10 +1431,11 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
             status='completed', completed_at=NOW(), conversation=?, updated_at=NOW()
           WHERE id=?
         `, JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
-        await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', approach.id);
+        // Instance-wide approach statistics: a demo visitor does not move them.
+        if (!demoVisitor) await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', approach.id);
 
         // Update approach quality rolling average
-        if (qualityScore !== null) {
+        if (qualityScore !== null && !demoVisitor) {
           const approachRow = await db.get(
             'SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?'
           , approach.id) as { avg_quality_score: number | null; times_completed: number } | undefined;
@@ -1215,8 +1477,8 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
       })}\n\n`);
       res.end();
     } catch (err) {
-      console.error('[task-agent] execute-step failed:', err);
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+      console.error('[task-agent] execute-step failed:', err instanceof Error ? err.message : err);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: publicErrorMessage(err) })}\n\n`);
       res.end();
     }
     });
@@ -1254,7 +1516,12 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
   // where the approach declares them — with the standard mission
   // checkpoint/autonomy behavior (check_in). Status flows back via
   // GET /tasks/:id (linked_mission) and POST /tasks/:id/sync-mission.
+  //
+  // Not on a public demo for visitors: the missions runner is forced off there
+  // (DEMO_FORCED_FLAGS), so a mission would never run and the task would wait
+  // for ever. Answers as a route the demo does not offer.
   router.post('/tasks/:id/execute-as-mission', async (req: Request, res: Response) => {
+    if (isDemoVisitor(req)) return res.status(404).json({ error: 'Not available in this demo' });
     const userId = getUserId(req);
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -1383,6 +1650,8 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
   // An aborted mission marks the task failed. Called by the Task Agent UI
   // when it observes linked_mission.status === 'completed'.
   router.post('/tasks/:id/sync-mission', async (req: Request, res: Response) => {
+    // A demo visitor has no linked mission (execute-as-mission refuses them).
+    if (isDemoVisitor(req)) return res.status(404).json({ error: 'Not available in this demo' });
     const userId = getUserId(req);
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -1420,7 +1689,7 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
       // Quality gate on the FINAL deliverable — same gate as classic
       // execution (item 1.8). Never blocks delivery; null = unavailable.
       let gate: GateResult | null = null;
-      if (deliverableText.trim()) {
+      if (deliverableText.trim() && demoQualityScoreOn()) {
         gate = await scoreWithGate(async (prompt) => {
           const response = await callChat({
             model: await getRoutedUtilityModel(db),
@@ -1428,7 +1697,10 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
             messages: [{ role: 'user', content: prompt }],
             maxTokens: 500,
             jsonMode: true,
+            db,
+            purpose: 'task-quality-gate',
           });
+          await charge(req, response);
           return response.text;
         }, deliverableText, task.title, 'Mission deliverable (all steps)');
       }
@@ -1512,7 +1784,7 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
     const { summary, run_ids = [], quality_score } = req.body as {
       summary?: string;
       run_ids?: string[];
-      quality_score?: number;
+      quality_score?: unknown;
     };
 
     await db.run(`
@@ -1526,8 +1798,10 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
       emitTaskAtoms(task, summary, 'Task marked complete', 0);
     }
 
-    // Update approach quality score if provided
-    if (task.chosen_approach_id && quality_score != null) {
+    // Update approach quality score if provided: a score from 0 to 10, into an
+    // instance-wide average that a demo visitor does not move.
+    if (task.chosen_approach_id && typeof quality_score === 'number' && Number.isFinite(quality_score)
+      && quality_score >= 0 && quality_score <= 10 && !isDemoVisitor(req)) {
       const approach = await db.get('SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?', task.chosen_approach_id) as { avg_quality_score: number | null; times_completed: number } | undefined;
       if (approach) {
         const prevAvg = approach.avg_quality_score ?? quality_score;
@@ -1568,7 +1842,9 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
   });
 
   // ── POST /api/task-agent/backfill-atoms — extract atoms from all existing completed tasks ──
-  router.post('/backfill-atoms', async (req: Request, res: Response) => {
+  // Instance-wide maintenance: it walks every user's completed tasks, so only
+  // an administrator (or the solo owner) may start it.
+  router.post('/backfill-atoms', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const completedTasks = await db.all(`
         SELECT * FROM anton_tasks WHERE status='completed' AND execution_results IS NOT NULL
@@ -1615,12 +1891,21 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     await db.run('DELETE FROM anton_tasks WHERE id=?', req.params.id);
+    // On a public demo a deleted task leaves nothing behind: the copy of its
+    // deliverable in workflow_outputs goes too (as a deleted session's does).
+    // Elsewhere that copy is the instance's learning record and is kept.
+    if (isDemoMode()) {
+      await db.run('DELETE FROM workflow_outputs WHERE execution_id = ? AND created_by = ?', task.id, task.user_id).catch(() => undefined);
+    }
     res.json({ success: true });
   });
 
   // ── POST /api/task-agent/ingest — external task intake (Jira/Slack) ────
-  // Requires X-ANTON-Token header matching TASK_AGENT_WEBHOOK_SECRET env var
-  router.post('/ingest', validate(TaskIngestSchema), async (req: Request, res: Response) => {
+  // Requires X-ANTON-Token header matching TASK_AGENT_WEBHOOK_SECRET env var.
+  // Every /api route needs a session in team mode, so this is reached by the
+  // owner's own tooling; it creates a task without the caller's identity, so
+  // only an administrator (or the solo owner) may call it.
+  router.post('/ingest', requireAdminOrSolo, validate(TaskIngestSchema), async (req: Request, res: Response) => {
     const webhookSecret = process.env.TASK_AGENT_WEBHOOK_SECRET;
     const providedToken = req.headers['x-anton-token'];
     if (webhookSecret && providedToken !== webhookSecret) {
@@ -1634,8 +1919,9 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
 
     const id = randomUUID();
     // External tasks belong to the instance owner so they surface in the desktop
-    // Task Agent (keyed by req.user.id = SOLO_USER_ID), not a phantom 'default' user.
-    const userId = SOLO_USER_ID;
+    // Task Agent (keyed by req.user.id = SOLO_USER_ID), not a phantom 'default'
+    // user. On a team server, to the administrator who sent them.
+    const userId = req.user?.id ?? SOLO_USER_ID;
 
     // Extract tags from Jira labels or Slack hashtags
     let tags: string[] = [];

@@ -5,8 +5,15 @@ import { MessageCircle, Send, Square, ArrowRight, Sparkles, Copy, Check, Downloa
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { streamMessage } from '@/lib/api';
-import { MODULES, AREAS } from '@/lib/constants';
-import type { Message } from '@/lib/types';
+import { AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
+import { useConfigStore } from '@/stores/useConfigStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+import { demoRunModel } from '@/lib/demo-model-names';
+import { modelLabel } from '@/lib/model-labels';
+import type { Message, ModelId } from '@/lib/types';
 
 const BRIEF_SYSTEM_PROMPT = `You are Anton, an expert AI assistant powered by openEXPERT. You have deep expertise across financial crime prevention, legal & compliance, risk management, audit, consulting, HR, finance, technology, and many other professional domains.
 
@@ -20,6 +27,14 @@ You can handle any professional question — compliance, legal, risk, strategy, 
 
 export default function BriefMePage() {
   const { t } = useTranslation();
+  // Suggestions never name a module a public demo keeps off.
+  const catalogue = useDemoCatalogue();
+  // The Brief answers on the model chosen elsewhere in the app; on a public
+  // demo one the demo offers (its default when the choice is not offered).
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
+  const selectedModel = useConfigStore((s) => s.model);
+  const runModel = demoRunModel(demoConfig, selectedModel) as ModelId;
   const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -71,7 +86,7 @@ export default function BriefMePage() {
     try {
       const stream = streamMessage(
         {
-          model: 'claude-opus-5-5',
+          model: runModel,
           thinking: 'think',
           creativity: 'balanced',
           systemPrompt: BRIEF_SYSTEM_PROMPT,
@@ -173,7 +188,7 @@ export default function BriefMePage() {
     const lastQuestion = messages.filter((m) => m.role === 'user').pop()?.content?.toLowerCase() ?? '';
     const words = lastQuestion.split(/\W+/).filter((w) => w.length > 3);
 
-    return MODULES
+    return catalogue.modules
       .map((mod) => {
         const text = `${mod.label} ${mod.description}`.toLowerCase();
         const score = words.reduce((s, w) => s + (text.includes(w) ? 1 : 0), 0);
@@ -198,6 +213,7 @@ export default function BriefMePage() {
           <div>
             <h1 className="text-lg font-semibold text-adv-off-white">{t('brief.title')}</h1>
             <p className="text-xs text-adv-gray">{t('brief.subtitle')}</p>
+            <p className="text-xs text-adv-gray">Answers by {modelLabel(runModel)}. Nothing from this chat is saved.</p>
           </div>
         </div>
       </div>
@@ -382,6 +398,9 @@ export default function BriefMePage() {
               <span className="text-xs text-adv-gray">{t('brief.ctrlEnter')}</span>
             </div>
           </div>
+          {demoLimited && (
+            <p className="mt-1.5 text-sm text-adv-gold">Demo: don&apos;t enter real personal or client data.</p>
+          )}
         </div>
       </div>
     </div>

@@ -12,7 +12,9 @@
  * ordinary account. One pass must remove every row of the first — the ledger
  * row stays, without its ids — and leave the other two exactly as they were.
  * Old audit / login / security rows and old export files go too; recent ones
- * stay.
+ * stay. The G4 cases at the end (privacy review, 2026-09-26) add what those
+ * rows could not show: a session the visitor deleted, unowned answer copies,
+ * edited module prompts and orphans no account pass reaches.
  *
  * Skips without a test database (tests/setup/db-guard.ts decides which).
  */
@@ -21,6 +23,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 import type { DatabaseAdapter } from '../../server/db/database.js';
 
@@ -35,6 +39,7 @@ const TAG = randomUUID().slice(0, 8);
  * another test file expires a moment before (demo-signup.db.test.ts does).
  */
 const HALF_HOUR_AGO = () => new Date(Date.now() - 30 * 60 * 1000);
+const LEDGER_MODEL = `compat:openrouter:retention-${TAG}`;
 
 interface Seeded {
   id: string;
@@ -133,8 +138,9 @@ d('demo retention (services/demo-retention.ts)', () => {
     await db.run(`INSERT INTO versions (entity_type, entity_id, version_number, content, user_id) VALUES ('output', ?, 1, 'x', ?)`, s.session, s.id);
     if (hasLedger) {
       await db.run(
-        `INSERT INTO llm_spend_ledger (user_id, model, cost_usd, cost_source, session_id) VALUES (?, 'compat:openrouter:z-ai/glm-5.3-flash', 0.0123, 'usage.cost', ?)`,
-        s.id, s.session,
+        // Late in a UTC day, which is the next day in the server's zone (L1).
+        `INSERT INTO llm_spend_ledger (user_id, model, cost_usd, cost_source, session_id, created_at) VALUES (?, ?, 0.0123, 'usage.cost', ?, '2026-09-20T23:30:00Z')`,
+        s.id, LEDGER_MODEL, s.session,
       );
     }
     return s;
@@ -187,6 +193,7 @@ d('demo retention (services/demo-retention.ts)', () => {
         await db.run('DELETE FROM users WHERE id = ?', s.id).catch(() => {});
       }
       if (hasLedger) await db.run("DELETE FROM llm_spend_ledger WHERE user_id IS NULL AND cost_usd = 0.0123 AND cost_source = 'usage.cost'").catch(() => {});
+      if (hasLedger) await db.run('DELETE FROM llm_spend_ledger WHERE model = ?', LEDGER_MODEL).catch(() => {});
       await db.run("DELETE FROM audit_events WHERE id LIKE ?", `ae-old-${TAG}%`).catch(() => {});
       await db.close();
     }
@@ -232,6 +239,21 @@ d('demo retention (services/demo-retention.ts)', () => {
     expect(Number(anonymous?.n)).toBeGreaterThanOrEqual(1);
     const current = await db.get<{ n: string | number }>('SELECT COUNT(*) AS n FROM llm_spend_ledger WHERE user_id = ?', accounts.current.id);
     expect(Number(current?.n)).toBe(1);
+  });
+
+  it('L1: the anonymised ledger row keeps only the UTC day it was spent on', async () => {
+    if (!hasLedger) return;
+    const rows = await db.all<{ at: string }>(
+      "SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS') AS at FROM llm_spend_ledger WHERE model = ? AND user_id IS NULL",
+      LEDGER_MODEL,
+    );
+    expect(rows).toEqual([{ at: '2026-09-20T00:00:00' }]);
+    // Negative control: a row that still has its person keeps its time.
+    const kept = await db.get<{ at: string }>(
+      "SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS') AS at FROM llm_spend_ledger WHERE user_id = ?",
+      accounts.current.id,
+    );
+    expect(kept).toEqual({ at: '2026-09-20T23:30:00' });
   });
 
   it('prunes audit / login / security rows and export files older than the retention period — not recent ones', async () => {
@@ -351,18 +373,18 @@ d('demo retention (services/demo-retention.ts)', () => {
 
     const r = await pass();
 
-    expect(await userExists(visitor)).toBe(false);
-    expect(r.errors.filter((e) => e.table === 'users')).toEqual([]);
-    expect(await db.get('SELECT id FROM student_growth_profiles WHERE student_user_id = ?', visitor)).toBeUndefined();
+    expect.soft(await userExists(visitor)).toBe(false);
+    expect.soft(r.errors.filter((e) => e.table === 'users')).toEqual([]);
+    expect.soft(await db.get('SELECT id FROM student_growth_profiles WHERE student_user_id = ?', visitor)).toBeUndefined();
     if (hasMissions) expect(await db.get('SELECT id FROM missions.missions WHERE created_by = ?', visitor)).toBeUndefined();
     const probeRow = await db.get<{ reviewed_by: string | null }>(`SELECT reviewed_by FROM ${probe} WHERE id = ?`, `p-${visitor}`);
-    expect(probeRow).toEqual({ reviewed_by: null });
+    expect.soft(probeRow).toEqual({ reviewed_by: null });
 
     // Negative control: the ordinary account's rows are exactly as they were.
-    expect(await userExists(ordinary)).toBe(true);
-    expect(await db.get('SELECT id FROM student_growth_profiles WHERE student_user_id = ?', ordinary)).toBeDefined();
+    expect.soft(await userExists(ordinary)).toBe(true);
+    expect.soft(await db.get('SELECT id FROM student_growth_profiles WHERE student_user_id = ?', ordinary)).toBeDefined();
     if (hasMissions) expect(await db.get('SELECT id FROM missions.missions WHERE created_by = ?', ordinary)).toBeDefined();
-    expect(await db.get<{ reviewed_by: string | null }>(`SELECT reviewed_by FROM ${probe} WHERE id = ?`, `p-${ordinary}`)).toEqual({ reviewed_by: ordinary });
+    expect.soft(await db.get<{ reviewed_by: string | null }>(`SELECT reviewed_by FROM ${probe} WHERE id = ?`, `p-${ordinary}`)).toEqual({ reviewed_by: ordinary });
     await db.run(`DELETE FROM ${probe}`);
   });
 
@@ -379,14 +401,14 @@ d('demo retention (services/demo-retention.ts)', () => {
 
     const r = await pass();
 
-    expect(r.failed).toBe(1);
-    expect(r.errors).toContainEqual({ table: 'users', code: '23503', constraint: `${parent}_holder_fkey` });
-    expect(await db.get<{ off: boolean }>('SELECT disabled_at IS NOT NULL AS off FROM users WHERE id = ?', held)).toEqual({ off: true });
+    expect.soft(r.failed).toBe(1);
+    expect.soft(r.errors).toContainEqual({ table: 'users', code: '23503', constraint: `${parent}_holder_fkey` });
+    expect.soft(await db.get<{ off: boolean }>('SELECT disabled_at IS NOT NULL AS off FROM users WHERE id = ?', held)).toEqual({ off: true });
 
     // Negative control: once nothing holds it, the next pass deletes it.
     await db.run(`DELETE FROM ${child}`);
-    expect((await pass()).failed).toBe(0);
-    expect(await userExists(held)).toBe(false);
+    expect.soft((await pass()).failed).toBe(0);
+    expect.soft(await userExists(held)).toBe(false);
   });
 
   it('C8: an account a pass failed on no longer takes the batch — newer expiries are deleted first', async () => {
@@ -396,12 +418,12 @@ d('demo retention (services/demo-retention.ts)', () => {
 
     const r = await pass({ limit: 1 });
 
-    expect(r.expired).toBe(1);
-    expect(await userExists(fresh)).toBe(false);
-    expect(await userExists(stuck)).toBe(true);
+    expect.soft(r.expired).toBe(1);
+    expect.soft(await userExists(fresh)).toBe(false);
+    expect.soft(await userExists(stuck)).toBe(true);
     // Negative control: with room in the batch, the switched-off account is still deleted.
     await pass();
-    expect(await userExists(stuck)).toBe(false);
+    expect.soft(await userExists(stuck)).toBe(false);
   });
 
   it('L5: a custom module shared with the community outlives its author\'s demo account; a private one does not', async () => {
@@ -416,10 +438,10 @@ d('demo retention (services/demo-retention.ts)', () => {
 
     await pass();
 
-    expect(await userExists(author)).toBe(false);
-    expect(await db.get('SELECT user_id FROM custom_modules WHERE id = ?', shared)).toEqual({ user_id: null });
+    expect.soft(await userExists(author)).toBe(false);
+    expect.soft(await db.get('SELECT user_id FROM custom_modules WHERE id = ?', shared)).toEqual({ user_id: null });
     // Negative control: the author's private module goes with the account.
-    expect(await db.get('SELECT id FROM custom_modules WHERE id = ?', own)).toBeUndefined();
+    expect.soft(await db.get('SELECT id FROM custom_modules WHERE id = ?', own)).toBeUndefined();
   });
 
   it('L6: the export prune keeps a deck the presentations table still lists', async () => {
@@ -437,9 +459,219 @@ d('demo retention (services/demo-retention.ts)', () => {
 
     await pass({ pruneTraces: true });
 
-    expect(fs.existsSync(path.join(outputDir, deck))).toBe(true);
+    expect.soft(fs.existsSync(path.join(outputDir, deck))).toBe(true);
     // Negative controls: an old export and a deck no row lists are pruned as before.
-    expect(fs.existsSync(path.join(outputDir, oldExport))).toBe(false);
-    expect(fs.existsSync(path.join(outputDir, orphanDeck))).toBe(false);
+    expect.soft(fs.existsSync(path.join(outputDir, oldExport))).toBe(false);
+    expect.soft(fs.existsSync(path.join(outputDir, orphanDeck))).toBe(false);
+  });
+
+  // ── Privacy review G4 (2026-09-26): nothing of an expired account survives ─
+  //
+  // Answer copies (versions) had no owner, a deleted session left its copies
+  // and embeddings where no pass could find them, and an edited module prompt
+  // (system_prompts) had no owner at all. Two accounts get the same rows: a
+  // session each deletes through the route on the demo, followed by the late
+  // writes that can land after it (an answer embedding, a quality score, a
+  // memory-feedback row and an unowned answer copy, older than the sweep's
+  // minimum age); a live session with its answer copies (owned, and unowned
+  // from before versions had an owner), an embedding, a score, feedback and
+  // an edited prompt its runs name; an edited prompt both accounts' runs name.
+
+  it('G4: an expired account leaves nothing behind (a session it deleted, answer copies, edited prompts, embeddings); the other account keeps its rows', async () => {
+    const express = (await import('express')).default;
+    const { createSessionRoutes } = await import('../../server/routes/sessions.js');
+    const app = express();
+    app.use(express.json());
+    app.use((req, _res, next) => {
+      const id = String(req.headers['x-test-user'] ?? '');
+      (req as typeof req & { user?: { id: string; username: string; role: string } }).user = { id, username: id, role: 'analyst' };
+      next();
+    });
+    app.use('/api', await createSessionRoutes(db));
+    const server = await new Promise<Server>((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
+    extraCleanup.push(() => new Promise<void>((resolve) => { server.close(() => resolve()); }));
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+
+    const visitor = await seedUser('g4_visitor');
+    const other = await seedUser('g4_other', { expiresAgo: null });
+    const promptId = () => randomUUID().replace(/-/g, '').slice(0, 16);
+    const prompts: string[] = [];
+    const addPrompt = async (ageSql = 'NOW()'): Promise<string> => {
+      const id = promptId();
+      prompts.push(id);
+      await db.run(`INSERT INTO system_prompts (id, module_id, version, content, content_hash, author, created_at) VALUES (?, ?, 1, 'edited', ?, 'user-override', ${ageSql})`, id, `g4-${TAG}-${id}`, id);
+      return id;
+    };
+    const shared = await addPrompt();
+    const unnamedOld = await addPrompt("NOW() - INTERVAL '3 hours'");
+    const unnamedFresh = await addPrompt();
+
+    type Work = { session: string; message: string; prompt: string };
+    const all: Work[] = [];
+    const seedWork = async (userId: string): Promise<{ live: Work; gone: Work }> => {
+      const out = {
+        live: { session: randomUUID(), message: randomUUID(), prompt: await addPrompt() },
+        gone: { session: randomUUID(), message: randomUUID(), prompt: await addPrompt() },
+      };
+      for (const w of [out.live, out.gone]) {
+        all.push(w);
+        await db.run(`INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, 'alert-investigation', 'g4', ?, ?)`, w.session, JSON.stringify({ modulePromptVersionId: w.prompt }), userId);
+        await db.run(`INSERT INTO messages (id, session_id, role, content, config_snapshot) VALUES (?, ?, 'assistant', 'an answer', ?)`, w.message, w.session, JSON.stringify({ modulePromptVersionId: w.prompt }));
+        await db.run(`INSERT INTO audit_log (id, session_id, module_id, user_id, system_prompt_version_id) VALUES (?, ?, 'alert-investigation', ?, ?)`, `al-${w.session}`, w.session, userId, w.prompt);
+        // The Work path's copy (owned since F1) and one written before versions had an owner.
+        await db.run(
+          `INSERT INTO versions (entity_type, entity_id, version_number, label, content, user_id) VALUES ('session', ?, 1, 'Auto v1', 'copy', ?), ('session', ?, 2, 'Auto v2', 'copy', NULL)`,
+          w.session, userId, w.session,
+        );
+        await db.run(`INSERT INTO embeddings (id, content_type, content_id, content_text, embedding, embedding_model, embedding_dimension) VALUES (?, 'session_output', ?, 'answer head', '[]', 'm', 0)`, `emb-${w.message}`, w.message);
+        await db.run(`INSERT INTO quality_scores (id, session_id, module_id, content_hash, score_overall) VALUES (?, ?, 'alert-investigation', 'h', 7)`, `qs-${w.session}`, w.session);
+        await db.run(`INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method) VALUES (?, 'atom-g4', 'hybrid')`, w.session);
+      }
+      // A second run of the live session sent a prompt text the other account also sent.
+      await db.run(`INSERT INTO audit_log (id, session_id, module_id, user_id, system_prompt_version_id) VALUES (?, ?, 'alert-investigation', ?, ?)`, `al2-${out.live.session}`, out.live.session, userId, shared);
+      return out;
+    };
+    const v = await seedWork(visitor);
+    const o = await seedWork(other);
+    // Rows that only look like orphans: keyed by a module id or a Risk Atlas, or too recent to judge.
+    const moduleVersionEntity = `alert-investigation-${TAG}`;
+    const atlasScore = `atlas_${randomUUID()}`;
+    const freshOrphan = randomUUID();
+    await db.run(`INSERT INTO versions (entity_type, entity_id, version_number, content, created_at) VALUES ('output', ?, 1, 'saved before a session', NOW() - INTERVAL '3 hours')`, moduleVersionEntity);
+    await db.run(
+      `INSERT INTO quality_scores (id, session_id, module_id, content_hash, score_overall, scored_at)
+       VALUES (?, ?, 'risk-atlas', 'h', 7, NOW() - INTERVAL '3 hours'), (?, ?, 'alert-investigation', 'h', 7, NOW())`,
+      `qs-${atlasScore}`, atlasScore, `qs-${freshOrphan}`, freshOrphan,
+    );
+
+    extraCleanup.push(async () => {
+      for (const w of all) {
+        await db.run('DELETE FROM embeddings WHERE content_id = ?', w.message).catch(() => {});
+        for (const table of ['quality_scores', 'retrieval_feedback', 'audit_log']) {
+          await db.run(`DELETE FROM ${table} WHERE session_id = ?`, w.session).catch(() => {});
+        }
+        await db.run('DELETE FROM versions WHERE entity_id = ?', w.session).catch(() => {});
+        await db.run('DELETE FROM sessions WHERE id = ?', w.session).catch(() => {});
+      }
+      for (const p of prompts) await db.run('DELETE FROM system_prompts WHERE id = ?', p).catch(() => {});
+      await db.run('DELETE FROM versions WHERE entity_id = ?', moduleVersionEntity).catch(() => {});
+      await db.run('DELETE FROM quality_scores WHERE session_id IN (?, ?)', atlasScore, freshOrphan).catch(() => {});
+    });
+
+    // Each account deletes one session through the route, on the demo.
+    const savedDemo = process.env.DEMO_MODE;
+    process.env.DEMO_MODE = 'true';
+    try {
+      for (const [userId, w] of [[visitor, v.gone], [other, o.gone]] as const) {
+        const res = await fetch(`${base}/api/sessions/${w.session}`, { method: 'DELETE', headers: { 'x-test-user': userId } });
+        expect(res.status).toBe(200);
+      }
+    } finally {
+      if (savedDemo === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = savedDemo;
+    }
+    // Then the late writes land, and a pass runs later than the sweep's minimum age.
+    for (const w of [v.gone, o.gone]) {
+      await db.run(
+        `INSERT INTO embeddings (id, content_type, content_id, content_text, embedding, embedding_model, embedding_dimension, created_at)
+         VALUES (?, 'session_output', ?, 'late', '[]', 'm-late', 0, NOW() - INTERVAL '3 hours')`,
+        `emb-late-${w.message}`, w.message,
+      );
+      await db.run(`INSERT INTO quality_scores (id, session_id, module_id, content_hash, score_overall, scored_at) VALUES (?, ?, 'alert-investigation', 'h', 6, NOW() - INTERVAL '3 hours')`, `qs-late-${w.session}`, w.session);
+      await db.run(`INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, injected_at) VALUES (?, 'atom-g4', 'hybrid', NOW() - INTERVAL '3 hours')`, w.session);
+      await db.run(`INSERT INTO versions (entity_type, entity_id, version_number, content, created_at) VALUES ('session', ?, 9, 'late copy', NOW() - INTERVAL '3 hours')`, w.session);
+    }
+
+    const count = async (sql: string, ...params: unknown[]) => Number((await db.get<{ n: string | number }>(sql, ...params))?.n ?? 0);
+    const rowsOf = async (w: Work) => ({
+      sessions: await count('SELECT COUNT(*) AS n FROM sessions WHERE id = ?', w.session),
+      versions: await count('SELECT COUNT(*) AS n FROM versions WHERE entity_id = ?', w.session),
+      embeddings: await count('SELECT COUNT(*) AS n FROM embeddings WHERE content_id = ?', w.message),
+      quality_scores: await count('SELECT COUNT(*) AS n FROM quality_scores WHERE session_id = ?', w.session),
+      retrieval_feedback: await count('SELECT COUNT(*) AS n FROM retrieval_feedback WHERE session_id = ?', w.session),
+      audit_log: await count('SELECT COUNT(*) AS n FROM audit_log WHERE session_id = ?', w.session),
+      system_prompts: await count('SELECT COUNT(*) AS n FROM system_prompts WHERE id = ?', w.prompt),
+    });
+    const otherLiveBefore = await rowsOf(o.live);
+    expect.soft(otherLiveBefore).toEqual({ sessions: 1, versions: 2, embeddings: 1, quality_scores: 1, retrieval_feedback: 1, audit_log: 2, system_prompts: 1 });
+
+    const r = await pass();
+
+    expect.soft(await userExists(visitor)).toBe(false);
+    const none = { sessions: 0, versions: 0, embeddings: 0, quality_scores: 0, retrieval_feedback: 0, audit_log: 0, system_prompts: 0 };
+    expect.soft(await rowsOf(v.live), 'the live session').toEqual(none);
+    expect.soft(await rowsOf(v.gone), 'the session it deleted').toEqual(none);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM versions WHERE user_id = ?', visitor)).toBe(0);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM system_prompts WHERE id = ?', unnamedOld), 'an edited prompt no run names').toBe(0);
+
+    // Negative controls: the other account's live session is exactly as it was;
+    // a prompt its runs also name stays; so does what only looks like an orphan.
+    expect.soft(await userExists(other)).toBe(true);
+    expect.soft(await rowsOf(o.live)).toEqual(otherLiveBefore);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM system_prompts WHERE id = ?', shared), 'a prompt the other account\'s run names').toBe(1);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM system_prompts WHERE id = ?', unnamedFresh), 'an unnamed prompt younger than the minimum age').toBe(1);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM versions WHERE entity_id = ?', moduleVersionEntity), 'a version keyed by a module id').toBe(1);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM quality_scores WHERE session_id = ?', atlasScore), 'a Risk Atlas score').toBe(1);
+    expect.soft(await count('SELECT COUNT(*) AS n FROM quality_scores WHERE session_id = ?', freshOrphan), 'an orphan younger than the minimum age').toBe(1);
+    // The session the other account deleted is gone too, late writes included: they were orphans.
+    expect.soft(await rowsOf(o.gone)).toEqual(none);
+
+    expect.soft(r.errors.filter((e) => /^(system_prompts|versions|embeddings|quality_scores|retrieval_feedback|audit_log)/.test(e.table))).toEqual([]);
+  });
+
+  it('G4: collectAccountRows exports what the pass would delete, credentials and tokens redacted; deleteDemoAccountNow deletes a demo account at once', async () => {
+    const { collectAccountRows, deleteDemoAccountNow } = await import('../../server/services/demo-retention.js');
+    // A demo account that has not expired yet, an ordinary account, an administrator.
+    const visitor = await seedUser('g4_now', { expiresAgo: '-10 days' });
+    const ordinary = await seedUser('g4_ordinary', { expiresAgo: null });
+    const admin = await seedUser('g4_admin', { role: 'admin' });
+    const session = randomUUID();
+    const message = randomUUID();
+    const prompt = randomUUID().replace(/-/g, '').slice(0, 16);
+    const token = `tok-g4-${TAG}`;
+    await db.run(`INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, 'alert-investigation', 'g4 now', '{}', ?)`, session, visitor);
+    await db.run(`INSERT INTO messages (id, session_id, role, content, config_snapshot) VALUES (?, ?, 'assistant', 'an answer', ?)`, message, session, JSON.stringify({ modulePromptVersionId: prompt }));
+    await db.run(`INSERT INTO system_prompts (id, module_id, version, content, content_hash, author) VALUES (?, ?, 1, 'edited', ?, 'user-override')`, prompt, `g4now-${TAG}`, prompt);
+    await db.run(`INSERT INTO versions (entity_type, entity_id, version_number, content) VALUES ('session', ?, 1, 'unowned copy')`, session);
+    await db.run(`INSERT INTO embeddings (id, content_type, content_id, content_text, embedding, embedding_model, embedding_dimension) VALUES (?, 'session_output', ?, 'answer head', '[0.1]', 'm', 1)`, `emb-${message}`, message);
+    await db.run(`INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, NOW() + INTERVAL '1 day')`, token, visitor);
+    extraCleanup.push(async () => {
+      await db.run('DELETE FROM user_sessions WHERE token = ?', token);
+      await db.run('DELETE FROM embeddings WHERE content_id = ?', message);
+      await db.run('DELETE FROM versions WHERE entity_id = ?', session);
+      await db.run('DELETE FROM system_prompts WHERE id = ?', prompt);
+      await db.run('DELETE FROM sessions WHERE id = ?', session);
+    });
+
+    const exported = await collectAccountRows(db, visitor);
+    expect(exported?.tables.sessions?.map((s) => s.id)).toEqual([session]);
+    expect(exported?.tables.messages?.map((m) => m.id)).toEqual([message]);
+    expect(exported?.tables.versions?.map((x) => x.content)).toEqual(['unowned copy']);
+    expect(exported?.tables.embeddings?.map((x) => [x.content_text, x.embedding])).toEqual([['answer head', '[redacted]']]);
+    expect(exported?.tables.system_prompts?.map((x) => x.id)).toEqual([prompt]);
+    expect(exported?.tables.user_sessions?.map((x) => x.token)).toEqual(['[redacted]']);
+    expect(exported?.tables.users?.[0]?.password_hash).toBe('[redacted]');
+    expect(exported?.errors).toEqual([]);
+    // Negative control: nobody else's rows.
+    expect((await collectAccountRows(db, ordinary))?.tables.sessions).toBeUndefined();
+    expect(await collectAccountRows(db, randomUUID())).toBeNull();
+
+    expect((await deleteDemoAccountNow(db, admin)).refused).toBe('admin');
+    expect((await deleteDemoAccountNow(db, ordinary)).refused).toBe('not_demo_account');
+    expect(await userExists(admin)).toBe(true);
+    expect(await userExists(ordinary)).toBe(true);
+
+    const r = await deleteDemoAccountNow(db, visitor, { uploadDir });
+    expect(r).toMatchObject({ deleted: 1, failed: 0 });
+    expect(r.refused).toBeUndefined();
+    expect(await userExists(visitor)).toBe(false);
+    for (const [sql, id] of [
+      ['SELECT COUNT(*) AS n FROM sessions WHERE id = ?', session],
+      ['SELECT COUNT(*) AS n FROM versions WHERE entity_id = ?', session],
+      ['SELECT COUNT(*) AS n FROM embeddings WHERE content_id = ?', message],
+      ['SELECT COUNT(*) AS n FROM system_prompts WHERE id = ?', prompt],
+      ['SELECT COUNT(*) AS n FROM user_sessions WHERE token = ?', token],
+    ] as const) {
+      expect(Number((await db.get<{ n: string | number }>(sql, id))?.n), sql).toBe(0);
+    }
   });
 });

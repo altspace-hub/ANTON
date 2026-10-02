@@ -9,6 +9,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      // The public demo is built with ANTON_DEMO_BUILD=true: no service worker,
+      // no offline copy of its pages in a visitor's browser (privacy notice).
+      disable: process.env.ANTON_DEMO_BUILD === 'true',
       registerType: 'autoUpdate',
       devOptions: {
         enabled: false, // Never register SW in dev — prevents stale cache breaking hot-reload
@@ -32,14 +35,6 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
           {
             // School locale files — stale-while-revalidate so offline still works
             urlPattern: /\/locales\/.*-school\.json$/,

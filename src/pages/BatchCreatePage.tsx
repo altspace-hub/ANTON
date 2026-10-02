@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { MODULES } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import type { KnowledgeLibraryEntry } from '@/lib/types';
 import {
   Upload,
@@ -102,6 +103,8 @@ interface RowResult {
 }
 
 export default function BatchCreatePage() {
+  // On a public demo the module picker leaves out the modules kept off it.
+  const catalogue = useDemoCatalogue();
   const [step, setStep] = useState(1);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParsedCSV | null>(null);
@@ -528,7 +531,7 @@ export default function BatchCreatePage() {
                 className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
               >
                 <option value="">-- None (use custom system prompt) --</option>
-                {MODULES.map((m) => (
+                {catalogue.modules.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}
                   </option>
