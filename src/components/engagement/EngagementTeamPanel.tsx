@@ -11,6 +11,7 @@ import {
   AlertCircle, CheckCircle, X, Building, UserCheck, Lightbulb
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { useEngagementDemo, responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, Stakeholder } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -35,6 +36,8 @@ interface ExtractResult {
 }
 
 export default function EngagementTeamPanel({ engagement, onNext, onReload }: Props) {
+  // Public demo: people are described by role, not by name (privacy notice).
+  const demo = useEngagementDemo();
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState<ExtractResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,18 +64,19 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       const data = await res.json();
       setExtractResult(data);
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
     } finally {
       setExtracting(false);
     }
   }
 
   async function importExtracted(type: StakeholderType, person: { name: string; role: string; organisation: string; expertise_areas?: string[] }) {
-    await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
+    setError(null);
+    const res = await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -80,14 +84,17 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
         stakeholder_type: type, expertise_areas: person.expertise_areas || [],
       }),
     });
+    // A refusal (the demo's row cap or write limit) is shown, not swallowed.
+    if (!res.ok) { setError(await responseErrorMessage(res)); return; }
     onReload();
   }
 
   async function addMember(type: StakeholderType) {
     if (!newName.trim()) return;
     setSaving(true);
+    setError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,6 +102,7 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
           stakeholder_type: type, expertise_areas: newExpertise, notes: newNotes,
         }),
       });
+      if (!res.ok) { setError(await responseErrorMessage(res)); return; }
       setNewName(''); setNewRole(''); setNewOrg(''); setNewExpertise([]); setNewNotes('');
       setAdding(null);
       onReload();
@@ -121,6 +129,13 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
         <p className="mt-1 text-sm text-adv-gray">
           Define who is on this engagement. ANTON can extract the delivery team and client contacts from the engagement letter, or you can add them manually. Team composition is injected into every execution step.
         </p>
+        {demo.restricted && (
+          <p role="note" className="mt-2 text-sm text-adv-gold">
+            This is a public demo: describe people by their role (for example &ldquo;AML lead&rdquo; or &ldquo;Head of Compliance&rdquo;)
+            rather than by name, and enter no contact details. What you enter here, and the people named in an uploaded
+            letter, are sent to the AI model.
+          </p>
+        )}
       </div>
 
       {/* Extract button */}
@@ -331,6 +346,7 @@ interface TeamSectionProps {
 function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, onStartAdd, onCancelAdd, defaultOrg,
   newName, setNewName, newRole, setNewRole, newOrg, setNewOrg,
   newExpertise, setNewExpertise, newNotes, setNewNotes, saving, onAdd, showExpertise }: TeamSectionProps) {
+  const demo = useEngagementDemo();
 
   function toggleExpertise(area: string) {
     setNewExpertise(newExpertise.includes(area)
@@ -364,7 +380,7 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
                 <input
                   autoFocus
                   value={newName} onChange={e => setNewName(e.target.value)}
-                  placeholder="e.g. Daniel Bardun"
+                  placeholder={demo.restricted ? 'e.g. AML lead (a role, not a real name)' : 'e.g. Daniel Bardun'}
                   className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
               </div>

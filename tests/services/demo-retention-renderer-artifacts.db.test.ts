@@ -31,11 +31,11 @@ const d = DATABASE_URL ? describe : describe.skip;
 const TAG = randomUUID().slice(0, 8);
 const DAY_MS = 24 * 60 * 60 * 1000;
 /**
- * The passes' reference time. The account pass deletes every demo account
- * expired by then, in the whole test database, and other files run at the
- * same time (demo-retention.db.test.ts expires one an hour back). This
- * file's account expired ten days ago, so a reference five days back finds it
- * and leaves theirs alone.
+ * The trace pass's reference time. A full pass also deletes every demo account
+ * expired by then, in the whole test database, while other files run at the
+ * same time (demo-retention.db.test.ts expires one an hour back): five days
+ * back leaves theirs alone. This file's own deletion goes through
+ * deleteDemoAccountNow, so no pass elsewhere can take it first.
  */
 const FIVE_DAYS_AGO = () => new Date(Date.now() - 5 * DAY_MS);
 
@@ -103,16 +103,20 @@ d('demo retention removes Transform panel files', () => {
     fs.rmSync(uploadDir, { recursive: true, force: true });
   });
 
-  it('the account pass removes an expired visitor\'s transform files and keeps a current visitor\'s', async () => {
-    const expired = await user('expired', 'analyst', "NOW() - INTERVAL '10 days'");
+  it('deleting an account removes the visitor\'s transform files and keeps another visitor\'s', async () => {
+    // Deleted directly — the account pass deletes each expired account the
+    // same way. An account left expired here would also be taken by the pass
+    // of demo-retention.db.test.ts running at the same time, with its own
+    // folders, and this file's would then stay on disk.
+    const leaving = await user('expired', 'analyst', "NOW() + INTERVAL '1 day'");
     const current = await user('current', 'analyst', "NOW() + INTERVAL '10 days'");
-    const gone = writeArtifact(await session('expired', expired));
+    const gone = writeArtifact(await session('expired', leaving));
     const kept = writeArtifact(await session('current', current));
 
-    const { runDemoRetention } = await import('../../server/services/demo-retention.js');
-    const result = await runDemoRetention(db, { uploadDir, outputDir, pruneTraces: false, sweepOrphans: false, now: FIVE_DAYS_AGO() });
+    const { deleteDemoAccountNow } = await import('../../server/services/demo-retention.js');
+    const result = await deleteDemoAccountNow(db, leaving, { uploadDir, outputDir });
 
-    expect(result.deleted).toBeGreaterThanOrEqual(1);
+    expect(result.deleted).toBe(1);
     expect(fs.existsSync(gone)).toBe(false);
     expect(result.rowsByTable['transform files']).toBeGreaterThanOrEqual(1);
     // Negative control: the visitor whose account has not expired keeps theirs.

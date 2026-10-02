@@ -7,8 +7,10 @@
  * DeepSeek V4 Flash and Kimi K2.6:
  *
  *   - the sidebar: My Work, Open Chat, the AI Council, the 5-minute Brief and
- *     Build Module, and still none of the admin-only tools (Projects, the
- *     Task Agent, Knowledge Base, Exchange, …);
+ *     Build Module, and (opened 2026-10-02) Engagement Tasks, Discover, the
+ *     Task Agent, Projects, the Knowledge Base, Exchange, Orchestration,
+ *     Intelligence and Horizon Radar, each once; still none of the admin-only
+ *     tools (Coding, the App Gateway, Workflows, …);
  *   - the AI Council: members spread over the offered models instead of all
  *     on one; each answer labelled with the model the server ran; no web
  *     search on models without it; the demo data line and personal-data check;
@@ -18,7 +20,8 @@
  *   - the Trust Score panel names the model that scored the answer;
  *   - the rerun comparison says "not scored" at once when the demo scores
  *     nothing;
- *   - Build Module: no community sharing or .anton download for a visitor,
+ *   - Build Module: no community sharing for a visitor, and the .anton download
+ *     of their own module (opened 2026-10-02) asks for, and says, unsigned;
  *     and a refused share no longer hides that the module was saved;
  *   - Settings › Double-check lists every model an endpoint allows.
  *
@@ -214,21 +217,24 @@ afterEach(async () => {
 // ── The sidebar ─────────────────────────────────────────────────────────
 
 describe('Sidebar: the visitor\'s features', () => {
-  const VISITOR_FEATURES = ['/my-work', '/prompt', '/council', '/brief', '/build-module'];
-  const ADMIN_ONLY = ['/projects', '/engagements', '/task-agent', '/knowledge-base', '/exchange', '/orchestration',
-    '/intelligence', '/radar', '/discover', '/pathfinder', '/coding', '/app-gateway'];
+  const VISITOR_FEATURES = ['/my-work', '/prompt', '/council', '/brief', '/build-module',
+    '/engagements', '/discover', '/task-agent', '/projects', '/knowledge-base', '/exchange', '/orchestration',
+    '/intelligence', '/radar'];
+  const ADMIN_ONLY = ['/pathfinder', '/coding', '/app-gateway', '/workflows', '/agents', '/knowledge', '/graph',
+    '/patterns', '/datasets', '/coworkers'];
 
   // A starred entry is drawn in Favorites only; every first launch stars some
   // (DEFAULT_FAVORITE_NAV_ITEMS), and a person can unstar them all.
   for (const favourites of ['the default favourites', 'no favourites'] as const) {
-    it(`gives a visitor My Work, Open Chat, the AI Council, the Brief and Build Module, once each — none of the admin-only tools (${favourites})`, async () => {
+    it(`gives a visitor My Work, Open Chat, the AI Council, the Brief, Build Module and the features opened on 2026-10-02, once each — none of the admin-only tools (${favourites})`, async () => {
       if (favourites === 'no favourites') localStorage.setItem('openexpert-favorite-nav-items', '[]');
       as('visitor');
       await render(Sidebar as ComponentType<object>);
       const hrefs = links();
       for (const href of VISITOR_FEATURES) expect(hrefs.filter((h) => h === href), href).toHaveLength(1);
       for (const href of ADMIN_ONLY) expect(hrefs, href).not.toContain(href);
-      // Build Module shows outside the Tools section a visitor does not get.
+      // Build Module and the visitor's other tools show outside the Tools
+      // section a visitor does not get.
       expect(container.querySelector('[aria-controls="nav-section-tools"]')).toBeNull();
     });
   }
@@ -238,12 +244,15 @@ describe('Sidebar: the visitor\'s features', () => {
     as('admin');
     await render(Sidebar as ComponentType<object>);
     for (const href of ['/my-work', '/prompt', '/council', '/brief', '/discover', '/task-agent']) expect(links(), href).toContain(href);
-    // Build Module stays under Tools & Features for an admin.
-    expect(links()).not.toContain('/build-module');
+    // Build Module and the other tools stay under Tools & Features for an admin.
+    for (const href of ['/build-module', '/projects', '/knowledge-base', '/exchange', '/orchestration', '/radar']) {
+      expect(links(), href).not.toContain(href);
+    }
     await click(container.querySelector('[aria-controls="nav-section-tools"]') as HTMLButtonElement);
-    expect(links()).toContain('/build-module');
-    expect(links()).toContain('/projects');
-    expect(links().filter((h) => h === '/build-module')).toHaveLength(1);
+    for (const href of ['/build-module', '/projects', '/knowledge-base', '/exchange', '/orchestration', '/intelligence',
+      '/radar', '/coding', '/app-gateway']) {
+      expect(links().filter((h) => h === href), href).toHaveLength(1);
+    }
   });
 });
 
@@ -442,11 +451,24 @@ describe('RerunComparison: the quality score of each side', () => {
 // ── Build Module ────────────────────────────────────────────────────────
 
 describe('Build Module', () => {
-  it('gives a visitor no community sharing and no .anton download', async () => {
+  it('gives a visitor no community sharing, and an unsigned .anton download of their own module', async () => {
     as('visitor');
+    answers = { '/api/exchange/export/m0?type=custom': { body: { bundle: 'unsigned' } } };
+    const created = vi.fn(() => 'blob:anton');
+    URL.createObjectURL = created as unknown as typeof URL.createObjectURL;
+    URL.revokeObjectURL = (() => {}) as typeof URL.revokeObjectURL;
     await render(BuildYourOwnModule as ComponentType<object>);
     expect(text()).toContain('My checker');
+    // Opened 2026-10-02: POST /exchange/export/:id answers a visitor for their
+    // own module, always unsigned; the page says so and asks for no signature.
     expect(button('Export as .anton')).toBeUndefined();
+    expect(text()).toContain('A module you download as .anton from this demo is unsigned');
+    await click(button('Export as .anton (unsigned)'));
+    const exported = calls.find((c) => c.url === '/api/exchange/export/m0?type=custom' && c.method === 'POST');
+    expect(exported).toBeDefined();
+    expect(JSON.parse(exported?.body ?? '{}')).toEqual({ sign: false });
+    expect(created).toHaveBeenCalled();
+    expect(text()).not.toContain('Export failed');
     await click([...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Save Current Session')) as HTMLButtonElement);
     expect(text()).toContain('Save As Custom Module');
     expect(text()).not.toContain('Share with Community');
@@ -457,6 +479,9 @@ describe('Build Module', () => {
     answers = { '/api/modules/community': { status: 500, body: { error: 'refused' } } };
     await render(BuildYourOwnModule as ComponentType<object>);
     expect(button('Export as .anton')).toBeDefined();
+    // An admin's download is not marked unsigned (the server may sign it).
+    expect(button('Export as .anton (unsigned)')).toBeUndefined();
+    expect(text()).not.toContain('A module you download as .anton from this demo is unsigned');
     await click([...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Save Current Session')) as HTMLButtonElement);
     expect(text()).toContain('Share with Community');
     await typeInto(container.querySelector('input[placeholder="e.g., Nordic Bank AMLR Checker"]') as HTMLInputElement, 'New module');

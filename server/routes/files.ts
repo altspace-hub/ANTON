@@ -3,14 +3,16 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
-import { fileTypeFromBuffer } from 'file-type';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { validateParams } from '../lib/validate.js';
 import { FileIdParamSchema } from '../lib/schemas.js';
 import { safeError } from '../lib/error-response.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
-import { isDemoMode, demoUserUploadQuota, type UploadQuota } from '../middleware/demo-mode.js';
+import {
+  accountStoredUsage, isDemoVisitor, overQuota, quotaMessage, storageQuotaFor, UPLOAD_QUOTA_CODE,
+} from '../services/rag/demo-storage.js';
+import { uploadContentRefusal } from '../services/demo-upload-guard.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 fs.ensureDirSync(UPLOAD_DIR);
@@ -51,36 +53,13 @@ const upload = multer({
   },
 });
 
-/**
- * The storage quota that applies to this caller, or null: a non-admin on a
- * public demo (DEMO_MODE=true). One visitor must not be able to fill the
- * disk that uploads share with PostgreSQL; the owner is not limited.
+/*
+ * The demo upload quota (a non-admin on DEMO_MODE=true): one visitor must not
+ * be able to fill the disk that uploads share with PostgreSQL; the owner is
+ * not limited. It is one total over every store an account keeps files in
+ * (rag/demo-storage.ts accountStoredUsage): run attachments, Engagement Task
+ * files, Knowledge Base documents, project files and Task Agent attachments.
  */
-function uploadQuotaFor(req: Request): UploadQuota | null {
-  if (!isDemoMode() || !req.user || req.user.role === 'admin') return null;
-  const quota = demoUserUploadQuota();
-  return quota.maxBytes > 0 || quota.maxFiles > 0 ? quota : null;
-}
-
-/** What an account keeps in uploads, from the ownership records. */
-async function uploadUsage(db: DatabaseAdapter, userId: string): Promise<{ bytes: number; files: number }> {
-  const row = await db.get<{ bytes: string | number | null; files: string | number | null }>(
-    'SELECT COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS files FROM file_uploads WHERE uploaded_by = ?',
-    userId,
-  );
-  return { bytes: Number(row?.bytes ?? 0), files: Number(row?.files ?? 0) };
-}
-
-function overQuota(quota: UploadQuota, bytes: number, files: number): boolean {
-  return (quota.maxBytes > 0 && bytes > quota.maxBytes) || (quota.maxFiles > 0 && files > quota.maxFiles);
-}
-
-function quotaMessage(quota: UploadQuota): string {
-  const parts: string[] = [];
-  if (quota.maxBytes > 0) parts.push(`${Math.round(quota.maxBytes / (1024 * 1024))} MB`);
-  if (quota.maxFiles > 0) parts.push(`${quota.maxFiles} files`);
-  return `This demo account has reached its upload limit (${parts.join(' or ')}).`;
-}
 
 export function createFilesRoutes(db: DatabaseAdapter): Router {
   const router = Router();
@@ -89,13 +68,13 @@ export function createFilesRoutes(db: DatabaseAdapter): Router {
   // plus this request's size, must fit. Checked again after the write, when
   // the real size is known (two uploads at once both pass this check).
   const uploadQuotaPrecheck = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const quota = uploadQuotaFor(req);
+    const quota = storageQuotaFor(req);
     if (!quota) { next(); return; }
     try {
-      const used = await uploadUsage(db, req.user!.id);
+      const used = await accountStoredUsage(db, req.user!.id);
       const incoming = Number(req.headers['content-length']) || 0;
       if (overQuota(quota, used.bytes + incoming, used.files + 1)) {
-        res.status(413).json({ error: quotaMessage(quota), code: 'UPLOAD_QUOTA' });
+        res.status(413).json({ error: quotaMessage(quota), code: UPLOAD_QUOTA_CODE });
         return;
       }
       next();
@@ -111,61 +90,21 @@ router.post('/files/upload', uploadQuotaPrecheck, upload.single('file'), async (
     return;
   }
 
-  // MIME type validation - verify file content matches declared extension
-  const ALLOWED_MIMES: Record<string, string> = {
-    '.pdf':  'application/pdf',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.doc':  'application/msword',
-    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.csv':  'text/csv',
-    '.html': 'text/html',
-    '.png':  'image/png',
-    '.jpg':  'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif':  'image/gif',
-    '.webp': 'image/webp',
-  };
-
   const ext = path.extname(req.file.originalname).toLowerCase();
-  const expectedMime = ALLOWED_MIMES[ext];
   const fileBuffer = await fs.readFile(req.file.path);
 
-  if (expectedMime) {
-    const detected = await fileTypeFromBuffer(fileBuffer);
-    if (detected && detected.mime !== expectedMime) {
-      await fs.remove(req.file.path);
-      res.status(400).json({ error: `File content does not match declared type (expected ${expectedMime}, got ${detected.mime})` });
-      return;
-    }
-  }
-
-  // SEC-09: ZIP bomb / compression ratio check for ZIP-based formats (.docx, .xlsx)
-  // These formats are ZIP archives — expanded content must not exceed 100× compressed size.
-  const ZIP_BASED_EXTS = new Set(['.docx', '.doc', '.xlsx']);
-  if (ZIP_BASED_EXTS.has(ext)) {
-    const compressedSize = req.file.size;
-    // Quick heuristic: scan central directory for uncompressed sizes without fully extracting.
-    // We walk the file buffer looking for local file header signatures (PK\x03\x04).
-    let totalUncompressed = 0;
-    let pos = 0;
-    const sig = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // PK local file header
-    while (pos < fileBuffer.length - 30) {
-      const idx = fileBuffer.indexOf(sig, pos);
-      if (idx === -1) break;
-      // Uncompressed size is at offset +22 from signature (4 bytes LE)
-      const uncompressedSize = fileBuffer.readUInt32LE(idx + 22);
-      totalUncompressed += uncompressedSize;
-      pos = idx + 4;
-    }
-    const MAX_RATIO = Number(process.env.ZIP_MAX_EXPANSION_RATIO) || 100;
-    if (compressedSize > 0 && totalUncompressed > compressedSize * MAX_RATIO) {
-      await fs.remove(req.file.path);
-      res.status(400).json({
-        error: `File rejected: compressed content expands by more than ${MAX_RATIO}× (${Math.round(totalUncompressed / compressedSize)}× detected). Possible ZIP bomb.`,
-        code: 'ZIP_BOMB_DETECTED',
-      });
-      return;
-    }
+  // The content matches the extension, and a ZIP-based file (.docx, .xlsx)
+  // does not expand past ZIP_MAX_EXPANSION_RATIO (SEC-09) — for every caller,
+  // as before; a demo visitor is also held to the expansion ceiling
+  // (services/demo-upload-guard.ts, shared with every upload path).
+  const contentRefusal = await uploadContentRefusal(
+    { originalname: req.file.originalname, size: req.file.size, path: req.file.path, buffer: fileBuffer },
+    { visitor: isDemoVisitor(req) },
+  );
+  if (contentRefusal) {
+    await fs.remove(req.file.path);
+    res.status(400).json(contentRefusal);
+    return;
   }
 
   const isImage = IMAGE_EXTENSIONS.has(ext);
@@ -182,13 +121,13 @@ router.post('/files/upload', uploadQuotaPrecheck, upload.single('file'), async (
   // The quota again, now that this file is on disk and on record: counted
   // after the insert, so of several uploads racing past the pre-check none
   // that stays can take the account over the limit.
-  const quota = uploadQuotaFor(req);
+  const quota = storageQuotaFor(req);
   if (quota) {
     // Fails closed: a quota that cannot be read keeps nothing.
     let refusal: { status: number; body: { error: string; code?: string } } | null = null;
     try {
-      const used = await uploadUsage(db, req.user!.id);
-      if (overQuota(quota, used.bytes, used.files)) refusal = { status: 413, body: { error: quotaMessage(quota), code: 'UPLOAD_QUOTA' } };
+      const used = await accountStoredUsage(db, req.user!.id);
+      if (overQuota(quota, used.bytes, used.files)) refusal = { status: 413, body: { error: quotaMessage(quota), code: UPLOAD_QUOTA_CODE } };
     } catch (err) {
       refusal = { status: 500, body: { error: safeError(err) } };
     }

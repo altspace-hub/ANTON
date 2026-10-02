@@ -16,10 +16,12 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
   const [icon, setIcon] = useState('FolderOpen');
   const [color, setColor] = useState('#2DD4A8');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const response = await fetchWithAuth('/api/collections', {
@@ -39,9 +41,13 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
         onSuccess(data.collectionId);
         onClose();
         resetForm();
+      } else {
+        // The server's own sentence (a limit reached, a name taken), when it wrote a short one.
+        const body = await response.json().catch(() => ({})) as { error?: unknown };
+        setError(typeof body.error === 'string' && body.error.length < 200 ? body.error : 'The collection could not be created.');
       }
-    } catch (error) {
-      console.error('Failed to create collection:', error);
+    } catch {
+      setError('The collection could not be created. Check the connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -152,6 +158,10 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
               />
             </div>
           </div>
+
+          {error && (
+            <p role="alert" className="text-sm text-adv-red">{error}</p>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <button

@@ -2060,9 +2060,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.aiCouncil')}
         </NavLinkWithStar>
 
-        {/* Build Module lives under Tools & Features, which a demo visitor does
-            not get; it is one of the visitor's features, so it shows here. */}
-        {demoLimited && (
+        {/* Build Module, Projects, the Knowledge Base, Exchange, Orchestration,
+            Intelligence and Horizon Radar live under Tools & Features, which a
+            demo visitor does not get (Coding, the App Gateway and the rest stay
+            with admins). These are the visitor's features (DEMO_WORK_NAV_ITEMS),
+            so they show here. */}
+        {demoLimited && (<>
           <NavLinkWithStar
             to="/build-module"
             navId="build-module"
@@ -2076,13 +2079,99 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <Puzzle className="h-4 w-4 shrink-0" />
             {!sidebarCollapsed && t('nav.buildModule')}
           </NavLinkWithStar>
-        )}
+
+          <NavLinkWithStar
+            to="/projects"
+            navId="projects"
+            title={sidebarCollapsed ? t('nav.projects') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('projects')}
+            isHidden={hiddenNavItems.has('projects')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <FolderOpen className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.projects')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/knowledge-base"
+            navId="knowledge-base"
+            title={sidebarCollapsed ? t('nav.knowledgeBase') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('knowledge-base')}
+            isHidden={hiddenNavItems.has('knowledge-base')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <DatabaseIcon className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.knowledgeBase')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/exchange"
+            navId="exchange"
+            title={sidebarCollapsed ? t('nav.exchange') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('exchange')}
+            isHidden={hiddenNavItems.has('exchange')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.exchange')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/orchestration"
+            navId="orchestration"
+            title={sidebarCollapsed ? 'Orchestration' : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('orchestration')}
+            isHidden={hiddenNavItems.has('orchestration')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && 'Orchestration'}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/intelligence"
+            navId="intelligence"
+            title={sidebarCollapsed ? t('nav.intelligenceDashboard') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('intelligence')}
+            isHidden={hiddenNavItems.has('intelligence')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Brain className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.intelligence')}
+          </NavLinkWithStar>
+
+          <NavLinkWithStar
+            to="/radar"
+            navId="radar"
+            title={sidebarCollapsed ? t('nav.regulatoryRadar') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('radar')}
+            isHidden={hiddenNavItems.has('radar')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Radar className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.radar')}
+          </NavLinkWithStar>
+        </>)}
 
         </>)}
 
         {/* ── Tools & Features section (collapsed by default) ──── */}
-        {/* Not on a public demo: apart from Build Module (above), none of these is
-            a Work route the server lets a visitor reach. */}
+        {/* Not on a public demo: the visitor's tools from this section are drawn
+            above (Build Module, Projects, the Knowledge Base, Exchange,
+            Orchestration, Intelligence, Horizon Radar); the server answers 404
+            to a visitor for the rest. */}
         {!sidebarCollapsed && !demoLimited && (
           <button
             onClick={() => toggleSection('tools')}

@@ -16,6 +16,7 @@ import {
   Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square, ExternalLink
 } from 'lucide-react';
 import { fetchWithAuth, streamMessage } from '@/lib/api';
+import { useEngagementDemo, responseErrorMessage, errorText } from './engagement-demo';
 import RunRecordPanel from '@/components/shared/RunRecordPanel';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { ModelId, StreamEvent } from '@/lib/types';
@@ -95,10 +96,10 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
           custom_instruction: selectedLens === 'custom' ? customInstruction : undefined,
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
     } catch (e) {
-      setError(`Gap analysis failed: ${String(e)}`);
+      setError(`Gap analysis failed: ${errorText(e)}`);
     } finally {
       setGeneratingGap(null);
     }
@@ -126,7 +127,7 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -930,8 +931,12 @@ function CouncilPanel({ engagement, iteration, onSaved }: {
 }) {
   const [enabled, setEnabled] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(['scope-checker', 'quality-auditor']));
+  // Public demo: every seat runs one of the demo's models — the server refuses
+  // any other — starting on the demo's own model.
+  const demo = useEngagementDemo();
+  const seatDefault = (): ModelId => (demo.restricted && demo.demoModel ? demo.demoModel : councilDefaultModel()) as ModelId;
   const [roleModels, setRoleModels] = useState<Record<string, ModelId>>(() =>
-    Object.fromEntries(COUNCIL_ROLES.map(r => [r.id, councilDefaultModel()]))
+    Object.fromEntries(COUNCIL_ROLES.map(r => [r.id, seatDefault()]))
   );
   const [running, setRunning] = useState(false);
   const [activeRole, setActiveRole] = useState<string | null>(null);
@@ -993,7 +998,7 @@ Provide a structured review in 3-5 paragraphs with clear headings. Be specific a
         setRoleOutputs(prev => ({ ...prev, [role.id]: '' }));
 
         const stream = streamMessage({
-          model: roleModels[role.id] || councilDefaultModel(),
+          model: roleModels[role.id] || seatDefault(),
           thinking: 'think',
           creativity: 'strict',
           systemPrompt: buildMemberSystemPrompt(role.id),
@@ -1022,7 +1027,7 @@ Provide a structured review in 3-5 paragraphs with clear headings. Be specific a
 
       let chairText = '';
       const chairStream = streamMessage({
-        model: councilDefaultModel(),
+        model: seatDefault(),
         thinking: 'think_hard',
         creativity: 'balanced',
         systemPrompt: `You are the Chair of an AI Council reviewing a consulting engagement draft. Synthesise the council's reviews into a final assessment.
@@ -1052,7 +1057,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
         members: members.map(r => ({
           role: r.id,
           label: r.label,
-          model: roleModels[r.id] || councilDefaultModel(),
+          model: roleModels[r.id] || seatDefault(),
           output: allOutputs[r.id] || '',
         })),
         chairSynthesis: chairText,
@@ -1067,7 +1072,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
       setSaved(true);
       onSaved();
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
     } finally {
       setRunning(false);
       setActiveRole(null);
@@ -1138,12 +1143,17 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                     <p className="text-xs text-adv-gray mb-2">{role.description}</p>
                     {active && (
                       <select
-                        value={roleModels[role.id] || councilDefaultModel()}
+                        value={roleModels[role.id] || seatDefault()}
                         onChange={(e) => setRoleModels(prev => ({ ...prev, [role.id]: e.target.value as ModelId }))}
                         onClick={e => e.stopPropagation()}
                         disabled={running}
                         className="w-full rounded border border-adv-teal/20 bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
                       >
+                        {demo.restricted ? (
+                          <optgroup label="Models on this demo">
+                            {demo.offeredModels.map((m) => <option key={m} value={m}>{m.replace(/^compat:[^:]+:/, '')}</option>)}
+                          </optgroup>
+                        ) : (<>
                         <optgroup label="Claude">
                           <option value="claude-opus-5-5">Claude Opus 5.5</option>
                           <option value="claude-opus-4-8">Claude Opus 4.8</option>
@@ -1160,6 +1170,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                         <optgroup label="Mistral">
                           <option value="mistral-large-latest">Mistral Large</option>
                         </optgroup>
+                        </>)}
                       </select>
                     )}
                   </div>

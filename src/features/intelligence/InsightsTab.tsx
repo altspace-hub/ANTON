@@ -45,10 +45,21 @@ interface TopEntity {
   atom_count: number;
 }
 
-export function InsightsTab() {
+interface InsightsTabProps {
+  /**
+   * A public-demo visitor: the Intelligence Brief (a free-form model call the
+   * demo does not open) is left out; Generate Insights reads only the
+   * visitor's own and the shared atoms.
+   */
+  demoLimited?: boolean;
+}
+
+export function InsightsTab({ demoLimited = false }: InsightsTabProps = {}) {
   const [loading, setLoading] = useState(true);
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+  const [insightsTried, setInsightsTried] = useState(false);
   const [distribution, setDistribution] = useState<AtomDistribution>({});
   const [topEntities, setTopEntities] = useState<TopEntity[]>([]);
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month' | 'all'>('week');
@@ -84,13 +95,21 @@ export function InsightsTab() {
   async function generateInsights() {
     try {
       setGeneratingInsights(true);
+      setInsightsError(null);
 
       const res = await fetch(`/api/intelligence/insights?timeRange=${timeRange}&limit=100`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({})) as { insights?: Insight[]; error?: unknown };
+      if (!res.ok) {
+        // The server's own sentence where it wrote one (a daily AI budget, a limit).
+        setInsightsError(typeof data.error === 'string' && data.error.length < 300 ? data.error : 'Insights could not be generated. Please try again later.');
+        return;
+      }
 
-      setInsights(data.insights || []);
+      setInsights(Array.isArray(data.insights) ? data.insights : []);
+      setInsightsTried(true);
     } catch (error) {
       console.error('Failed to generate insights:', error);
+      setInsightsError('Insights could not be generated. Please try again later.');
     } finally {
       setGeneratingInsights(false);
     }
@@ -256,8 +275,8 @@ export function InsightsTab() {
         </div>
       </div>
 
-      {/* AI Narrative Brief */}
-      <div className="bg-card border border-adv-teal/20 rounded-lg p-4">
+      {/* AI Narrative Brief (not on a public demo) */}
+      {!demoLimited && <div className="bg-card border border-adv-teal/20 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-adv-off-white flex items-center gap-2">
             <Brain className="w-4 h-4 text-adv-teal" />
@@ -281,7 +300,7 @@ export function InsightsTab() {
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* AI Insights */}
       <div className="bg-card border border-border rounded-lg p-4">
@@ -309,9 +328,21 @@ export function InsightsTab() {
           </button>
         </div>
 
-        {insights.length === 0 && !generatingInsights && (
+        {insightsError && (
+          <div className="mb-3 rounded-lg border border-red-500/30 bg-red-900/10 px-3 py-2 text-sm text-red-400" role="alert">
+            {insightsError}
+          </div>
+        )}
+
+        {insights.length === 0 && !generatingInsights && !insightsError && (
           <div className="text-center py-8 text-adv-gray text-sm">
-            Click "Generate Insights" to analyze patterns and trends in your knowledge atoms.
+            {totalAtoms === 0
+              ? (demoLimited
+                ? 'There are no knowledge atoms to analyse: learning is switched off on this demo.'
+                : 'There are no knowledge atoms to analyse yet.')
+              : insightsTried
+                ? 'No insights came back this time. Try another time range, or try again.'
+                : 'Click "Generate Insights" to analyze patterns and trends in your knowledge atoms.'}
           </div>
         )}
 

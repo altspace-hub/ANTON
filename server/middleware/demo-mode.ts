@@ -26,6 +26,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import rateLimit from 'express-rate-limit';
 import { parseSpendCap, invalidSpendCapMessage, SPEND_CAP_VARS } from '../services/llm-spend-cap-env.js';
+import { ENGAGEMENT_WORK_ROUTES } from '../services/engagement-demo-routes.js';
 
 type Env = Record<string, string | undefined>;
 
@@ -277,6 +278,16 @@ export function demoUserWritesPer10Min(env: Env = process.env): number {
   return intEnv(env.DEMO_USER_WRITES_PER_10_MIN, 30, 1, 100_000);
 }
 
+/**
+ * Small edits per account per 10 minutes: an engagement's scope items,
+ * workstreams, team, client intelligence and every PATCH or DELETE.
+ * DEMO_USER_EDITS_PER_10_MIN, default 300 — a walkthrough adds and edits
+ * dozens of rows, which the write limit of 30 would refuse.
+ */
+export function demoUserEditsPer10Min(env: Env = process.env): number {
+  return intEnv(env.DEMO_USER_EDITS_PER_10_MIN, 300, 1, 100_000);
+}
+
 export interface DemoSignupPolicy {
   /** Anyone may try to sign up (with the code, when one is set). */
   open: boolean;
@@ -311,7 +322,7 @@ export function demoSignupWithEmail(env: Env = process.env): boolean {
  * the terms text changes: a browser still showing the old terms is then
  * refused and asked to reload.
  */
-export const DEMO_TERMS_VERSION = '2026-10-02';
+export const DEMO_TERMS_VERSION = '2026-10-03';
 
 /**
  * DEMO_OPERATOR_NAME: the legal name of whoever runs the demo, for the
@@ -476,19 +487,28 @@ export function demoModuleHidden(
 
 /**
  * What the Work page needs, read off its API calls (ModulePage and the
- * shell around it: layout, header, sidebar, stores), and the Work tools
- * opened to visitors on 2026-10-01: My Work, the answer tools (Explain for,
- * citation check, Review, Rerun with another model, Transform), Find the
- * right module, the AI Council and Build Module. Paths are under /api.
- * `:x` is one path segment; a trailing `/*` also matches everything below.
- * Every entry is exact: a prefix would also open its sibling routes (POST
- * /reviews/orchestrate, POST /modules/community, the rest of /ai-assist).
- * Anything not here answers 404 to a non-admin. Deliberately left out, for
- * DEMO_EXTRA_ROUTES to add when the owner wants them: deliberation,
- * collections and RAG, EUR-Lex, evidence packs, exchange (and with it the
- * .anton download of a built module), community sharing of a module,
- * projects, Discover, the Task Agent, public share links, profile writes, and
- * the custom model slots (GET /settings/custom-models can carry a per-slot key).
+ * shell around it: layout, header, sidebar, stores), the Work tools opened
+ * to visitors on 2026-10-01 (My Work, the answer tools: Explain for,
+ * citation check, Review, Rerun with another model, Transform; Find the
+ * right module, the AI Council and Build Module), and the features opened on
+ * 2026-10-02: Engagement Tasks, Projects, the Knowledge Base, the Task Agent,
+ * Discover, and read-only Orchestration, Intelligence and Horizon Radar, plus
+ * the unsigned .anton download of a module the visitor built (Exchange).
+ * Paths are under /api. `:x` is one path segment; a trailing `/*` also
+ * matches everything below. Every entry is exact: a prefix would also open
+ * its sibling routes (POST /reviews/orchestrate, POST /modules/community, the
+ * rest of /ai-assist, the mission routes of the Task Agent, radar triage,
+ * project members and invitations, an engagement's host-folder index).
+ * Each opened route that holds a person's rows checks the owner in SQL itself,
+ * so another visitor's row answers 404; the shared reads (the radar feed, the
+ * organisation context, shared knowledge) change nothing. Anything not here
+ * answers 404 to a non-admin. Deliberately
+ * left out, for DEMO_EXTRA_ROUTES to add when the owner wants them:
+ * deliberation, indexed local folders (/rag, /folders), EUR-Lex, evidence
+ * packs, Exchange imports and signed exports, community sharing of a module,
+ * project sharing (members, invitations), Coding, the App Gateway, public
+ * share links, profile writes, and the custom model slots
+ * (GET /settings/custom-models can carry a per-slot key).
  */
 export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]> = [
   // The shell
@@ -581,7 +601,7 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/council/:x/dissent-ledger'],
   // Build Module: the caller's own custom modules, the guided builder and its
   // test run, and the module's saved versions. Sharing with the community
-  // (POST /modules/community) and the .anton export (/exchange) stay closed.
+  // (POST /modules/community) stays closed.
   ['POST', '/custom-modules'],
   ['PATCH,DELETE', '/custom-modules/:x'],
   ['POST', '/custom-modules/guide-message'],
@@ -590,6 +610,91 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/ai-assist/module-prompt'],
   ['POST', '/ai-assist/module-inputs'],
   ['POST', '/versions/module/:x'],
+  // Exchange: the .anton download of the caller's own built module, always
+  // unsigned for a visitor (routes/exchange.ts; a built-in module or someone
+  // else's answers 404). Import, validate, the bundle exports and the signing
+  // identity stay closed.
+  ['POST', '/exchange/export/:x'],
+
+  // ── Opened 2026-10-02 ──
+  // Engagement Tasks (services/engagement-demo-routes.ts holds the list; a
+  // test keeps the two equal). Closed: the host-folder index (rag-directory),
+  // linking a project, and the web-search benchmark.
+  ...ENGAGEMENT_WORK_ROUTES,
+  // Projects: the caller's own (membership decides; a visitor cannot share
+  // one: members and invitations stay closed), their files and notes, filing
+  // a session under one, and the AI Scaffold button.
+  ['GET,POST', '/projects'],
+  ['GET,PATCH,DELETE', '/projects/:x'],
+  ['GET', '/projects/:x/stats'],
+  ['GET,POST', '/projects/:x/files'],
+  ['GET', '/projects/:x/files/:x/download'],
+  ['DELETE', '/projects/:x/files/:x'],
+  ['GET,POST', '/projects/:x/notes'],
+  ['DELETE', '/projects/:x/notes/:x'],
+  ['PATCH', '/sessions/:x/project'],
+  ['POST', '/ai-assist/project-scaffold'],
+  // The Knowledge Base: the caller's own collections and documents (a
+  // visitor's are searched by keyword only, never embedded). Collection
+  // edits, queries, re-indexing and maintenance stay closed.
+  ['GET,POST', '/collections'],
+  ['DELETE', '/collections/:x'],
+  ['GET', '/collections/:x/documents'],
+  ['POST', '/documents/upload'],
+  ['GET', '/documents/collection/:x'],
+  ['DELETE', '/documents/:x'],
+  // The ANTON Task Agent: the caller's own tasks. Closed: running a task as
+  // a mission (the missions runner is off on a demo), completing it with a
+  // client-supplied score, PATCH, the backfill and the webhook intake.
+  ['GET', '/task-agent/capabilities'],
+  ['GET', '/task-agent/stats'],
+  ['GET,POST', '/task-agent/tasks'],
+  ['GET,DELETE', '/task-agent/tasks/:x'],
+  ['POST', '/task-agent/tasks/:x/message'],
+  ['POST', '/task-agent/tasks/:x/select-approach'],
+  ['POST', '/task-agent/tasks/:x/intake-ready'],
+  ['POST', '/task-agent/tasks/:x/execute-step'],
+  ['GET', '/task-agent/tasks/:x/execute-step/stream'],
+  ['POST', '/task-agent/tasks/:x/upload'],
+  ['DELETE', '/task-agent/tasks/:x/upload/:x'],
+  ['PUT', '/task-agent/tasks/:x/knowledge-packs'],
+  // Discover: the caller's own interviews. Closed: writing interview state
+  // directly (PUT), status changes, the follow-up list and single packs.
+  ['GET,POST', '/discovery/sessions'],
+  ['GET,DELETE', '/discovery/sessions/:x'],
+  ['GET', '/discovery/sessions/:x/start'],
+  ['POST', '/discovery/sessions/:x/respond'],
+  ['GET', '/discovery/sessions/:x/insights'],
+  ['POST', '/discovery/sessions/:x/generate'],
+  ['GET', '/discovery/sessions/:x/output'],
+  ['POST', '/discovery/sessions/:x/export'],
+  ['PATCH', '/discovery/sessions/:x/upgrade'],
+  ['POST', '/discovery/sessions/:x/pack'],
+  ['POST', '/discovery/sessions/:x/followup'],
+  ['GET', '/discovery/packs'],
+  // Orchestration, read only: the organisation context the operator set, the
+  // caller's own insights and continuity profiles.
+  ['GET', '/org-context'],
+  ['GET', '/insights'],
+  ['GET', '/insights/unread-count'],
+  ['GET', '/continuity/profiles'],
+  // Intelligence, read only: the caller's own and shared knowledge. Patterns,
+  // the A/B and memory switches and the Intelligence Brief stay closed.
+  ['GET', '/intelligence/summary'],
+  ['GET', '/intelligence/distribution'],
+  ['GET', '/intelligence/top-entities'],
+  ['GET', '/intelligence/insights'],
+  ['GET', '/intelligence/export'],
+  ['GET', '/intelligence/temporal/atoms-per-day'],
+  ['GET', '/intelligence/temporal/entity-activity'],
+  ['GET', '/intelligence/temporal/quality-trend'],
+  ['GET', '/knowledge-graph/entities'],
+  // Horizon Radar, read only: the shared feed. Triage, sources, scans and
+  // settings stay with admins.
+  ['GET', '/radar/summary'],
+  ['GET', '/radar/items'],
+  ['GET', '/radar/sources'],
+  ['GET', '/radar/scan-status'],
 ];
 
 /** The API prefixes an enabled pillar adds. Work's are WORK_ROUTES. */
@@ -735,6 +840,25 @@ export function createDemoWriteLimiter(): RequestHandler {
     skip: (req: Request) => !isDemoMode() || !req.user || req.user.role === 'admin',
     keyGenerator: (req: Request) => `demo-write:${req.user?.id ?? 'anonymous'}`,
     message: { error: 'Too many uploads, exports or AI requests from this demo account. Try again in a few minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+}
+
+/**
+ * Per-account limit on small edits (DEMO_USER_EDITS_PER_10_MIN): the engagement
+ * writes that store a row but no file and call no model. A count of its own,
+ * so editing an engagement does not use up the uploads and AI requests.
+ * Counts only a non-admin in demo mode.
+ */
+export function createDemoEditLimiter(): RequestHandler {
+  return rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: () => demoUserEditsPer10Min(),
+    validate: false,
+    skip: (req: Request) => !isDemoMode() || !req.user || req.user.role === 'admin',
+    keyGenerator: (req: Request) => `demo-edit:${req.user?.id ?? 'anonymous'}`,
+    message: { error: 'Too many changes from this demo account in a short time. Try again in a few minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
   });

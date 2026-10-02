@@ -2,8 +2,10 @@
  * demo-features-smoke.ts — a live check of the answer tools a demo visitor can
  * use beside a module run: the Trust Score, Explain-for, the Citations check,
  * the Review chip and "Rerun with..." (the second opinion), Find the right
- * module, the Transform panel and Build Module; and that the admin-only
- * features still answer 404.
+ * module, the Transform panel and Build Module; the workspace features
+ * (Engagement Tasks, Projects, the Knowledge Base, the Task Agent, Discover,
+ * the read-only views and the Exchange download; --workspace-only checks just
+ * these); and that the admin-only features still answer 404.
  *
  * Run on the demo server, in the app directory:
  *
@@ -26,6 +28,8 @@ const argValue = (name: string): string | undefined => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const BASE = (argValue('--base') ?? `http://127.0.0.1:${process.env.PORT || 3001}`).replace(/\/+$/, '');
+/** Skips the answer tools and checks only the workspace features (fewer model calls). */
+const WORKSPACE_ONLY = args.includes('--workspace-only');
 
 let failures = 0;
 function check(ok: boolean, label: string, detail = ''): void {
@@ -63,6 +67,124 @@ async function readSse(res: Response): Promise<{ text: string; errors: string[];
   return out;
 }
 
+type Headers = (json?: boolean) => Record<string, string>;
+
+/**
+ * The workspace features opened to visitors on 2026-10-02: Engagement Tasks,
+ * Projects, the Knowledge Base (as a run source too), the Task Agent, Discover,
+ * the read-only Orchestration, Intelligence and Radar views, and the Exchange
+ * download. Everything it makes is deleted with the account.
+ */
+async function workspaceFeatures(h: Headers, defaultModel: string): Promise<void> {
+  const json = async <T>(r: Response): Promise<T> => (await r.json().catch(() => ({}))) as T;
+
+  // Engagement Tasks: create, one intake turn on the model, read back.
+  const en = await fetch(`${BASE}/api/engagements`, { method: 'POST', headers: h(), body: JSON.stringify({ title: 'Smoke engagement', client_name: 'Example Bank (fictional)', domain_areas: ['aml'] }) });
+  const enBody = await json<{ id?: string; error?: string }>(en);
+  check(en.ok && !!enBody.id, 'Engagement Tasks: create', `HTTP ${en.status}${enBody.error ? `, ${enBody.error}` : ''}`);
+  if (enBody.id) {
+    const turn = await fetch(`${BASE}/api/engagements/${enBody.id}/intake/turn`, { method: 'POST', headers: h(), body: JSON.stringify({ message: "We are reviewing a fictional mid-size bank's sanctions screening before a 2026 inspection. Scope: screening calibration and alert handling." }) });
+    const t = await readSse(turn);
+    check(turn.ok && t.text.length > 50 && t.errors.length === 0, 'Engagement Tasks: intake turn', `HTTP ${turn.status}, ${t.text.length} chars, frames ${[...t.types].join('/')}${t.errors.length ? `, errors: ${t.errors.join(' | ').slice(0, 200)}` : ''}`);
+    const back = await fetch(`${BASE}/api/engagements/${enBody.id}`, { headers: h(false) });
+    check(back.ok, 'Engagement Tasks: read back', `HTTP ${back.status}`);
+    const cl = await fetch(`${BASE}/api/engagements/${enBody.id}/changelog`, { headers: h(false) });
+    check(cl.ok, 'Engagement Tasks: changelog', `HTTP ${cl.status}`);
+  }
+
+  // Projects: create, list, delete.
+  const pr = await fetch(`${BASE}/api/projects`, { method: 'POST', headers: h(), body: JSON.stringify({ name: 'Smoke project', description: 'made by the features smoke' }) });
+  const prBody = await json<{ id?: string; project?: { id?: string } }>(pr);
+  const projectId = prBody.id ?? prBody.project?.id;
+  check(pr.ok && !!projectId, 'Projects: create', `HTTP ${pr.status}`);
+  const pl = await fetch(`${BASE}/api/projects`, { headers: h(false) });
+  check(pl.ok, 'Projects: list', `HTTP ${pl.status}`);
+  if (projectId) {
+    const pd = await fetch(`${BASE}/api/projects/${projectId}`, { method: 'DELETE', headers: h(false) });
+    check(pd.ok, 'Projects: delete', `HTTP ${pd.status}`);
+  }
+
+  // Knowledge Base: a collection, one document, and a run that uses it (keyword search).
+  const co = await fetch(`${BASE}/api/collections`, { method: 'POST', headers: h(), body: JSON.stringify({ name: `smoke-${randomBytes(3).toString('hex')}`, displayName: 'Smoke policies' }) });
+  const coBody = await json<{ id?: string; collection?: { id?: string }; error?: string }>(co);
+  const collectionId = coBody.id ?? coBody.collection?.id;
+  check(co.ok && !!collectionId, 'Knowledge Base: create collection', `HTTP ${co.status}${coBody.error ? `, ${coBody.error}` : ''}`);
+  if (collectionId) {
+    const form = new FormData();
+    form.append('collectionId', collectionId);
+    form.append('file', new Blob(['Quokkaflux retention policy (fictional).\n\nUnder the Quokkaflux policy, customer due diligence records are kept for 47 days after the relationship ends, then deleted.\n'], { type: 'text/plain' }), 'quokkaflux-policy.txt');
+    const up = await fetch(`${BASE}/api/documents/upload`, { method: 'POST', headers: { authorization: h(false).authorization, origin: BASE }, body: form });
+    const upBody = await json<{ error?: string }>(up);
+    check(up.ok, 'Knowledge Base: upload a document', `HTTP ${up.status}${upBody.error ? `, ${upBody.error}` : ''}`);
+    let indexed = false;
+    let lastStatus = '';
+    for (let i = 0; i < 10 && !indexed; i++) {
+      const docs = await json<Array<{ status?: string }> | { documents?: Array<{ status?: string }> }>(await fetch(`${BASE}/api/documents/collection/${collectionId}`, { headers: h(false) }));
+      const list = Array.isArray(docs) ? docs : docs.documents ?? [];
+      lastStatus = list.map((d) => String(d.status ?? '?')).join(',');
+      indexed = list.some((d) => /indexed|ready|complete/i.test(String(d.status ?? '')));
+      if (!indexed) await new Promise((r) => setTimeout(r, 2000));
+    }
+    check(indexed, 'Knowledge Base: the document is indexed', lastStatus);
+    const run = await fetch(`${BASE}/api/claude/message`, {
+      method: 'POST', headers: h(),
+      body: JSON.stringify({ model: defaultModel, thinking: 'quick', history: [], userMessage: 'How long are customer due diligence records kept under the Quokkaflux policy? Answer in one sentence.', knowledgeSources: { modes: { claudeKnowledge: { enabled: false, webSearchEnabled: false } }, ragSearch: { enabled: true, collections: [collectionId] } } }),
+    });
+    const a = await readSse(run);
+    const cites = /47/.test(a.text);
+    check(run.ok && cites && a.errors.length === 0, "Knowledge Base: a run answers from the visitor's collection", `HTTP ${run.status}, ${a.text.length} chars, ${cites ? 'cites 47 days' : `no "47": ${a.text.slice(0, 160)}`}${a.errors.length ? `, errors: ${a.errors.join(' | ').slice(0, 200)}` : ''}`);
+    const cd = await fetch(`${BASE}/api/collections/${collectionId}`, { method: 'DELETE', headers: h(false) });
+    check(cd.ok, 'Knowledge Base: delete collection', `HTTP ${cd.status}`);
+  }
+
+  // Task Agent: a task and one conversational turn.
+  const ta = await fetch(`${BASE}/api/task-agent/tasks`, { method: 'POST', headers: h(), body: JSON.stringify({ title: 'Smoke task', description: 'Draft a one-page checklist for onboarding a new payment processor under the GDPR.' }) });
+  const taBody = await json<{ id?: string; task?: { id?: string }; error?: string }>(ta);
+  const taskId = taBody.id ?? taBody.task?.id;
+  check(ta.ok && !!taskId, 'Task Agent: create task', `HTTP ${ta.status}${taBody.error ? `, ${taBody.error}` : ''}`);
+  if (taskId) {
+    const msg = await fetch(`${BASE}/api/task-agent/tasks/${taskId}/message`, { method: 'POST', headers: h(), body: JSON.stringify({ content: 'It is for a 30-person Swedish fintech. Keep it short.' }) });
+    const m = await readSse(msg);
+    check(msg.ok && m.text.length > 50 && m.errors.length === 0, 'Task Agent: a turn on the model', `HTTP ${msg.status}, ${m.text.length} chars, frames ${[...m.types].join('/')}${m.errors.length ? `, errors: ${m.errors.join(' | ').slice(0, 200)}` : ''}`);
+    const mission = await fetch(`${BASE}/api/task-agent/tasks/${taskId}/execute-as-mission`, { method: 'POST', headers: h(), body: '{}' });
+    check(mission.status === 404, 'Task Agent: execute-as-mission stays closed', `HTTP ${mission.status}`);
+  }
+
+  // Discover: a lite interview, its opening and one answer.
+  const ds = await fetch(`${BASE}/api/discovery/sessions`, { method: 'POST', headers: h(), body: JSON.stringify({ tier: 'lite' }) });
+  const dsBody = await json<{ id?: string; error?: string }>(ds);
+  check(ds.ok && !!dsBody.id, 'Discover: create interview', `HTTP ${ds.status}${dsBody.error ? `, ${dsBody.error}` : ''}`);
+  if (dsBody.id) {
+    const st = await fetch(`${BASE}/api/discovery/sessions/${dsBody.id}/start`, { headers: h(false) });
+    const stBody = await json<{ response?: string; error?: string }>(st);
+    check(st.ok && (stBody.response ?? '').length > 30, 'Discover: opening question', `HTTP ${st.status}, ${(stBody.response ?? stBody.error ?? '').length} chars`);
+    const rs = await fetch(`${BASE}/api/discovery/sessions/${dsBody.id}/respond`, { method: 'POST', headers: h(), body: JSON.stringify({ message: 'I am a compliance analyst at a fictional payments firm. Most of my day goes on reviewing alerts by hand.' }) });
+    const rsBody = await json<{ response?: string; state?: { userProfile?: { role?: string } }; error?: string }>(rs);
+    const reply = rsBody.response ?? '';
+    check(rs.ok && reply.length > 30 && !/STATE_UPDATE|```json/.test(reply), 'Discover: an answer, with no raw state JSON shown', `HTTP ${rs.status}, ${reply.length} chars, role recorded: ${rsBody.state?.userProfile?.role || '(none)'}`);
+    const dd = await fetch(`${BASE}/api/discovery/sessions/${dsBody.id}`, { method: 'DELETE', headers: h(false) });
+    check(dd.ok, 'Discover: delete', `HTTP ${dd.status}`);
+  }
+
+  // Read-only views.
+  for (const route of ['/api/org-context', '/api/insights', '/api/intelligence/summary', '/api/radar/items', '/api/radar/summary', '/api/continuity/profiles']) {
+    const r = await fetch(`${BASE}${route}`, { headers: h(false) });
+    check(r.ok, `read: GET ${route}`, `HTTP ${r.status}`);
+  }
+
+  // Exchange: the visitor's own module, downloaded unsigned.
+  const cm = await fetch(`${BASE}/api/custom-modules`, { method: 'POST', headers: h(), body: JSON.stringify({ name: 'Smoke exchange module', system_prompt: 'You review supplier contracts.', area: 'data-privacy' }) });
+  const cmBody = await json<{ id?: string }>(cm);
+  if (cmBody.id) {
+    const ex = await fetch(`${BASE}/api/exchange/export/${cmBody.id}?type=custom`, { method: 'POST', headers: h(), body: '{}' });
+    const bytes = ex.ok ? (await ex.arrayBuffer()).byteLength : 0;
+    check(ex.ok && bytes > 100, 'Exchange: download own module', `HTTP ${ex.status}, ${bytes} bytes`);
+    await fetch(`${BASE}/api/custom-modules/${cmBody.id}`, { method: 'DELETE', headers: h(false) });
+  } else {
+    check(false, 'Exchange: a module to download', `HTTP ${cm.status}`);
+  }
+}
+
 async function main(): Promise<void> {
   if (!isDemoMode()) throw new Error('DEMO_MODE is not true here: this is meant for the demo server.');
   const db = new PostgresAdapter({ connectionString: process.env.DATABASE_URL!, maxConnections: 2 });
@@ -84,6 +206,7 @@ async function main(): Promise<void> {
   console.log(`[features] visitor ${userId} via ${BASE}; default ${defaultModel}; second opinion ${other}`);
 
   try {
+    if (!WORKSPACE_ONLY) {
     // A module run on the default model, in a session (the Trust Score needs one).
     const s = await fetch(`${BASE}/api/sessions`, { method: 'POST', headers: h(), body: JSON.stringify({ moduleId: 'cross-border-transfer-assessment', title: 'features smoke', config: { model: defaultModel } }) });
     const sessionId = ((await s.json()) as { id: string }).id;
@@ -165,8 +288,16 @@ async function main(): Promise<void> {
       check(del.ok, 'Build Module: delete', `HTTP ${del.status}`);
     }
 
+    }
+
+    await workspaceFeatures(h, defaultModel);
+
     // Still admin-only for a visitor.
-    for (const [method, route] of [['GET', '/api/projects'], ['GET', '/api/engagements'], ['GET', '/api/task-agent/tasks'], ['POST', '/api/claude/deliberate'], ['GET', '/api/knowledge/atoms'], ['POST', '/api/modules/community'], ['GET', '/api/radar/items']] as const) {
+    for (const [method, route] of [
+      ['POST', '/api/claude/deliberate'], ['GET', '/api/knowledge/atoms'], ['POST', '/api/modules/community'],
+      ['GET', '/api/coding/projects'], ['POST', '/api/radar/scan'], ['POST', '/api/exchange/import'],
+      ['POST', '/api/task-agent/backfill-atoms'], ['POST', '/api/projects/x/members'], ['PUT', '/api/org-context'],
+    ] as const) {
       const r = await fetch(`${BASE}${route}`, { method, headers: h(method !== 'GET'), ...(method !== 'GET' ? { body: '{}' } : {}) });
       check(r.status === 404, `visitor kept from ${method} ${route}`, `HTTP ${r.status}`);
     }

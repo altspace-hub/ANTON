@@ -10,6 +10,7 @@ import {
   GitBranch, Clock, Zap, FileText, RotateCcw, ExternalLink, Brain, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, Workstream } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -25,6 +26,9 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
   const [streamedThinking, setStreamedThinking] = useState('');
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // What the run says about itself: a cut-off answer (warning), something it
+  // could not do (notice). Shown with the deliverable, never dropped.
+  const [runNotes, setRunNotes] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   /** Wave 3: the agentic engine's tool calls while it works. */
   const [activity, setActivity] = useState<Array<{ id: number; name: string; input: string; status: 'running' | 'done' | 'error'; ms?: number }>>([]);
@@ -72,6 +76,7 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
     setActivity([]);
     setThinkingOpen(false);
     setError(null);
+    setRunNotes([]);
     setDone(false);
 
     abortRef.current = new AbortController();
@@ -86,7 +91,7 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
         })
         : await fetchWithAuth(`/api/engagements/${engagement.id}/execute/stream`, { signal: abortRef.current.signal });
 
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       if (!res.body) throw new Error('No response stream');
 
       const reader = res.body.getReader();
@@ -126,11 +131,15 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
             }
             if (event.type === 'done') { setDone(true); onReload(); }
             if (event.type === 'error') setError(String(event.error ?? event.message ?? 'Execution failed'));
+            if ((event.type === 'warning' || event.type === 'notice') && typeof event.message === 'string' && event.message) {
+              const note = event.message;
+              setRunNotes(prev => (prev.includes(note) ? prev : [...prev, note]));
+            }
           } catch { /**/ }
         }
       }
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') setError(String(e));
+      if ((e as Error).name !== 'AbortError') setError(errorText(e));
     } finally {
       setExecuting(false);
     }
@@ -311,6 +320,18 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
             {streamedText}
             {executing && <span className="inline-block w-1.5 h-3.5 bg-adv-teal animate-pulse ml-0.5 align-text-bottom" />}
           </div>
+        </div>
+      )}
+
+      {/* What the run said about itself */}
+      {runNotes.length > 0 && (
+        <div role="status" className="space-y-1 rounded-lg bg-adv-gold/10 border border-adv-gold/30 px-4 py-3">
+          {runNotes.map((note) => (
+            <p key={note} className="flex items-start gap-2 text-sm text-adv-gold">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              {note}
+            </p>
+          ))}
         </div>
       )}
 

@@ -103,7 +103,8 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   // Team mode: only the entities this caller may see (see the note at the top).
   router.get('/knowledge-graph/entities', async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 20;
+      // At most 200 rows a call, whatever the query asks.
+      const limit = Math.min(200, Math.max(1, parseInt(req.query.limit as string) || 20));
       const visible = entityVisibleSql(searchScopeForRequest(req), 'en.entity_type', 'en.entity_id');
       const entities = visible.sql
         ? await db.all(`

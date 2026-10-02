@@ -4,8 +4,54 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 import { findCandidateModules, formatCandidatesForPrompt, validateModuleMatches } from './module-recommendation.js';
-import { demoModuleHidden } from '../middleware/demo-mode.js';
+import { demoModuleHidden, demoHiddenAreas, demoHiddenModules } from '../middleware/demo-mode.js';
 import { extractJsonReply, isJsonObject } from './coding-workspace.js';
+import { getAreas } from './module-loader.js';
+
+/**
+ * Per-call options from the route. `demoVisitor`: a non-admin on a public demo
+ * (DEMO_MODE=true) — the interview asks for no real names and no health, HR
+ * or other special-category data, says so at the start, and never offers a
+ * module or pack the demo keeps off. `onUsage`: the tokens of every model call
+ * the request makes, for the caller's monthly budget.
+ */
+export interface DiscoveryCallOptions {
+  demoVisitor?: boolean;
+  onUsage?: (inputTokens: number, outputTokens: number) => Promise<void> | void;
+}
+
+/**
+ * The discovery packs that belong to an area the demo keeps off: the
+ * Expert-tier healthcare pack (clinical documentation, patients) invites
+ * health data. Hidden from a demo visitor whenever the healthcare area is
+ * (demoModuleHidden; the built-in list hides it).
+ */
+const PACK_AREAS: Readonly<Record<string, string>> = { healthcare: 'healthcare' };
+
+/** Whether a demo visitor is kept from this discovery pack. Always false outside demo mode. */
+export function discoveryPackHiddenForDemo(packId: string | null | undefined): boolean {
+  const area = PACK_AREAS[String(packId ?? '').trim().toLowerCase()];
+  return !!area && demoModuleHidden(null, area);
+}
+
+/**
+ * Said before the first question to a demo visitor, word for word (not left
+ * to the model): the interview is about one's work, and a public demo must
+ * not receive real names or special-category data.
+ */
+export const DEMO_OPENING_NOTICE = 'Before we start: this is a public demo. Please do not enter the real name of your organisation, your clients or anyone else, and no health, HR or other personal details. Describe a typical or made-up situation instead — the results are just as useful.';
+
+/** The interview rules for a demo visitor, appended to the system prompt. Lists what the demo keeps off from its live configuration. */
+function demoInterviewRules(): string {
+  const areas = demoHiddenAreas();
+  const modules = demoHiddenModules();
+  return `PUBLIC DEMO RULES (these override everything above):
+- This conversation runs on a public demo server. The person has been told not to enter real names or personal details.
+- Ask about the KIND of role and organisation ("compliance analyst at a mid-size bank"), never its name, its clients' names or any person's name. Talk about roles and teams, never about identifiable individuals (no named colleagues, no one's performance or opinions).
+- Never ask about health or medical matters, HR cases, recruitment, salaries or pay, employee performance, credit histories or criminal matters. When an hourly rate is needed, use EUR 75/hour; do not ask for one.
+- If the person gives such details anyway, do not repeat them and leave them out of the [STATE_UPDATE]: say plainly that this demo should not receive them and ask them to describe a typical or made-up situation instead.
+- Healthcare, HR, workers' rights, credit scoring, CV writing, criminal investigations and sanctions cases are not offered on this demo.${areas.length > 0 ? ` Never recommend modules in these areas: ${areas.join(', ')}.` : ''}${modules.length > 0 ? ` Never recommend these modules: ${modules.join(', ')}.` : ''}`;
+}
 
 /**
  * A model's JSON object, read whatever surrounds it: GLM, DeepSeek and Kimi
@@ -374,11 +420,20 @@ const OPENING_TURN_MESSAGE = "I'm ready to start.";
  * about an answer they had never given. The opening turn is now excluded from the
  * history entirely (see processUserResponse), so 0 means 0 again.
  */
-function getPhasePrompt(phase: DiscoveryPhase, tier: DiscoveryTier, state: DiscoveryState): string {
+function getPhasePrompt(phase: DiscoveryPhase, tier: DiscoveryTier, state: DiscoveryState, demo = false): string {
   const turnCount = state.conversationHistory.filter(m => m.role === 'user').length;
 
   switch (phase) {
     case 'context':
+      if (turnCount === 0 && demo) {
+        // A demo visitor: the kind of organisation, never its name, and no
+        // health-sector example to invite health data. The notice about real
+        // names is put before this reply by the engine, word for word.
+        return `CURRENT PHASE: Understanding You (Phase 1)
+This is the very first message. Start the discovery conversation with Anchor Question 1:
+"Let's start with you. What kind of role do you have, and what kind of organization do you work in? No names needed. For example: 'compliance analyst at a mid-size bank' or 'solo marketing consultant' or 'head of operations at a logistics company.'"
+Be warm and welcoming. Keep it brief.`;
+      }
       if (turnCount === 0) {
         return `CURRENT PHASE: Understanding You (Phase 1)
 This is the very first message. Start the discovery conversation with Anchor Question 1:
@@ -630,7 +685,27 @@ When the user confirms they're ready for the report, include: [PHASE_COMPLETE:ac
 // This is a simplified version for Phase 1 (Lite). AI-powered matching happens
 // in the output generation step. This provides structural data for the system prompt.
 
-function getModuleContext(): string {
+/** Area lines of getModuleContext() a demo visitor is not shown while that area is hidden. */
+const MODULE_CONTEXT_AREA_IDS: Readonly<Record<string, string>> = { 'AREA: HR ': 'hr', 'AREA: Healthcare ': 'healthcare' };
+
+/**
+ * The module overview in the interview's system prompt. For a demo visitor
+ * the areas the demo keeps off are left out and the hidden FCP modules are
+ * not named, so the model does not steer towards them.
+ */
+function getModuleContext(demo = false): string {
+  const full = getFullModuleContext();
+  if (!demo) return full;
+  return full
+    .split('\n')
+    .filter((line) => !Object.entries(MODULE_CONTEXT_AREA_IDS).some(([prefix, area]) => line.startsWith(prefix) && demoModuleHidden(null, area)))
+    .map((line) => (line.startsWith('AREA: Financial Crime Prevention')
+      ? line.replace(' Sanctions Advisory,', '').replace(' Investigation Support,', '')
+      : line))
+    .join('\n');
+}
+
+function getFullModuleContext(): string {
   return `You have access to openEXPERT's module library with 240+ expert modules across 30 professional areas including:
 
 AREA: Financial Crime Prevention (FCP) — Modules: AMLR Gap Analysis, Document Creation, Sanctions Advisory, Regulatory Monitor, Training Content, Data Management, Risk Assessment, Investigation Support, and many more
@@ -1184,14 +1259,31 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
 
   // ── State Update Parsing ─────────────────────────────────────────────
 
-  function parseStateUpdate(response: string, currentState: DiscoveryState): { cleanResponse: string; updatedState: DiscoveryState } {
-    const stateMatch = response.match(/\[STATE_UPDATE\]:(.+)$/m);
+  /**
+   * The turn's [STATE_UPDATE] and [PHASE_COMPLETE] markers, and the reply the
+   * person sees. The update is everything after its marker, read wherever the
+   * JSON sits (readJsonObject): GLM, DeepSeek and Kimi put it on the lines
+   * below the marker, pretty-printed or fenced, where reading the marker's own
+   * line found nothing — the update was lost and the JSON was shown to the
+   * visitor and kept in the conversation (2026-10-02). [PHASE_COMPLETE] is
+   * read on the whole reply first (it may follow the JSON); the visible reply
+   * is the text before the marker. Same approach as extractStateUpdate in
+   * coding-workshop-engine.ts.
+   */
+  function parseStateUpdate(response: string, currentState: DiscoveryState, demo = false): { cleanResponse: string; updatedState: DiscoveryState } {
     const phaseCompleteMatch = response.match(/\[PHASE_COMPLETE:(\w+)\]/);
+    const marker = /\[STATE_UPDATE\]\s*:?/.exec(response);
+    const stateText = marker
+      ? response.slice(marker.index + marker[0].length).replace(/\[PHASE_COMPLETE:\w+\]/g, '')
+      : null;
 
-    const cleanResponse = response
-      .replace(/\[STATE_UPDATE\]:.*$/m, '')
+    let cleanResponse = (marker ? response.slice(0, marker.index) : response)
       .replace(/\[PHASE_COMPLETE:\w+\]/g, '')
       .trim();
+    // A fence opened just before the marker ("```json\n[STATE_UPDATE]: …")
+    // belongs to the update: an unpaired fence line ending the reply goes.
+    const fenceLines = cleanResponse.match(/^[ \t]*(?:```|~~~)/gm) ?? [];
+    if (fenceLines.length % 2 === 1) cleanResponse = cleanResponse.replace(/(?:^|\n)[ \t]*(?:```|~~~)[\w-]*$/, '').trim();
 
     const updatedState: DiscoveryState = {
       ...currentState,
@@ -1212,9 +1304,9 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
     };
 
     // Apply state update from AI
-    if (stateMatch) {
+    if (stateText !== null) {
       try {
-        const update = readJsonObject(stateMatch[1]);
+        const update = readJsonObject(stateText);
 
         if (update.userProfile) {
           updatedState.userProfile = { ...updatedState.userProfile, ...(update.userProfile as Partial<DiscoveryState['userProfile']>) };
@@ -1293,7 +1385,10 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
           }
         }
         if (typeof update.executiveBriefing === 'string') updatedState.executiveBriefing = update.executiveBriefing;
-        if (typeof update.activePack === 'string') updatedState.activePack = update.activePack;
+        // The model may name a pack; a demo visitor never gets one the demo keeps off.
+        if (typeof update.activePack === 'string' && !(demo && discoveryPackHiddenForDemo(update.activePack))) {
+          updatedState.activePack = update.activePack;
+        }
         if (update.packData && typeof update.packData === 'object') updatedState.packData = { ...updatedState.packData, ...(update.packData as Record<string, unknown>) };
         if (typeof update.followUpScheduled === 'boolean') updatedState.followUpScheduled = update.followUpScheduled;
         if (update.readinessScores) {
@@ -1347,7 +1442,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
     return unsummarizedMessages > 20 && state.tier !== 'lite';
   }
 
-  async function createPhaseSummary(state: DiscoveryState, phase: DiscoveryPhase): Promise<PhaseSummary> {
+  async function createPhaseSummary(state: DiscoveryState, phase: DiscoveryPhase, opts: DiscoveryCallOptions = {}): Promise<PhaseSummary> {
     // Get messages from this phase
     const phaseMessages = state.conversationHistory.slice(-20); // Last 20 messages as approximation
     const conversationText = phaseMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
@@ -1361,6 +1456,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
         system: 'Summarize the following discovery conversation phase. Extract key findings as bullet points. Be concise but comprehensive. Return JSON: {"summary":"...","keyFindings":["..."]}',
         messages: [{ role: 'user', content: `Phase: ${phase}\nTier: ${state.tier}\n\nConversation:\n${conversationText}` }],
       });
+      await opts.onUsage?.(chatResult.inputTokens || 0, chatResult.outputTokens || 0);
 
       const parsed = readJsonObject(chatResult.text) as { summary: string; keyFindings: string[] };
       return {
@@ -1389,9 +1485,10 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
    * question (see getPhasePrompt). A null models "no user message yet" honestly, so
    * neither problem can come back.
    */
-  async function processTurn(sessionId: string, userMessage: string | null): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+  async function processTurn(sessionId: string, userMessage: string | null, opts: DiscoveryCallOptions = {}): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
+    const demo = opts.demoVisitor === true;
 
     const state = session.state;
     const previousPhase = state.phase;
@@ -1403,15 +1500,16 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
     }
 
     // Build messages for Claude
-    const phasePrompt = getPhasePrompt(state.phase, state.tier, state);
+    const phasePrompt = getPhasePrompt(state.phase, state.tier, state, demo);
     const statePrompt = getStateExtractionPrompt(state);
-    const moduleContext = getModuleContext();
+    const moduleContext = getModuleContext(demo);
 
     const systemPrompt = [
       DISCOVERY_SYSTEM_PROMPT,
       moduleContext,
       phasePrompt,
       statePrompt,
+      ...(demo ? [demoInterviewRules()] : []),
     ].join('\n\n');
 
     // Build messages — use summaries for long sessions
@@ -1460,17 +1558,24 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
       system: systemPrompt,
       messages,
     });
+    await opts.onUsage?.(chatResult.inputTokens || 0, chatResult.outputTokens || 0);
 
     const assistantText = chatResult.text;
 
     // Parse state updates and phase transitions from response
     const phaseCompleteMatch = assistantText.match(/\[PHASE_COMPLETE:(\w+)\]/);
-    const { cleanResponse, updatedState } = parseStateUpdate(assistantText, state);
+    const parsedTurn = parseStateUpdate(assistantText, state, demo);
+    const updatedState = parsedTurn.updatedState;
+    // A demo visitor hears the notice about real names before the first
+    // question, word for word; it is kept in the history like the reply.
+    const cleanResponse = demo && userMessage === null
+      ? `${DEMO_OPENING_NOTICE}\n\n${parsedTurn.cleanResponse}`
+      : parsedTurn.cleanResponse;
 
     // Progressive summarization — create summary when phase completes
     if (phaseCompleteMatch && (updatedState.tier === 'professional' || updatedState.tier === 'expert')) {
       const completedPhase = phaseCompleteMatch[1] as DiscoveryPhase;
-      const summary = await createPhaseSummary(updatedState, completedPhase);
+      const summary = await createPhaseSummary(updatedState, completedPhase, opts);
       updatedState.phaseSummaries.push(summary);
 
       // For very long sessions, trim older conversation history (keep summaries)
@@ -1500,30 +1605,51 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
   }
 
   /** A normal turn: the user typed something. */
-  async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
-    return processTurn(sessionId, userMessage);
+  async function processUserResponse(sessionId: string, userMessage: string, opts: DiscoveryCallOptions = {}): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+    return processTurn(sessionId, userMessage, opts);
   }
 
   /**
    * The opening assistant message. Returns the existing opening when the session has
    * already started, so a page reload never re-runs (and re-bills) the first turn.
    */
-  async function startConversation(sessionId: string): Promise<{ response: string; state: DiscoveryState }> {
+  async function startConversation(sessionId: string, opts: DiscoveryCallOptions = {}): Promise<{ response: string; state: DiscoveryState }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
 
     const existing = session.state.conversationHistory.find(m => m.role === 'assistant');
     if (existing) return { response: existing.content, state: session.state };
 
-    const result = await processTurn(sessionId, null);
+    const result = await processTurn(sessionId, null, opts);
     return { response: result.response, state: result.state };
+  }
+
+  /**
+   * The names of the areas a demo visitor is kept from (healthcare →
+   * "Healthcare", …), lower-cased: the insights name modules by area name
+   * rather than id, so a match is dropped when its area is one of these.
+   */
+  async function hiddenAreaNames(): Promise<string[]> {
+    const hidden = demoHiddenAreas();
+    if (hidden.length === 0) return [];
+    const names = new Set<string>(hidden);
+    try {
+      for (const a of await getAreas()) {
+        if (!hidden.includes(a.id)) continue;
+        if (a.name) names.add(a.name.toLowerCase());
+        if (a.shortName) names.add(a.shortName.toLowerCase());
+      }
+    } catch { /* the ids alone still apply */ }
+    if (hidden.includes('hr')) names.add('human resources');
+    return [...names];
   }
 
   // ── Generate Insights ────────────────────────────────────────────────
 
-  async function generateInsights(sessionId: string): Promise<Record<string, unknown>> {
+  async function generateInsights(sessionId: string, opts: DiscoveryCallOptions = {}): Promise<Record<string, unknown>> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
+    const demo = opts.demoVisitor === true;
 
     try {
       const chatResult = await callChat({
@@ -1532,10 +1658,25 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
         db,
         purpose: 'discovery-insights',
         system: 'You are an analytical assistant. Return only valid JSON, no markdown.',
-        messages: [{ role: 'user', content: getInsightPrompt(session.state) }],
+        messages: [{ role: 'user', content: getInsightPrompt(session.state) + (demo ? `\n\n${demoInterviewRules()}` : '') }],
       });
+      await opts.onUsage?.(chatResult.inputTokens || 0, chatResult.outputTokens || 0);
 
-      return readJsonObject(chatResult.text);
+      const insights = readJsonObject(chatResult.text);
+      if (demo && Array.isArray(insights.earlyModuleMatches)) {
+        // A demo visitor is never pointed at a module the demo keeps off.
+        const hiddenNames = await hiddenAreaNames();
+        const hiddenModules = demoHiddenModules();
+        insights.earlyModuleMatches = (insights.earlyModuleMatches as unknown[]).filter((m) => {
+          if (!isJsonObject(m)) return false;
+          const area = String(m.area ?? '').trim().toLowerCase();
+          const name = String(m.name ?? '').trim().toLowerCase();
+          // Exact for short names ("hr"), contained for longer ones ("healthcare & life sciences").
+          if (area && hiddenNames.some((h) => area === h || (h.length > 3 && area.includes(h)))) return false;
+          return !hiddenModules.some((id) => name.replace(/\s+/g, '-') === id);
+        });
+      }
+      return insights;
     } catch (e) {
       console.error('[discovery] Insight generation failed:', e);
       return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
@@ -1549,13 +1690,22 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
    * decides) no module the demo keeps off (demoModuleHidden) is offered as a
    * candidate or kept as a match: its run would be refused.
    */
-  async function generateOutput(sessionId: string, opts: { hideDemoModules?: boolean } = {}): Promise<{ outputId: string; contentMd: string; moduleMatches: ModuleMatch[]; actionPlan: unknown[]; metrics: unknown; nonAiFindings: NonAiFinding[]; executiveBriefing: string }> {
+  async function generateOutput(sessionId: string, opts: DiscoveryCallOptions & { hideDemoModules?: boolean } = {}): Promise<{ outputId: string; contentMd: string; moduleMatches: ModuleMatch[]; actionPlan: unknown[]; metrics: unknown; nonAiFindings: NonAiFinding[]; executiveBriefing: string }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
+    const hideDemo = opts.hideDemoModules === true || opts.demoVisitor === true;
     const hidden = (moduleId: string, areaId: string | null | undefined): boolean =>
-      opts.hideDemoModules === true && demoModuleHidden(moduleId, areaId);
+      hideDemo && demoModuleHidden(moduleId, areaId);
 
-    let outputPrompt = getOutputGenerationPrompt(session.state);
+    // A demo visitor's report is built without a pack the demo keeps off,
+    // whatever the stored state says.
+    const reportState = hideDemo && discoveryPackHiddenForDemo(session.state.activePack)
+      ? { ...session.state, activePack: null, packData: {} }
+      : session.state;
+    let outputPrompt = getOutputGenerationPrompt(reportState);
+    if (opts.demoVisitor === true) {
+      outputPrompt += `\n\nPUBLIC DEMO: this report is written on a public demo server. Do not name real organisations, clients or people, even if the conversation did; refer to them by kind ("the bank", "the compliance team").`;
+    }
 
     // GROUND the module recommendations in the real catalogue.
     //
@@ -1599,6 +1749,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter) {
       system: 'You are ANTON, an expert AI advisor generating a professional discovery report. Be specific, actionable, and honest.',
       messages: [{ role: 'user', content: outputPrompt }],
     });
+    await opts.onUsage?.(chatResult.inputTokens || 0, chatResult.outputTokens || 0);
 
     const fullText = chatResult.text;
 

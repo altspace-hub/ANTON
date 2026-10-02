@@ -14,7 +14,9 @@
  *     phone number is shown back and nothing is sent until the visitor
  *     confirms or edits — for the message and for "improve prompt", which
  *     sends the draft too;
- *   - a lens the router suggests that the demo keeps off is not taken.
+ *   - a lens the router suggests that the demo keeps off is not taken;
+ *   - (2026-10-02) the project chip: projects are open to visitors, so a
+ *     visitor can file the chat under one of their own projects.
  *
  * Negative controls: an admin on the demo and everyone on an ordinary server
  * keep the microphone, see no demo line and send at once. Rendered with
@@ -139,7 +141,7 @@ beforeEach(() => {
   resetPublicModelConfigCache();
   localStorage.clear();
   sessionStorage.clear();
-  useConfigStore.setState({ lens: null });
+  useConfigStore.setState({ lens: null, project: null });
   window.matchMedia = ((query: string) => ({
     matches: false, media: query, onchange: null,
     addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {},
@@ -156,6 +158,7 @@ beforeEach(() => {
     if (url.includes('/custom-modules')) return json([]);
     if (url.startsWith('/api/sessions/stats')) return json({ totalSessions: 0, totalMessages: 0, totalOutputTokens: 0, thisWeekSessions: 0, thisMonthSessions: 0, recentSessions: [] });
     if (url.startsWith('/api/sessions?')) return json([]);
+    if (url === '/api/projects') return json([{ id: 'p1', name: 'Nordic bank AMLR review', project_type: 'standard', status: 'active' }]);
     return json({ error: 'not found' }, 404);
   });
   container = document.createElement('div');
@@ -290,6 +293,31 @@ describe('Open Chat: the expert lens', () => {
     await typeComposer('Help me with my career.');
     await click(button('Send message (Ctrl+Enter)'));
     expect(useConfigStore.getState().lens?.moduleId).toBe('cv-writer');
+  });
+});
+
+describe('Open Chat: filing the chat under a project', () => {
+  // Projects are open to visitors since 2026-10-02 (GET/POST /projects and
+  // PATCH /sessions/:id/project are in WORK_ROUTES; the routes scope them).
+  it('gives a visitor the project chip, which lists their own projects', async () => {
+    as('visitor');
+    await render(PromptPage);
+    expect(text()).toContain('No project —');
+    await click(button('file this under a matter'));
+    expect(calls.some((c) => c.url === '/api/projects' && c.method === 'GET')).toBe(true);
+    await click(button('Nordic bank AMLR review'));
+    expect(useConfigStore.getState().project).toEqual({ id: 'p1', name: 'Nordic bank AMLR review' });
+    expect(text()).toContain('In Nordic bank AMLR review');
+  });
+
+  it('negative controls: an admin on the demo and an ordinary server have it too', async () => {
+    for (const who of ['admin', 'ordinary'] as const) {
+      await fresh();
+      useConfigStore.setState({ project: null });
+      as(who);
+      await render(PromptPage);
+      expect(button('file this under a matter'), who).toBeDefined();
+    }
   });
 });
 

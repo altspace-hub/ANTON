@@ -9,8 +9,12 @@
  * retention; whether and by which model answers are scored (the Trust Score,
  * [[SCORING_SENTENCE]]); the features open to visitors (modules, Open Chat,
  * the AI Council, the 5-minute Brief, Build Module, My Work and the tools under
- * an answer: Transform, "Rerun with…", Review, Citations, "Explain for…"),
- * with module sharing and the .anton download closed; no memory
+ * an answer: Transform, "Rerun with…", Review, Citations, "Explain for…"; and
+ * from 2026-10-02 Engagement Tasks, the Task Agent, Discover, Projects, the
+ * Knowledge Base with keyword search only, the unsigned .anton download of a
+ * built module, and read-only Orchestration, Intelligence and Horizon Radar),
+ * with module sharing, project sharing, Exchange imports, web search and
+ * server folders closed; no memory
  * learning, Online References, voice input or sign-off form for visitors; the
  * demo-mode session cookie and the preference keys cleared at sign-out
  * (src/lib/safe-storage.ts); nothing loaded from other sites; accounts made
@@ -39,7 +43,7 @@ export const PRIVACY_NOTICE_MD = `# Privacy notice: ANTON public demo
 >
 >   Either way you also confirm that you are 18 or over and that you accept the demo terms.
 > - **Please don't enter real personal data**, about you or about anyone else. That means no real names, no personal identity numbers (personnummer), and no health, money, job or client details. Use made-up or public information.
-> - **Where your input goes:** what you type or upload (in a module, Open Chat, the AI Council, the 5-minute Brief or a module you build) goes to OpenRouter, Inc. in the USA. OpenRouter passes it to Inceptron AB, which runs the AI model in the EU/EEA: [[DEFAULT_MODEL]], unless you choose [[OTHER_MODELS]] in the model list. Some features send it to more than one of these models, such as the AI Council and a second opinion on an answer (section 6.1).
+> - **Where your input goes:** what you type or upload (in a module, Open Chat, the AI Council, the 5-minute Brief, a module you build, an Engagement Task, the Task Agent or Discover, and the documents of a project or Knowledge Base collection that a run uses) goes to OpenRouter, Inc. in the USA. OpenRouter passes it to Inceptron AB, which runs the AI model in the EU/EEA: [[DEFAULT_MODEL]], unless you choose [[OTHER_MODELS]] in the model list. Some features send it to more than one of these models, such as the AI Council and a second opinion on an answer (section 6.1).
 >   - Both companies say they don't store your prompts and answers after the answer is generated, and that they don't use them to train AI. There are narrow exceptions: brief caching, where the law requires it, and dealing with misuse.
 >   - OpenRouter also runs its own misuse checks and anonymous statistics. It is responsible for those itself (section 6.2).
 > - **Transfer to the USA:** OpenRouter is not certified under the EU-U.S. Data Privacy Framework. The transfer rests on the EU Standard Contractual Clauses (section 8).
@@ -79,8 +83,8 @@ We have not appointed a data protection officer, because the law does not requir
 |---|---|---|
 | Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. **If you signed up with your email address:** that address, which is also your username. **If we invited you by email:** your email address, which is also your username; the display name we gave the account (unless we chose another, the part of your address before the @); which administrator invited you, and when each invitation link was made, expires and was used. A link itself is stored only as a one-way hash (SHA-256). | You and our system. If we invited you: the administrator who invited you, from the address you gave us or that we use to work with you. |
 | Sign-in sessions | A sign-in token, when it was issued, when it expires and when it was last used. | Our system |
-| What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. The modules you build: their name, description, instructions, questions and example output. The topic and settings of an AI Council. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. | You |
-| What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. Rewrites made with "Explain for…", kept as further version copies. A second answer when you rerun an answer on another model, and the reviews you ask for. For an AI Council: the deliberation record (the topic, every member's answer, the vote table and the names of attached files) and the dissent ledger. Quality scores (the Trust Score), when this demo scores answers. Files made by the Transform panel, such as diagrams, slide decks and web pages. | The AI models |
+| What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. The modules you build: their name, description, instructions, questions and example output. The topic and settings of an AI Council. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. **Engagement Tasks:** each engagement's title, client and organisation names, scope, client profile, team members (names, roles, organisations), the intake conversation and the documents you upload to it (engagement letter, project plan, good example, resources) with their extracted text. **The Task Agent:** each task's title and description, your chat with it and the answers it gathers, the plan you approve, the knowledge packs you switch on, and the text we extract from documents you attach to a task (up to 50,000 characters per document and five documents per task, with the file name and size; the file itself is not kept). **Discover:** every message of your interview, and what it records about the kind of work you do (your role, the kind and size of your organisation, your work activities, pain points and workflows, readiness scores, opportunities and business-case figures), the pack you choose and the follow-up dates you set. **Projects:** each project's name, goal and notes, the files you add to it, and which of your sessions you file under it. **Knowledge Base:** the collections you make, the documents you upload into them, and the text we read from those documents, split into passages for keyword search. | You |
+| What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. Rewrites made with "Explain for…", kept as further version copies. A second answer when you rerun an answer on another model, and the reviews you ask for. For an AI Council: the deliberation record (the topic, every member's answer, the vote table and the names of attached files) and the dissent ledger. Quality scores (the Trust Score), when this demo scores answers. Files made by the Transform panel, such as diagrams, slide decks and web pages. **Engagement Tasks:** every draft deliverable (a copy of each also appears in My Work as a session), gap analyses, benchmark comparisons, quality-gate results and the engagement's change log. **The Task Agent:** the approaches it proposes, and each step's result with the model's reasoning text; when this demo scores answers, also each step's quality score and the reviewer's critique. **Discover:** the insights shown beside the interview, the summaries written at the end of each phase in longer interviews, and the discovery report. **Projects:** the project outline the AI Scaffold button drafts, if you keep it. | The AI models |
 | Run records | For each answer: the full instructions sent to the AI (including the text of your uploaded files), the sources used, the model, the number of tokens and the cost. | Our system |
 | Your ratings | The verdicts, star ratings and comments you give on answers. | You |
 | Usage records | Which modules you used and when. The settings of each run and the names of the files used as sources. Your token totals and the cost of each AI call. A count of your runs per module. For each module, your last-used settings and inputs, so that the form can be pre-filled next time. | Our system |
@@ -94,8 +98,11 @@ We have not appointed a data protection officer, because the law does not requir
 - fetching web pages from web addresses you give (Online References);
 - voice input (the microphone button);
 - the sign-off form that asks for a reviewer's name;
-- sharing a module you build with other users, or downloading it as a file;
-- web search in the AI Council.
+- sharing a module you build with other users (you can download it as a file, which we don't keep);
+- sharing a project with other accounts, and sending project invitations;
+- web search, in the AI Council and everywhere else: none of the models on this demo can search the web. A feature that would need it (in Engagement Tasks or the Task Agent, for example) says so, or refuses, instead of answering as if it had searched;
+- reading folders on our server as a knowledge source;
+- importing modules (Exchange), and changing the Horizon Radar, the regulatory knowledge packs or the organisation context, which only the operator can do.
 
 None of these features is available on this demo. We also don't offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules.
 
@@ -103,7 +110,7 @@ None of these features is available on this demo. We also don't offer the module
 
 | Purpose | Data used | Legal basis (GDPR) |
 |---|---|---|
-| **1. Run the demo you signed up for.** This means opening and running your account (if we invite you, making the account for your email address and giving or sending you the link to choose your password), running the modules and other features you choose (Open Chat, the AI Council, the 5-minute Brief, Build Module and the tools under an answer), sending your input to the AI service, and showing and storing your sessions and the modules you build. It also covers writing session titles and summaries, scoring answers where this demo does so, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter (including the modules you build), what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
+| **1. Run the demo you signed up for.** This means opening and running your account (if we invite you, making the account for your email address and giving or sending you the link to choose your password), running the modules and other features you choose (Open Chat, the AI Council, the 5-minute Brief, Build Module, the tools under an answer, Engagement Tasks, the Task Agent, Discover, Projects, the Knowledge Base, Exchange, Orchestration, Intelligence and the Horizon Radar), sending your input to the AI service, and showing and storing your sessions, the modules you build, and your engagements, tasks, interviews, projects and collections. It also covers writing session titles and summaries, scoring answers where this demo does so, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter (including the modules you build, and your engagements, tasks, interviews, projects and collections), what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
 | **2. Keep the demo secure and stop abuse.** This covers sign-in checks, rate limits and lock-outs, logs of sign-ins and changes, web server logs, and investigating misuse. The pseudonymous code lets OpenRouter act against one account instead of blocking the whole demo. | Security and technical data, pseudonymous code | Art. 6(1)(f): our legitimate interest in a secure service that is not misused. |
 | **3. Keep the free demo affordable** with monthly token budgets, daily spending caps and cost records. | Usage records | Art. 6(1)(f): our legitimate interest in controlling the cost of a free service. |
 | **4. See which modules work well.** Your ratings also update anonymous quality statistics for each module. | Your ratings | Art. 6(1)(f): our legitimate interest in improving the modules. |
@@ -164,6 +171,13 @@ The operator can also switch on one more request that ANTON makes after each ans
 - **"Explain for…":** the answer goes to [[DEFAULT_MODEL]], which rewrites it for the audience you pick. The rewrite is stored as a further version copy of the answer.
 - **Transform:** the whole answer goes to [[DEFAULT_MODEL]] for a structured analysis and, for most transforms, once more to make the transform itself, such as a slide deck or a review. The file it makes is stored on our server with the session. It is deleted with the session, or with your account.
 - **Build Module:** what you type into the builder (the module's name, description and instructions, your answers in "Guide me", and your test question) goes to [[DEFAULT_MODEL]], to draft the module and to run the test. The modules you save are stored with your account and deleted with it. They are not shared with other visitors.
+- **Engagement Tasks:** each step sends what it needs to the model you pick for the engagement (or [[DEFAULT_MODEL]]). That includes extracted text from your uploaded documents (up to about 40,000 characters of a letter or plan, and up to 5,000 characters from each of ten resources for a run), the scope, the client profile, the delivery team's names and roles, the intake conversation, and your drafts when they are reviewed or quality-checked. When ANTON reads the delivery team from an uploaded letter, the names in it go to the model. The review step can ask several of the offered models, as the AI Council does. An engagement never looks up your client online, and no folder on our server is ever read for you.
+- **The Task Agent:** your task, your chat with it and a list of matching ANTON modules go to [[DEFAULT_MODEL]], which proposes a plan and asks its questions. Each step you run then sends the task, the answers gathered, the text of the documents you attached, the results of the earlier steps and any matching regulatory text from our knowledge packs to [[DEFAULT_MODEL]]. When this demo scores answers, each step's result also goes to the model that makes the Trust Score, and a step that scores low is run once more with that model's critique. A task never looks anything up on the web.
+- **Discover:** each answer you give goes to [[DEFAULT_MODEL]] with the whole interview so far and what it has recorded about your work. After each answer, that record goes once more to [[DEFAULT_MODEL]] for the insights shown beside the interview. In longer interviews a summary request is sent when a phase ends. When you ask for the report, the record goes once more, with a list of matching ANTON modules, to write it. The interview asks about the kind of work you do, never for names: describe a typical or made-up situation.
+- **Projects:** when you chat or run a module in a session filed under a project, the text of up to ten of the project's newest documents goes to the model with your question. The AI Scaffold button sends the project name and goal you type to [[DEFAULT_MODEL]].
+- **Knowledge Base:** your documents are searched by keyword on our own server. They are not sent to any embedding or search service. A collection's documents go to the AI model only when a run uses that collection as a source: then the passages that match your question are sent with it.
+- **Intelligence:** with learning switched off, the Intelligence page shows only knowledge the operator has shared, never another visitor's. If you press "Generate insights", up to 20 of those shared items go to [[DEFAULT_MODEL]] to write the insights, which are shown to you and not stored.
+- **Orchestration, Horizon Radar and Exchange** send nothing of yours to a model. Orchestration shows your own sessions and insights next to the organisation context the operator has set. The Radar shows public publications the operator's scans collect; you can read and filter it but not change it. Exchange makes the .anton file of a module you built when you ask and sends it straight to your browser; we keep no copy and it is not signed by our server.
 
 OpenRouter does **not** receive your IP address, username, password or cookies. It sees only our server's address.
 
@@ -205,9 +219,9 @@ They can be wrong, incomplete or out of date, and the model can make things up. 
 ### 6.4 What we don't do
 
 - We don't train AI models on your content. OpenRouter and Inceptron say they don't either. OpenRouter's anonymous statistics are described in section 6.2.
-- ANTON's memory learning is switched off on this demo. We extract no memory items from your content and build no search index from it. Nothing from your other sessions, or from other visitors, is added to your prompts. The one stored text added back is the summary of that same session, when you return to it after a break (section 6.1).
+- ANTON's memory learning is switched off on this demo. We extract no memory items from your content and build no search index from it, apart from the keyword index of the documents you put in your own Knowledge Base collections, which only you can search. Nothing from other visitors is added to your prompts. The stored texts added back are the summary of that same session, when you return to it after a break, and what you choose yourself: the documents of a project you file the session under, a collection you pick as a source, and the earlier steps and drafts of the same task or engagement (section 6.1).
 - To find reference material in ANTON's own library that fits your question, our server uses your message once as a search query. This happens on our own server, and the query is not saved.
-- Other visitors cannot see your sessions or the modules you build.
+- Other visitors cannot see your sessions, the modules you build, or your engagements, tasks, interviews, projects and Knowledge Base collections.
 
 ## 7. Who receives your data
 
@@ -240,14 +254,16 @@ OpenRouter is a US company and its platform is hosted in the USA. So everything 
 
 | Data | How long |
 |---|---|
-| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records, the modules you build, council records, reviews, quality scores, files made by the Transform panel, sign-in sessions and, if we invited you, your email address and the records of your invitation links | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
+| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records, the modules you build, council records, reviews, quality scores, files made by the Transform panel, engagements with their documents, files and deliverables, tasks and the text of their documents, discovery interviews with their reports and follow-ups, projects with their files and notes, Knowledge Base collections with their documents, sign-in sessions and, if we invited you, your email address and the records of your invitation links | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
 | An invitation nobody used | Its link works for 7 days. The account made for it, with the email address, is deleted by the same daily clean-up once the link has expired. |
 | A session you delete yourself | These are removed from our live database at once: its messages, answers, the version copies of its answers, the copy of its answers in our output store, its run records and its summary, its reviews and council record, the files the Transform panel made for it, and its ratings and any quality scores and feedback on its answers. These stay until your account is deleted: your token totals, your run counts and last-used settings for each module, and the files you uploaded. The cost records of its AI calls stay too, without the link to the session. |
+| A task, a discovery interview, a project, a project file, a collection or a document you delete yourself | Removed from our live database at once: the task with its chat, the text of its documents and its results; the interview with its record, report and follow-ups; the project with its notes and files; the collection or document with its files and text. The cost records of their AI calls stay, without content. |
+| An engagement you archive | Archiving hides it from your list but does not delete it. It is deleted, with its documents and drafts, when your account is deleted. Its drafts that appear in My Work as sessions can be deleted one by one, as any session. |
 | Sign-in attempts, security events and the log of changes, with IP addresses | Deleted by the daily clean-up once they are [[ACCOUNT_TTL_DAYS]] days old. Most entries about your account go earlier, when your account is deleted. The rest are deleted when they reach [[ACCOUNT_TTL_DAYS]] days. |
 | Web server access log | [[NGINX_LOG_SENTENCE]] |
 | Technical error logs of our server and database | 30 days. They are not meant to hold your content, but an error line can contain the name of a file you uploaded, or your username. |
 | Backups of the database | Each nightly backup is overwritten after 7 days, so a deleted account can stay in a backup for up to 7 more days. If we ever have to restore a backup, we first delete again every account that expired, or that we deleted on request, since the backup was taken. A session you deleted yourself in that time could come back. If it does, it is deleted with your account. |
-| Files you export | We keep no copy. The file goes straight to your browser. |
+| Files you export, and the .anton file of a module you download | We keep no copy. The file goes straight to your browser. |
 | Files made by the Transform panel | Stored on our server with the session. Deleted with the session, or with your account. |
 | Cost records of AI calls: model, tokens, cost, purpose and time | Kept while the demo runs, to control costs. When your account is deleted, we remove the link to your account and session. |
 | Results of the automatic checks run on each answer: which rule ran and what it found, never the answer text | Kept. They carry only the internal IDs of the session and the answer, which point to nothing once those are deleted. |
@@ -305,6 +321,7 @@ You have the right to:
 
 - delete a session (see section 9 for what is removed at once);
 - delete a module you built (Build Module, under My Modules);
+- delete a task, a discovery interview, a project or a project file, a Knowledge Base collection or a document;
 - download any answer with the Export button.
 
 ## 12. How we check that a request is yours
@@ -353,7 +370,7 @@ We would welcome the chance to put things right first, but you don't have to con
 
 If you enter, upload or paste information about other people, we process it only to answer you, and we delete it together with your account (section 9). We tell those people about this through this public notice, because we don't know who they are and have no way to contact them (GDPR Art. 14(5)(b)).
 
-Please don't enter such information: the demo is not meant for real personal data. Never enter health data, information about crimes, or personal identity numbers. That is why this demo does not offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules. The same applies to the modules you build: don't build one that asks for such information.
+Please don't enter such information: the demo is not meant for real personal data. Never enter health data, information about crimes, or personal identity numbers. That is why this demo does not offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules. The same applies to the modules you build: don't build one that asks for such information. In Engagement Tasks, describe people by their role (for example "Head of Compliance") rather than by name, enter no contact details, and don't upload real engagement letters or client documents: names in an uploaded letter are sent to the model when ANTON reads the delivery team from it. Don't upload documents to a project or the Knowledge Base that contain other people's personal data.
 
 ## 16. Automated decisions
 
@@ -363,7 +380,7 @@ Automatic limits can refuse a request for a while:
 
 - the monthly token budget;
 - the daily spending caps;
-- upload limits;
+- upload limits on the files you keep (attached to runs and engagements, or added to projects and Knowledge Base collections);
 - rate limits;
 - limits on new sign-ups;
 - a 15-minute lock after five failed sign-ins.
@@ -378,7 +395,7 @@ The demo is only for people aged 18 or over. You confirm your age when you sign 
 
 - The connection to the demo is encrypted (HTTPS).
 - Passwords are stored only as one-way hashes.
-- Each visitor can see only their own sessions.
+- Each visitor can see only their own sessions, engagements, tasks, interviews, projects and collections.
 - The database can only be reached from inside our server, and the key to the AI service is stored encrypted.
 - The operator's administrator account can technically see every account and its content. We look at your content only in these cases:
   - to deal with abuse or a security incident;

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 import type { EngagementData, PeerBenchmark } from '@/pages/EngagementWorkspacePage';
+import { useEngagementDemo, responseErrorMessage, errorText } from './engagement-demo';
 
 interface Props {
   engagement: EngagementData;
@@ -19,9 +20,11 @@ interface Props {
 
 interface PeerLibraryEntry {
   id: string;
-  label: string;               // anonymized label e.g. "Peer Institution A"
+  /** What GET /engagements/peer-library sends: "Peer Institution A", … */
+  anonymized_label?: string;
+  label?: string;              // older shape
   domain: string;
-  engagement_type: string;
+  engagement_type?: string;
   overall_score: number | null;
   completed_at: string;
 }
@@ -30,7 +33,11 @@ type Tab = 'web' | 'internal';
 
 export default function EngagementPeerBenchmarks({ engagement, onReload }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('web');
+  // Public demo: the demo's models cannot search the web, so a visitor starts
+  // on (and can only use) the library of their own completed engagements.
+  const demo = useEngagementDemo();
+  const [activeTab, setActiveTab] = useState<Tab>(demo.restricted ? 'internal' : 'web');
+  const [internalError, setInternalError] = useState<string | null>(null);
 
   // Web search state
   const [webQuery, setWebQuery] = useState('');
@@ -70,11 +77,11 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: webQuery.trim() }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       setWebQuery('');
       onReload();
     } catch (e) {
-      setWebError(String(e));
+      setWebError(errorText(e));
     } finally {
       setWebSearching(false);
     }
@@ -82,13 +89,17 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
 
   async function addFromInternal(sourceId: string) {
     setAddingFromInternal(sourceId);
+    setInternalError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}/peer-benchmarks/from-internal/${sourceId}`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/peer-benchmarks/from-internal/${sourceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
+    } catch (e) {
+      setInternalError(errorText(e));
     } finally {
       setAddingFromInternal(null);
     }
@@ -150,8 +161,15 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
             ))}
           </div>
 
-          {/* Web search tab */}
-          {activeTab === 'web' && (
+          {/* Web search tab — not on a public demo, whose models cannot search */}
+          {activeTab === 'web' && demo.restricted && (
+            <div className="flex items-start gap-2 text-xs text-adv-gray bg-adv-dark-2 border border-border rounded-lg px-3 py-2">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-adv-gold" />
+              Web-search benchmarks are not available on this demo: its models cannot search the web, and a benchmark
+              without sources would only look like research. Use the Internal Library with your own completed engagements.
+            </div>
+          )}
+          {activeTab === 'web' && !demo.restricted && (
             <div className="space-y-3">
               <p className="text-xs text-adv-gray">
                 ANTON will search the internet for publicly available benchmark information — industry reports, regulatory findings, published maturity assessments — relevant to your query.
@@ -185,8 +203,16 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
           {/* Internal library tab */}
           {activeTab === 'internal' && (
             <div className="space-y-3">
+              {internalError && (
+                <div role="alert" className="flex items-start gap-2 text-xs text-adv-red bg-adv-red/10 border border-adv-red/20 rounded-lg px-3 py-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  {internalError}
+                </div>
+              )}
               <p className="text-xs text-adv-gray">
-                Select completed engagements from the internal library. Client names are replaced with anonymous labels (Peer Institution A, B…). Scores and key findings are retained.
+                {demo.restricted
+                  ? "Select one of your own completed engagements that you enabled as a benchmark. Other visitors' engagements are never listed here."
+                  : 'Select completed engagements from the internal library. Client names are replaced with anonymous labels (Peer Institution A, B…). Scores and key findings are retained.'}
               </p>
               {loadingLibrary ? (
                 <div className="flex items-center gap-2 text-xs text-adv-gray py-4 justify-center">
@@ -207,8 +233,8 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
                       <div key={entry.id} className="flex items-center gap-3 bg-adv-dark-2 rounded-lg px-3 py-2.5">
                         <Building className="h-4 w-4 text-adv-blue shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-adv-off-white">{entry.label}</p>
-                          <p className="text-xs text-adv-gray mt-0.5">{entry.domain} · {entry.engagement_type}</p>
+                          <p className="text-xs font-medium text-adv-off-white">{entry.anonymized_label ?? entry.label}</p>
+                          <p className="text-xs text-adv-gray mt-0.5">{[entry.domain, entry.engagement_type].filter(Boolean).join(' · ')}</p>
                         </div>
                         {entry.overall_score !== null && (
                           <span className="text-xs text-adv-teal font-medium shrink-0">{entry.overall_score}/100</span>

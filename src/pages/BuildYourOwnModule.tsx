@@ -71,9 +71,12 @@ const MODEL_OPTIONS = [
 ];
 
 /**
- * Public demo: sharing a module with the community and the .anton download
- * are outside a visitor's routes (a shared module would show one visitor's
- * instructions to every other visitor). The module itself is the visitor's.
+ * Public demo: sharing a module with the community is outside a visitor's
+ * routes (a shared module would show one visitor's instructions to every other
+ * visitor). The module itself is the visitor's, and so is its .anton download:
+ * POST /exchange/export/:id answers a visitor for their own module only, and
+ * always unsigned (routes/exchange.ts), so the page asks for an unsigned file
+ * and says so.
  */
 function useBuilderDemo(): { demoMode: boolean; demoLimited: boolean; defaultModel: string | null } {
   const cfg = useDemoStore((s) => s.config);
@@ -1465,6 +1468,9 @@ export default function BuildYourOwnModule() {
       const res = await fetch(`/api/exchange/export/${m.id}?type=custom`, {
         method: 'POST',
         headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        // A demo visitor's export is unsigned (the server forces it too): nothing
+        // a visitor wrote may verify as vouched for by the showcase.
+        ...(demoLimited ? { body: JSON.stringify({ sign: false }) } : {}),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -1635,6 +1641,13 @@ export default function BuildYourOwnModule() {
             <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{modules.length}</span>
           </h2>
 
+          {demoLimited && modules.length > 0 && (
+            <p role="note" className="mb-3 text-sm text-adv-gray">
+              A module you download as .anton from this demo is unsigned: the file is your module, and nothing in it is
+              vouched for by this server. No copy is kept here.
+            </p>
+          )}
+
           {modules.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
               <Puzzle className="h-8 w-8 text-adv-gray mx-auto mb-3" />
@@ -1676,17 +1689,16 @@ export default function BuildYourOwnModule() {
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    {/* The .anton export is not a demo visitor's (it is signed with the instance key). */}
-                    {!demoLimited && (
+                    {/* On a public demo a visitor's download is unsigned (see useBuilderDemo). */}
                     <button
                       onClick={() => handleExportAnton(m)}
                       disabled={exporting === m.id}
-                      title="Export as .anton"
+                      title={demoLimited ? 'Export as .anton (unsigned)' : 'Export as .anton'}
+                      aria-label={demoLimited ? 'Export as .anton (unsigned)' : 'Export as .anton'}
                       className="rounded-lg border border-border p-1.5 text-adv-gray hover:border-adv-teal/40 hover:text-adv-teal transition-colors disabled:opacity-50"
                     >
-                      <Download className="h-3.5 w-3.5" />
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
-                    )}
                     <button
                       onClick={() => handleDelete(m.id)}
                       disabled={deleting === m.id}

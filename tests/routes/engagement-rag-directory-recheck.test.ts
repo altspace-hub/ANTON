@@ -96,6 +96,8 @@ function fakeDb(ragDir: string): DatabaseAdapter {
         };
       }
       if (/MAX\(iteration_number\)/.test(sql)) return { max: 0 };
+      // The monthly token budget check (team mode): no budget set = unlimited.
+      if (/FROM users WHERE id/.test(sql)) return { username: 'alice', monthly_token_budget: 0 };
       return undefined;
     },
     async all(sql: string) {

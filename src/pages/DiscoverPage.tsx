@@ -9,6 +9,26 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { fetchWithAuth } from '@/lib/api';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
+
+/**
+ * Shown to a visitor on a public demo before and during the interview (the
+ * server's opening message says the same, word for word): the interview is
+ * about one's work, and the demo must not receive real names or personal data.
+ */
+const DEMO_DISCOVER_NOTICE = 'This is a public demo. Do not enter the real name of your organisation, your clients or anyone else, and no health, HR or other personal details. Describe a typical or made-up situation instead.';
+
+/** The server's own sentence for a refused request (the monthly budget's reason), else `fallback`. */
+async function refusalMessage(res: Response, fallback: string): Promise<string> {
+  const body = await res.json().catch(() => null) as { error?: unknown; reason?: unknown } | null;
+  const error = typeof body?.error === 'string' ? body.error : '';
+  const reason = typeof body?.reason === 'string' ? body.reason : '';
+  if (error && reason) return `${error}: ${reason}.`;
+  return error || fallback;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -196,6 +216,12 @@ export default function DiscoverPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
 
+  // Public demo: a visitor is told to use made-up details, and is never shown
+  // a module the demo keeps off (the server leaves them out too).
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
+  const { moduleHidden } = useDemoCatalogue();
+
   // Load previous sessions on mount
   useEffect(() => {
     fetch('/api/discovery/sessions', { headers: getAuthHeader() })
@@ -256,14 +282,14 @@ export default function DiscoverPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier }),
       });
-      if (!createRes.ok) throw new Error('Failed to create session');
+      if (!createRes.ok) throw new Error(await refusalMessage(createRes, 'Failed to create session'));
       const { id } = await createRes.json();
       setSessionId(id);
 
       // Get opening message
       setIsProcessing(true);
       const startRes = await fetch(`/api/discovery/sessions/${id}/start`, { headers: getAuthHeader() });
-      if (!startRes.ok) throw new Error('Failed to start conversation');
+      if (!startRes.ok) throw new Error(await refusalMessage(startRes, 'Failed to start conversation'));
       const { response, state: newState } = await startRes.json();
       setState(newState);
       setView('conversation');
@@ -287,7 +313,8 @@ export default function DiscoverPage() {
         // Load output
         const outRes = await fetch(`/api/discovery/sessions/${sid}/output`, { headers: getAuthHeader() });
         if (outRes.ok) {
-          setOutput(await outRes.json());
+          const saved = await outRes.json() as DiscoveryOutput;
+          setOutput({ ...saved, moduleMatches: (saved.moduleMatches ?? []).filter((m) => !moduleHidden(m.moduleId)) });
           setView('output');
         } else {
           setView('conversation');
@@ -390,8 +417,7 @@ export default function DiscoverPage() {
         body: JSON.stringify({ message }),
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to process response');
+        throw new Error(await refusalMessage(res, 'Failed to process response'));
       }
       const { response, state: newState, phaseChanged } = await res.json();
       setState(newState);
@@ -415,9 +441,10 @@ export default function DiscoverPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error('Failed to generate report');
-      const data = await res.json();
-      setOutput(data);
+      if (!res.ok) throw new Error(await refusalMessage(res, 'Failed to generate report'));
+      const data = await res.json() as DiscoveryOutput;
+      // The server leaves out modules the demo keeps off; so does the page.
+      setOutput({ ...data, moduleMatches: (data.moduleMatches ?? []).filter((m) => !moduleHidden(m.moduleId)) });
       setView('output');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate report');
@@ -479,6 +506,11 @@ export default function DiscoverPage() {
           <p className="mx-auto max-w-xl text-sm text-adv-gray">
             ANTON can help you find where AI creates the most value in your work. It starts with understanding what you do and where it hurts.
           </p>
+          {demoLimited && (
+            <p role="note" className="mx-auto mt-4 max-w-xl rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-4 py-3 text-sm text-adv-off-white">
+              {DEMO_DISCOVER_NOTICE}
+            </p>
+          )}
         </div>
 
         {/* Tier Selection */}
@@ -821,6 +853,22 @@ export default function DiscoverPage() {
                 </div>
               )}
 
+              {demoLimited && (
+                <p role="note" className="mb-2 text-sm text-adv-gray">
+                  Public demo: no real names of organisations, clients or people, and no health, HR or other personal details.
+                </p>
+              )}
+
+              {/* A refused turn (the monthly budget, the model) used to fail silently here. */}
+              {error && (
+                <div role="alert" className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-sm text-adv-red">
+                  <span>{error}</span>
+                  <button onClick={() => setError(null)} aria-label="Dismiss the error" className="shrink-0 hover:text-adv-off-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-end gap-2">
                 <textarea
                   ref={textareaRef}
@@ -972,6 +1020,12 @@ export default function DiscoverPage() {
                 Download .md
               </button>
             </div>
+
+            {error && (
+              <div role="alert" className="mb-4 rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-sm text-adv-red">
+                {error}
+              </div>
+            )}
 
             <div className="prose prose-sm prose-invert max-w-none rounded-xl border border-border bg-adv-card p-8">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

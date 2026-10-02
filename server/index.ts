@@ -85,8 +85,9 @@ import { createPatternDetection } from './services/pattern-detection.js';
 import { startMemorySweep } from './services/memory-sweep.js';
 import {
   isDemoMode, demoModeStartupProblem, demoModeWarnings, applyDemoModeOverrides,
-  demoPublicConfig, createDemoAllowlistMiddleware, createDemoWriteLimiter,
+  demoPublicConfig, createDemoAllowlistMiddleware, createDemoWriteLimiter, createDemoEditLimiter,
 } from './middleware/demo-mode.js';
+import { mountEngagementDemoLimits } from './services/engagement-demo-routes.js';
 import { startDemoRetention } from './services/demo-retention.js';
 import { ensureWorkComplianceRules } from './services/work-compliance-rules.js';
 import { markInterruptedRuns } from './services/run-recovery.js';
@@ -707,6 +708,7 @@ const codingModelBudget = createBudgetMiddleware(db);
 // Public demo: uploads, exports and version saves per visitor per 10 minutes
 // (DEMO_USER_WRITES_PER_10_MIN). Calls next() for everyone else.
 const demoWriteLimiter = createDemoWriteLimiter();
+const demoEditLimiter = createDemoEditLimiter();
 app.post('/api/files/upload', demoWriteLimiter);
 app.post(['/api/export', '/api/export/*'], demoWriteLimiter);
 app.post('/api/versions/*', demoWriteLimiter);
@@ -727,10 +729,52 @@ app.post([
   '/api/custom-modules/test-run',
   '/api/ai-assist/module-prompt',
   '/api/ai-assist/module-inputs',
+  '/api/ai-assist/project-scaffold',
 ], demoWriteLimiter, claudeLimiter, codingModelBudget);
 // Built modules are stored rows with a free-text prompt: counted as writes.
 app.post('/api/custom-modules', demoWriteLimiter);
 app.patch('/api/custom-modules/:id', demoWriteLimiter);
+// The features opened to visitors on 2026-10-02 (demo-mode.ts WORK_ROUTES).
+// Every path is exact, as above. Each route also checks and charges the
+// monthly budget itself; codingModelBudget is the front check.
+//   Engagement Tasks: every write under /api/engagements is one count (any
+//   method but GET/HEAD/OPTIONS): create, uploads, export and the model steps
+//   of the write limit, every other edit of the edit limit; the model steps
+//   also get the model-call limiter and the budget.
+mountEngagementDemoLimits(app, { demoWriteLimiter, demoEditLimiter, claudeLimiter, modelBudget: codingModelBudget });
+//   Projects and the Knowledge Base: stored rows and files.
+app.post([
+  '/api/projects',
+  '/api/projects/:id/files',
+  '/api/projects/:id/notes',
+  '/api/collections',
+  '/api/documents/upload',
+  '/api/documents/upload-multiple',
+], demoWriteLimiter);
+//   The Task Agent and Discover: stored tasks, interviews, uploads and
+//   exports; the conversational turns are model calls (like /api/claude/message);
+//   two GETs call a model too; the Discover report is both.
+app.post([
+  '/api/task-agent/tasks',
+  '/api/task-agent/tasks/:id/upload',
+  '/api/discovery/sessions',
+  '/api/discovery/sessions/:id/export',
+  '/api/discovery/sessions/:id/followup',
+], demoWriteLimiter);
+app.post([
+  '/api/task-agent/tasks/:id/message',
+  '/api/task-agent/tasks/:id/execute-step',
+  '/api/discovery/sessions/:id/respond',
+], claudeLimiter, codingModelBudget);
+app.get([
+  '/api/discovery/sessions/:id/start',
+  '/api/discovery/sessions/:id/insights',
+], claudeLimiter, codingModelBudget);
+app.post('/api/discovery/sessions/:id/generate', demoWriteLimiter, claudeLimiter, codingModelBudget);
+//   Intelligence: "Generate insights" is a model call on a GET.
+app.get('/api/intelligence/insights', demoWriteLimiter, claudeLimiter, codingModelBudget);
+//   Exchange: the .anton download of a built module is built per request.
+app.post('/api/exchange/export/:moduleId', demoWriteLimiter);
 app.post('/api/core-team/:projectId/panel', claudeLimiter, codingModelBudget);
 app.get('/api/coding/workshop/sessions/:id/start', claudeLimiter, codingModelBudget);
 app.post('/api/coding/workshop/sessions/:id/respond', claudeLimiter, codingModelBudget);

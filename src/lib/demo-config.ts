@@ -219,10 +219,18 @@ export function demoSignupErrorMessage(status: number, body: unknown): string {
  * The Work entries a demo visitor keeps: home, where the module catalogue is,
  * and the features whose routes the server opens to visitors (WORK_ROUTES in
  * server/middleware/demo-mode.ts): My Work, Open Chat, the AI Council, the
- * 5-minute Brief and Build Module. Projects, the Task Agent, the Knowledge
- * Base, Exchange and the other tools stay with admins.
+ * 5-minute Brief and Build Module (2026-10-01); Engagement Tasks, Discover,
+ * the ANTON Task Agent, Projects and the Knowledge Base, each holding the
+ * visitor's own rows only; Exchange (the unsigned download of a module the
+ * visitor built), and Orchestration, Intelligence and Horizon Radar, read
+ * only (2026-10-02). Coding, the App Gateway and the other tools stay with
+ * admins.
  */
-export const DEMO_WORK_NAV_ITEMS: readonly string[] = ['home', 'my-work', 'prompt', 'council', 'brief', 'build-module'];
+export const DEMO_WORK_NAV_ITEMS: readonly string[] = [
+  'home', 'my-work', 'prompt', 'council', 'brief', 'build-module',
+  'engagements', 'discover', 'task-agent', 'projects', 'knowledge-base',
+  'exchange', 'orchestration', 'intelligence', 'radar',
+];
 
 /**
  * The sidebar entries to hide for this person: none on an ordinary server

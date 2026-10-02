@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '@/lib/api';
 import { Radio, Plus, Search, Filter, ExternalLink, Check, X, AlertCircle, FileText, Gavel, BookOpen, MessageSquare, FileCheck, RefreshCw, Square, Settings, ChevronDown, ChevronUp, Shield, Users, Cpu, Landmark, AlertTriangle, TrendingUp, Layers, Pencil, Trash2, Database } from 'lucide-react';
 import { asArray } from '@/lib/as-array';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted, demoModuleHiddenFor } from '@/lib/demo-config';
 
 interface RadarSource {
   id: string;
@@ -128,6 +131,13 @@ const MODULE_SUGGESTIONS: Record<string, { moduleId: string; label: string }> = 
 
 export default function RadarPage() {
   const navigate = useNavigate();
+  // On a public demo the radar is the operator's, shared by every visitor: a
+  // visitor reads the feed and opens an item in a module. Scans, sources,
+  // settings and the triage buttons (a status here changes it for everyone)
+  // stay with the operator; the server refuses them too.
+  const demoConfig = useDemoStore((s) => s.config);
+  const role = useAuthStore((s) => s.user?.role);
+  const demoLimited = demoRestricted(demoConfig, role);
   const [summary, setSummary] = useState<RadarSummary | null>(null);
   const [items, setItems] = useState<RadarItem[]>([]);
   const [sources, setSources] = useState<RadarSource[]>([]);
@@ -158,7 +168,9 @@ export default function RadarPage() {
       const [summaryRes, itemsRes, sourcesRes] = await Promise.all([
         fetch('/api/radar/summary', { headers: getAuthHeader() }),
         fetch(`/api/radar/items?limit=100${itemCatParam}`, { headers: getAuthHeader() }),
-        fetch(`/api/radar/sources?active=false`, { headers: getAuthHeader() }),
+        // activeOnly=false: the Sources tab lists the inactive ones too (the server
+        // reads activeOnly; this sent active=false, and they never showed).
+        fetch(`/api/radar/sources?activeOnly=false`, { headers: getAuthHeader() }),
       ]);
       setSummary(await summaryRes.json() as RadarSummary);
       setItems(asArray<RadarItem>(await itemsRes.json()));
@@ -301,9 +313,11 @@ export default function RadarPage() {
   useEffect(() => {
     fetchData();
     fetchScanStatus();
-    fetchSettings();
+    // The scan schedule is the operator's (and not opened to demo visitors).
+    if (!demoLimited) fetchSettings();
     return () => stopPolling();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per page, and again when the demo limits become known
+  }, [demoLimited]);
 
   async function updateStatus(itemId: string, status: string) {
     try {
@@ -370,7 +384,7 @@ export default function RadarPage() {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {!demoLimited && <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings((v) => !v)}
             className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-gray transition-colors hover:bg-adv-dark-2 hover:text-adv-off-white"
@@ -408,11 +422,18 @@ export default function RadarPage() {
             <Plus className="h-4 w-4" />
             Add Source
           </button>
-        </div>
+        </div>}
       </div>
 
+      {demoLimited && (
+        <p className="mb-4 text-sm text-adv-gray" role="note">
+          This feed is shared by everyone on the demo and kept up to date by the operator. You can read it, filter it and
+          open an item in a module; scanning, sources and triage stay with the operator.
+        </p>
+      )}
+
       {/* Scan Settings Panel */}
-      {showSettings && (
+      {showSettings && !demoLimited && (
         <div className="mb-4 rounded-xl border border-border bg-adv-card p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-adv-off-white flex items-center gap-2">
@@ -580,13 +601,15 @@ export default function RadarPage() {
                 {scanProgress.total > 0 && ` (${scanProgress.completed}/${scanProgress.total} sources)`}
               </span>
             </div>
-            <button
-              onClick={handleStopScan}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-adv-red hover:bg-adv-red/10 transition-colors"
-            >
-              <Square className="h-3 w-3" />
-              Stop
-            </button>
+            {!demoLimited && (
+              <button
+                onClick={handleStopScan}
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-adv-red hover:bg-adv-red/10 transition-colors"
+              >
+                <Square className="h-3 w-3" />
+                Stop
+              </button>
+            )}
           </div>
           {scanProgress.total > 0 && (
             <div className="h-1.5 w-full rounded-full bg-adv-dark">
@@ -737,16 +760,18 @@ export default function RadarPage() {
         <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h3 className="text-sm font-semibold text-adv-off-white">Monitored Sources ({sources.length})</h3>
-            <button
+            {!demoLimited && <button
               onClick={() => setShowAddSource(true)}
               className="flex items-center gap-1.5 rounded-lg border border-adv-teal bg-adv-teal-dim px-3 py-1.5 text-sm font-medium text-adv-teal transition-colors hover:bg-adv-teal-dim/80"
             >
               <Plus className="h-3.5 w-3.5" />
               Add Source
-            </button>
+            </button>}
           </div>
           {sources.length === 0 ? (
-            <div className="p-8 text-center text-sm text-adv-gray">No sources yet. Add a source to start monitoring.</div>
+            <div className="p-8 text-center text-sm text-adv-gray">
+              {demoLimited ? 'The operator has not set up any sources yet.' : 'No sources yet. Add a source to start monitoring.'}
+            </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -756,7 +781,7 @@ export default function RadarPage() {
                   <th className="px-4 py-2">Type</th>
                   <th className="px-4 py-2">Category</th>
                   <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2 text-right">Actions</th>
+                  {!demoLimited && <th className="px-4 py-2 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -775,7 +800,7 @@ export default function RadarPage() {
                         {s.is_active === 1 ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    {!demoLimited && <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setEditingSource(s)}
@@ -792,7 +817,7 @@ export default function RadarPage() {
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                    </td>
+                    </td>}
                   </tr>
                 ))}
               </tbody>
@@ -807,7 +832,9 @@ export default function RadarPage() {
           <p className="text-sm text-adv-gray">
             {searchQuery
               ? `No items match "${searchQuery}"`
-              : 'No items yet. Add sources and run a scan, or add manual items.'}
+              : demoLimited
+                ? 'No items yet. The feed fills when the operator runs a scan.'
+                : 'No items yet. Add sources and run a scan, or add manual items.'}
           </p>
         </div>
       ) : (
@@ -889,8 +916,8 @@ export default function RadarPage() {
                 </p>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  {item.status === 'new' && (
+                <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  {!demoLimited && item.status === 'new' && (
                     <>
                       <button
                         onClick={() => updateStatus(item.id, 'reviewed')}
@@ -908,16 +935,19 @@ export default function RadarPage() {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() => updateStatus(item.id, 'dismissed')}
-                    className="flex items-center gap-1 rounded-lg border border-adv-red/30 bg-adv-red/10 px-2 py-1 text-xs text-adv-red transition-colors hover:bg-adv-red/20"
-                  >
-                    <X className="h-3 w-3" />
-                    Dismiss
-                  </button>
+                  {!demoLimited && (
+                    <button
+                      onClick={() => updateStatus(item.id, 'dismissed')}
+                      className="flex items-center gap-1 rounded-lg border border-adv-red/30 bg-adv-red/10 px-2 py-1 text-xs text-adv-red transition-colors hover:bg-adv-red/20"
+                    >
+                      <X className="h-3 w-3" />
+                      Dismiss
+                    </button>
+                  )}
                   {(() => {
                     const suggestion = MODULE_SUGGESTIONS[item.item_type];
-                    return suggestion ? (
+                    // Not a module this visitor cannot run (investigation modules are off a demo).
+                    return suggestion && !demoModuleHiddenFor(demoConfig, role, suggestion.moduleId) ? (
                       <button
                         onClick={() => navigate(`/module/${suggestion.moduleId}?prefill=${encodeURIComponent(item.title)}`)}
                         className="px-2 py-1 text-xs bg-adv-teal/20 text-adv-teal border border-adv-teal/30 rounded hover:bg-adv-teal/30 transition-colors"

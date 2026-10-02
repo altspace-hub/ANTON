@@ -51,7 +51,9 @@ import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
 import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter.js';
 import { createBudgetMiddleware } from '../middleware/budget.js';
-import { semanticSearch } from '../services/semantic-search.js';
+import { semanticSearch, type SearchResult } from '../services/semantic-search.js';
+import { collectionReadScope } from '../services/collection-manager.js';
+import { isDemoVisitor, keywordOnlyEmbeddingAdapter } from '../services/rag/demo-storage.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
@@ -852,24 +854,44 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // NEW: RAG Search Integration (Phase 4.8 + 4.9)
       let ragContext = '';
-      let ragChunks: any[] = [];
+      let ragChunks: SearchResult[] = [];
       let ragTokenEstimate = 0;
 
       // ragSearch is nested inside knowledgeSources on the client side
-      const ragSearchConfig = (knowledgeSources as any)?.ragSearch ?? req.body.ragSearch;
-      if (ragSearchConfig?.enabled && ragSearchConfig.collections?.length > 0) {
-        const { collections, topK, rerank } = ragSearchConfig;
-
+      const ragSearchConfig = ((knowledgeSources as { ragSearch?: unknown } | null | undefined)?.ragSearch ?? req.body.ragSearch) as
+        { enabled?: unknown; collections?: unknown; topK?: unknown; rerank?: unknown } | null | undefined;
+      const requestedCollections = Array.isArray(ragSearchConfig?.collections)
+        ? [...new Set((ragSearchConfig.collections as unknown[]).filter((c): c is string => typeof c === 'string' && c.length > 0 && c.length <= 200))].slice(0, 50)
+        : [];
+      if (ragSearchConfig?.enabled && requestedCollections.length > 0) {
         try {
-          const results = await semanticSearch(db as DatabaseAdapter, {
+          // Only the collections this caller may read, decided in SQL like the
+          // Knowledge Base's own routes (collectionReadScope): on a public demo
+          // a visitor's own; a team member's own plus the shared ones; solo and
+          // admins all. Another person's collection id finds nothing — even a
+          // document of the caller's that was left in it.
+          const readScope = collectionReadScope(req as OwnedRequest);
+          const collections = readScope.sql
+            ? (await db.all<{ id: string }>(
+                `SELECT id FROM knowledge_collections WHERE id IN (${requestedCollections.map(() => '?').join(',')})${readScope.sql}`,
+                [...requestedCollections, ...readScope.params],
+              )).map((r) => r.id)
+            : requestedCollections;
+          const topK = Math.min(50, Math.max(1, Math.floor(Number(ragSearchConfig.topK) || 10)));
+          // A demo visitor's question is never embedded: the demo has no local
+          // embedder, and an embedding service is a recipient the privacy
+          // notice does not name. Their documents carry no vectors either
+          // (routes/documents.ts), so search runs by keyword.
+          const searchDeps = isDemoVisitor(req as OwnedRequest) ? { adapter: keywordOnlyEmbeddingAdapter() } : {};
+          const results = collections.length === 0 ? [] : await semanticSearch(db as DatabaseAdapter, {
             query: userMessage, // Use user's message as search query
             collections,
-            topK: topK || 10,
-            rerank: rerank ?? true,
-            // Collections are shared, documents are not: in team mode only the
-            // sender's own uploads reach their prompt (solo/admin: all).
+            topK,
+            rerank: ragSearchConfig.rerank !== false,
+            // Documents are their uploader's: in team mode only the sender's
+            // own uploads reach their prompt (solo/admin: all).
             owner: req as OwnedRequest,
-          });
+          }, searchDeps);
 
           ragChunks = results;
 
@@ -922,7 +944,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             })));
           }
         } catch (error) {
-          console.error('[RAG] Search failed:', error);
+          console.error('[RAG] Search failed:', error instanceof Error ? error.message : 'error');
           // Non-fatal — continue without RAG results
         }
       }

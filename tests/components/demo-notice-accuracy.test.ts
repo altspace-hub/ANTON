@@ -121,16 +121,71 @@ describe('notice section 6.1: the requests after an answer (problem 9)', () => {
 describe('notice section 6.4: memory (problem 10)', () => {
   const s = section('6.4');
 
-  it('names the session summary as the one stored text added back, instead of "no stored memory"', () => {
+  it('names the session summary as a stored text added back, instead of "no stored memory"', () => {
     expect(s).not.toContain("No stored memory is added to anyone's prompts.");
-    expect(s).toContain('Nothing from your other sessions, or from other visitors, is added to your prompts.');
+    expect(s).toContain('Nothing from other visitors is added to your prompts.');
     expect(s).toContain('the summary of that same session');
     expect(s).toContain('section 6.1');
   });
 
-  it('negative control: memory learning is still said to be off', () => {
+  it('names what a visitor chooses to add back since 2026-10-02: project documents, a collection, a task or engagement', () => {
+    // A session filed under a project reads its documents; a collection picked
+    // as a source adds its passages; a task step and an engagement run read
+    // their earlier steps and drafts (the routes do; notice section 6.1).
+    expect(s).not.toContain('Nothing from your other sessions, or from other visitors, is added to your prompts.');
+    expect(s).toContain('the documents of a project you file the session under');
+    expect(s).toContain('a collection you pick as a source');
+    expect(s).toContain('the earlier steps and drafts of the same task or engagement');
+  });
+
+  it("negative control: memory learning is still said to be off, and the only index is the visitor's own keyword index", () => {
     expect(s).toContain("ANTON's memory learning is switched off on this demo.");
-    expect(s).toContain('We extract no memory items from your content and build no search index from it.');
+    expect(s).toContain('We extract no memory items from your content and build no search index from it, apart from the keyword index of the documents you put in your own Knowledge Base collections, which only you can search.');
+  });
+});
+
+describe('the features opened to visitors on 2026-10-02', () => {
+  const s61 = section('6.1');
+
+  it('section 6.1 says, for each, what goes to the model', () => {
+    for (const feature of ['**Engagement Tasks:**', '**The Task Agent:**', '**Discover:**', '**Projects:**',
+      '**Knowledge Base:**', '**Intelligence:**', '**Orchestration, Horizon Radar and Exchange**']) {
+      expect(s61, feature).toContain(feature);
+    }
+    // No embedding service: the Knowledge Base is searched by keyword on the server (rag/demo-storage.ts).
+    expect(s61).toContain('They are not sent to any embedding or search service.');
+    // No web search on the demo's models; the routes refuse or say so.
+    expect(s61).toContain('An engagement never looks up your client online');
+    expect(s61).toContain('A task never looks anything up on the web.');
+  });
+
+  it('section 3 lists what is stored, and the switched-off list matches the routes', () => {
+    const entered = tableRow('What you enter');
+    for (const feature of ['**Engagement Tasks:**', '**The Task Agent:**', '**Discover:**', '**Projects:**', '**Knowledge Base:**']) {
+      expect(entered, feature).toContain(feature);
+    }
+    const s3 = section('3');
+    // The .anton download of a built module is open (unsigned, not kept); sharing is not.
+    expect(s3).not.toContain('sharing a module you build with other users, or downloading it as a file');
+    expect(s3).toContain("sharing a module you build with other users (you can download it as a file, which we don't keep)");
+    expect(s3).toContain('sharing a project with other accounts, and sending project invitations');
+    expect(s3).toContain('none of the models on this demo can search the web');
+  });
+
+  it('section 9 says how long each is kept, and what deleting one removes', () => {
+    const account = PRIVACY_NOTICE_MD.split('\n').find((l) => l.startsWith('| **Your account and everything in it:**')) ?? '';
+    for (const kept of ['engagements with their documents', 'tasks and the text of their documents', 'discovery interviews',
+      'projects with their files and notes', 'Knowledge Base collections with their documents']) {
+      expect(account, kept).toContain(kept);
+    }
+    expect(tableRow('A task, a discovery interview, a project, a project file, a collection or a document you delete yourself')).toContain('Removed from our live database at once');
+    // An engagement's DELETE archives it (routes/engagements.ts): the notice must not promise more.
+    expect(tableRow('An engagement you archive')).toContain('does not delete it');
+  });
+
+  it('negative control: the AI Council and Build Module sentences are unchanged', () => {
+    expect(s61).toContain('- **The AI Council:** one question goes to several models, in many requests.');
+    expect(s61).toContain('They are not shared with other visitors.');
   });
 });
 

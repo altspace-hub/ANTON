@@ -9,8 +9,9 @@
  *
  *   - "Collect insights — Responses contribute to knowledge base": a demo
  *     never learns from a visitor's runs;
- *   - knowledge modes a visitor cannot use: Online links, Local Folders, Combined, the
- *     Knowledge Collections (RAG) and the Regulatory Knowledge Packs;
+ *   - knowledge modes a visitor cannot use: Online links, Local Folders, Combined
+ *     and the Regulatory Knowledge Packs (the Knowledge Collections card is
+ *     open to them since 2026-10-02: their own collections, keyword search);
  *   - Home's Pathfinder search and "Add deadline";
  *   - on the Work page: Deliberation mode, the Risk Atlas banner, the
  *     knowledge-library suggestion (it turns on Local Folders), prompt
@@ -210,15 +211,24 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
     ragSearch: { enabled: true, collections: [], topK: 10, rerank: true, showRelevance: true },
   };
   // Online links too: the server does not fetch them for a visitor (privacy review H4, D8).
-  const hiddenFromVisitor = ['Online Regulation / Document Links', 'Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Knowledge Collections (RAG)', 'Regulatory Knowledge Packs'];
+  const hiddenFromVisitor = ['Online Regulation / Document Links', 'Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Regulatory Knowledge Packs'];
+  const COLLECTIONS = 'Knowledge Collections (RAG)';
+  const KEYWORD_WORDING = 'Searches your own Knowledge Base collections by keyword during the run';
+  const VECTOR_WORDING = 'local vector search fused with keyword matching';
 
-  it('offers a visitor the model\'s own knowledge only, and calls nothing outside the demo', async () => {
+  it('offers a visitor the model\'s own knowledge and their own collections, and calls nothing outside the demo', async () => {
     as('visitor');
     await render(KnowledgeSourcePanel as ComponentType<object>, { config: everyMode, onChange: () => {}, model: GLM });
     expect(text()).toContain("The Model's Own Knowledge");
     for (const title of hiddenFromVisitor) expect(text(), title).not.toContain(title);
-    expect(called('/api/collections')).toBe(false);
     expect(called('/api/knowledge-packs')).toBe(false);
+    // Opened 2026-10-02: the visitor's own collections (GET /collections is
+    // open to them; the run searches them by keyword only — routes/claude.ts),
+    // described as the keyword search it is.
+    expect(text()).toContain(COLLECTIONS);
+    expect(text()).toContain(KEYWORD_WORDING);
+    expect(text()).not.toContain(VECTOR_WORDING);
+    expect(called('/api/collections')).toBe(true);
   });
 
   it('negative controls: an admin on the demo and everyone on an ordinary server see every mode', async () => {
@@ -226,7 +236,10 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
       await fresh();
       as(who);
       await render(KnowledgeSourcePanel as ComponentType<object>, { config: everyMode, onChange: () => {}, model: GLM });
-      for (const title of hiddenFromVisitor) expect(text(), `${who}: ${title}`).toContain(title);
+      for (const title of [...hiddenFromVisitor, COLLECTIONS]) expect(text(), `${who}: ${title}`).toContain(title);
+      // Their documents are embedded: the card says vector search.
+      expect(text(), who).toContain(VECTOR_WORDING);
+      expect(text(), who).not.toContain(KEYWORD_WORDING);
       expect(called('/api/collections'), who).toBe(true);
       expect(called('/api/knowledge-packs'), who).toBe(true);
     }

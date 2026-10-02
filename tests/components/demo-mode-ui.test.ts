@@ -173,11 +173,14 @@ describe('Sidebar', () => {
     setDemo(DEMO_CONFIG);
     await render(Sidebar as ComponentType<object>);
     const hrefs = links();
-    for (const gone of ['/missions', '/portals', '/atlas', '/workflows', '/agents', '/task-agent', '/markets', '/coding']) {
+    for (const gone of ['/missions', '/portals', '/atlas', '/workflows', '/agents', '/markets', '/coding', '/app-gateway']) {
       expect(hrefs, gone).not.toContain(gone);
     }
-    // The features opened to visitors on 2026-10-01.
-    for (const kept of ['/my-work', '/prompt', '/council', '/brief', '/build-module']) expect(hrefs, kept).toContain(kept);
+    // The features opened to visitors on 2026-10-01 and 2026-10-02.
+    for (const kept of ['/my-work', '/prompt', '/council', '/brief', '/build-module', '/task-agent', '/engagements',
+      '/discover', '/projects', '/knowledge-base', '/exchange', '/orchestration', '/intelligence', '/radar']) {
+      expect(hrefs, kept).toContain(kept);
+    }
     expect(hrefs).toContain('/');
     expect(hrefs.some((h) => h?.startsWith('/module/'))).toBe(true);
     expect(hrefs).toContain('/privacy');

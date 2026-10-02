@@ -2,6 +2,17 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { emitInternalEvent } from './event-emitter.js';
 
+/** The statuses radar_items.status takes (its CHECK constraint). */
+export const RADAR_ITEM_STATUSES = ['new', 'reviewed', 'actioned', 'dismissed', 'archived'] as const;
+export type RadarItemStatus = typeof RADAR_ITEM_STATUSES[number];
+
+export function isRadarItemStatus(v: unknown): v is RadarItemStatus {
+  return typeof v === 'string' && (RADAR_ITEM_STATUSES as readonly string[]).includes(v);
+}
+
+/** The most items one listing returns, whatever the query asks. */
+export const RADAR_ITEMS_MAX_LIMIT = 200;
+
 export async function createRegulatoryRadar(db: DatabaseAdapter) {
 
   async function getSources(activeOnly = true, category?: string) {
@@ -56,7 +67,11 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
       bindArgs.push(s, s, s);
     }
 
-    bindArgs.push(params.limit ?? 50, params.offset ?? 0);
+    const limit = typeof params.limit === 'number' && Number.isFinite(params.limit)
+      ? Math.min(RADAR_ITEMS_MAX_LIMIT, Math.max(1, Math.floor(params.limit))) : 50;
+    const offset = typeof params.offset === 'number' && Number.isFinite(params.offset)
+      ? Math.max(0, Math.floor(params.offset)) : 0;
+    bindArgs.push(limit, offset);
 
     return await db.all(`
       SELECT ri.*, rs.display_name as source_name, rs.source_type, rs.category as source_category
@@ -66,6 +81,12 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
       ORDER BY ri.relevance_score DESC, ri.published_at DESC
       LIMIT ? OFFSET ?
     `, ...bindArgs);
+  }
+
+  /** One item by id, or undefined. */
+  async function getItem(id: string): Promise<{ id: string; title: string; summary: string | null; full_text?: string | null } | undefined> {
+    return await db.get('SELECT id, title, summary, full_text FROM radar_items WHERE id = ?', id) as
+      { id: string; title: string; summary: string | null; full_text?: string | null } | undefined;
   }
 
   async function getRadarSummary() {
@@ -89,13 +110,15 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
     return { newItems, highRelevance, consultationsOpen, recentHighRelevance: recent, categoryCounts };
   }
 
-  async function updateItemStatus(id: string, status: string, userId?: string) {
+  /** Sets a shared item's status. False when there is no such item. */
+  async function updateItemStatus(id: string, status: RadarItemStatus, userId?: string): Promise<boolean> {
     if (status === 'dismissed') {
-      await db.run('UPDATE radar_items SET status = ?, dismissed_by = ?, dismissed_at = ? WHERE id = ?'
+      const r = await db.run('UPDATE radar_items SET status = ?, dismissed_by = ?, dismissed_at = ? WHERE id = ?'
       , status, userId ?? 'user', new Date().toISOString(), id);
-    } else {
-      await db.run('UPDATE radar_items SET status = ? WHERE id = ?', status, id);
+      return r.changes > 0;
     }
+    const r = await db.run('UPDATE radar_items SET status = ? WHERE id = ?', status, id);
+    return r.changes > 0;
   }
 
   async function scoreItem(id: string, relevanceScore: number, urgencyScore: number, aiSummary: string, impactAreas: string[]) {
@@ -186,7 +209,7 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
 
   return {
     getSources, createSource, updateSource, deleteSource,
-    getItems, getRadarSummary,
+    getItems, getItem, getRadarSummary,
     updateItemStatus, scoreItem, ingestManualItem,
   };
 }

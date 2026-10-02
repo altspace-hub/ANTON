@@ -11,7 +11,16 @@
  *     session children; before that, every row keyed by one of its sessions in
  *     any table with a session_id column (quality_scores, retrieval_feedback,
  *     audit_log, output_feedback, human_oversight_reviews, …);
- *   - its uploads: the files on disk and their file_uploads rows;
+ *   - its uploads: the files on disk and their file_uploads rows (run
+ *     attachments, and the Engagement Task documents, which are stored the
+ *     same way);
+ *   - its Knowledge Base and Projects (rag/demo-storage.ts
+ *     removeAccountStoredFiles): the document files under
+ *     UPLOAD_DIR/rag-documents of every document it uploaded or that sits in
+ *     a collection it made, the WORKSPACES_DIR/<project id> directory of every
+ *     project it owns, the files it added to anyone else's project, and the
+ *     rows that list them; a session someone else filed under one of its
+ *     projects is unlinked, not deleted;
  *   - the files the Transform panel wrote for its sessions
  *     (OUTPUT_DIR/renderer-artifacts/<session id>/; their rendered_artifacts
  *     rows go with the sessions);
@@ -28,7 +37,13 @@
  *     student/teacher/guardian column names it (whatever DEMO_EXTRA_ROUTES or
  *     DEMO_ENABLED_PILLARS let it write); then whatever else a foreign key to
  *     users still holds (deleted, or the reference cleared when it is someone
- *     else's row); and finally the users row.
+ *     else's row); and finally the users row. The generic pass is what takes
+ *     the features opened on 2026-10-02 that keep no file: engagements
+ *     (user_id; their documents, scope, team, iterations, quality gates and
+ *     change log go by ON DELETE CASCADE), Task Agent tasks (anton_tasks.user_id;
+ *     an attachment is kept only as extracted text), Discover interviews
+ *     (discovery_sessions.user_id; outputs and follow-ups by CASCADE),
+ *     continuity profiles and proactive insights.
  *
  * The model-spend ledger keeps its rows — the day's instance total must not
  * drop — but loses the user and session ids, and the time of day. A custom
@@ -60,6 +75,7 @@ import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../db/database.js';
 import { demoAccountTtlDays, isDemoMode } from '../middleware/demo-mode.js';
 import { resetPromptVersionCacheForTests } from './prompt-versions.js';
+import { removeAccountStoredFiles } from './rag/demo-storage.js';
 
 /** Columns that name a user as the owner or author of a row. The School ones too: DEMO_ENABLED_PILLARS=school writes them. */
 export const USER_OWNER_COLUMNS = [
@@ -217,6 +233,8 @@ export interface RetentionOptions {
   uploadDir?: string;
   /** Where exports are written. Default OUTPUT_DIR or ./outputs (as routes/export.ts). */
   outputDir?: string;
+  /** Where project workspaces live. Default WORKSPACES_DIR or ./workspaces (as services/workspace.ts). */
+  workspacesDir?: string;
   /** Also prune old audit/login rows and export files. Default true. */
   pruneTraces?: boolean;
   /** Also sweep orphans older than ORPHAN_MIN_AGE_MS (ORPHAN_STEPS). Default true. */
@@ -314,7 +332,7 @@ async function deleteDemoAccount(
   user: { id: string; username: string },
   ctx: {
     sessionTables: TableColumns[]; ownerTables: TableColumns[]; foreignKeys: BlockingForeignKey[];
-    uploadDir: string; outputDir: string; result: RetentionResult;
+    uploadDir: string; outputDir: string; workspacesDir: string; result: RetentionResult;
   },
 ): Promise<boolean> {
   const { result } = ctx;
@@ -347,6 +365,18 @@ async function deleteDemoAccount(
     }
   }
   await step('file_uploads', 'DELETE FROM file_uploads WHERE uploaded_by = ?', user.id);
+
+  // Its Knowledge Base and Projects: the files first, while the rows that
+  // name them still exist, then those rows. The generic owner pass below
+  // would delete the rows but leave every file on disk. The helper never
+  // throws; each of its steps stands alone.
+  const stored = await removeAccountStoredFiles(db, user.id, {
+    env: { ...process.env, UPLOAD_DIR: ctx.uploadDir, WORKSPACES_DIR: ctx.workspacesDir },
+  });
+  result.filesRemoved += stored.filesRemoved;
+  count('project workspaces', stored.workspacesRemoved);
+  for (const [table, n] of Object.entries(stored.rowsByTable)) count(table, n);
+  result.errors.push(...stored.errors);
 
   // The transform files of its sessions, before the sessions (and with them
   // the rows that list the files) go.
@@ -563,6 +593,7 @@ export async function runDemoRetention(db: DatabaseAdapter, opts: RetentionOptio
   const limit = opts.limit ?? 200;
   const uploadDir = opts.uploadDir ?? (process.env.UPLOAD_DIR || './uploads');
   const outputDir = opts.outputDir ?? (process.env.OUTPUT_DIR || './outputs');
+  const workspacesDir = opts.workspacesDir ?? (process.env.WORKSPACES_DIR || './workspaces');
   const now = opts.now ?? new Date();
 
   // Not an administrator: an owner who promoted a visitor's account to help
@@ -584,7 +615,7 @@ export async function runDemoRetention(db: DatabaseAdapter, opts: RetentionOptio
     const ownerTables = await tablesWithColumns(db, USER_OWNER_COLUMNS);
     const foreignKeys = await blockingForeignKeys(db).catch(() => [] as BlockingForeignKey[]);
     for (const user of expired) {
-      const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, result });
+      const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, workspacesDir, result });
       if (ok) result.deleted++; else result.failed++;
     }
   }
@@ -699,7 +730,7 @@ export interface DeleteNowResult extends RetentionResult {
 export async function deleteDemoAccountNow(
   db: DatabaseAdapter,
   userId: string,
-  opts: { uploadDir?: string; outputDir?: string } = {},
+  opts: { uploadDir?: string; outputDir?: string; workspacesDir?: string } = {},
 ): Promise<DeleteNowResult> {
   const result: DeleteNowResult = { expired: 0, deleted: 0, failed: 0, filesRemoved: 0, rowsByTable: {}, errors: [] };
   const user = await db.get<{ id: string; username: string; role: string | null; demo: boolean }>(
@@ -722,7 +753,8 @@ export async function deleteDemoAccountNow(
   const foreignKeys = await blockingForeignKeys(db).catch(() => [] as BlockingForeignKey[]);
   const uploadDir = opts.uploadDir ?? (process.env.UPLOAD_DIR || './uploads');
   const outputDir = opts.outputDir ?? (process.env.OUTPUT_DIR || './outputs');
-  const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, result });
+  const workspacesDir = opts.workspacesDir ?? (process.env.WORKSPACES_DIR || './workspaces');
+  const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, workspacesDir, result });
   if (ok) result.deleted++; else result.failed++;
   forgetDeletedPromptVersions(result.rowsByTable);
   return result;

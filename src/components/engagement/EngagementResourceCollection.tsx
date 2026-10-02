@@ -14,6 +14,7 @@ import {
 import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, Resource } from '@/pages/EngagementWorkspacePage';
 import EngagementPeerBenchmarks from './EngagementPeerBenchmarks';
+import { useEngagementDemo, responseErrorMessage, errorText, safeHttpUrl, VISITOR_UPLOAD_ACCEPT } from './engagement-demo';
 
 interface Props {
   engagement: EngagementData;
@@ -60,6 +61,11 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
   const [ragIndexing, setRagIndexing] = useState(false);
   const [ragIndexResult, setRagIndexResult] = useState<{ chunkCount?: number; fileCount?: number } | null>(null);
   const [ragError, setRagError] = useState<string | null>(null);
+  // Uploads and links: the server's own sentence when it refuses one (the
+  // demo upload quota, a file type, a link that is not http(s)).
+  const [addError, setAddError] = useState<string | null>(null);
+  // Public demo: a visitor has no folder on the server to index.
+  const demo = useEngagementDemo();
 
   const categoryStatuses: Record<string, CategoryStatus> = {};
   for (const cat of CATEGORIES) {
@@ -69,16 +75,20 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
 
   async function uploadResource(category: Resource['category'], file: File) {
     setUploading(category);
+    setAddError(null);
     try {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('category', category);
       fd.append('title', file.name);
-      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
         body: fd,
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
+    } catch (e) {
+      setAddError(`Upload failed: ${errorText(e)}`);
     } finally {
       setUploading(null);
     }
@@ -87,14 +97,18 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
   async function addUrlResource(category: Resource['category']) {
     if (!urlInput.trim()) return;
     setAddingUrlLoading(true);
+    setAddError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, url: urlInput.trim(), title: urlTitle.trim() || urlInput.trim() }),
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       setUrlInput(''); setUrlTitle(''); setAddingUrl(null);
       onReload();
+    } catch (e) {
+      setAddError(`Could not add the link: ${errorText(e)}`);
     } finally {
       setAddingUrlLoading(false);
     }
@@ -123,7 +137,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
       setRagIndexResult({ chunkCount: data.chunkCount, fileCount: data.fileCount });
       onReload();
     } catch (e) {
-      setRagError(String(e));
+      setRagError(errorText(e));
     } finally {
       setRagIndexing(false);
     }
@@ -147,7 +161,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
       if (!res.ok) { setRagError(data.error || 'Reindex failed'); return; }
       setRagIndexResult({ chunkCount: data.chunkCount, fileCount: data.fileCount });
     } catch (e) {
-      setRagError(String(e));
+      setRagError(errorText(e));
     } finally {
       setRagIndexing(false);
     }
@@ -186,6 +200,13 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
           })}
         </div>
       </div>
+
+      {addError && (
+        <p role="alert" className="text-sm text-adv-red flex items-center gap-1.5">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {addError}
+        </p>
+      )}
 
       {/* Category panels */}
       {CATEGORIES.map(cat => {
@@ -309,7 +330,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                   ref={el => { inputRefs.current[cat.id] = el; }}
                   type="file"
                   className="hidden"
-                  accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.py,.js,.ts"
+                  accept={demo.restricted ? VISITOR_UPLOAD_ACCEPT : '.pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.py,.js,.ts'}
                   onChange={e => {
                     const f = e.target.files?.[0];
                     if (f) uploadResource(cat.id, f);
@@ -322,7 +343,8 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
         );
       })}
 
-      {/* RAG Knowledge Directory */}
+      {/* RAG Knowledge Directory — a folder on the server; never offered on a public demo */}
+      {!demo.restricted && (
       <div className="bg-adv-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4">
           <FolderSearch className="h-4 w-4 text-adv-teal shrink-0" />
@@ -407,6 +429,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
           )}
         </div>
       </div>
+      )}
 
       {/* Knowledge Sources (Mode 5a, 5b, 6) */}
       <EngagementKnowledgeSources engagement={engagement} onReload={onReload} />
@@ -452,6 +475,9 @@ function ResourceRow({ resource, engagementId, onReload }: { resource: Resource;
   }
 
   const isUrl = !!resource.url && !resource.file_path;
+  // Only an http(s) address becomes a link: a stored javascript: or data: URL
+  // would run in the browser of whoever opens it (an admin included).
+  const link = isUrl ? safeHttpUrl(resource.url) : null;
 
   return (
     <div className="flex items-center gap-3 bg-adv-dark-2 rounded-lg px-3 py-2">
@@ -460,13 +486,13 @@ function ResourceRow({ resource, engagementId, onReload }: { resource: Resource;
         : <FileText className="h-3.5 w-3.5 text-adv-teal shrink-0" />
       }
       <span className="flex-1 text-xs text-adv-off-white truncate">{resource.title}</span>
-      {isUrl && resource.url && (
+      {link && (
         <a
-          href={resource.url} target="_blank" rel="noopener noreferrer"
+          href={link.toString()} target="_blank" rel="noopener noreferrer"
           className="text-xs text-adv-blue hover:text-adv-teal transition-colors shrink-0 truncate max-w-[120px]"
-          title={resource.url}
+          title={link.toString()}
         >
-          {new URL(resource.url).hostname}
+          {link.hostname}
         </a>
       )}
       {resource.status === 'reviewed' && <CheckCircle className="h-3 w-3 text-adv-green shrink-0" />}
@@ -505,12 +531,17 @@ function EngagementKnowledgeSources({ engagement, onReload }: { engagement: Enga
   const [packs, setPacks] = useState<KnowledgePack[]>([]);
   const [indexedFolders, setIndexedFolders] = useState<Array<{ path: string; file_count: number }>>([]);
   const [saving, setSaving] = useState(false);
+  // Public demo: the demo's models cannot search the web, and a visitor has no
+  // indexed folders on the server — neither is offered (the server refuses a
+  // run with web search on, and never reads a folder for a visitor).
+  const demo = useEngagementDemo();
 
   // Load knowledge packs + indexed folders on mount
   useEffect(() => {
     fetchWithAuth('/api/knowledge-packs').then(r => r.json()).then((d: KnowledgePack[]) => setPacks(Array.isArray(d) ? d : [])).catch(() => {});
+    if (demo.restricted) return;
     fetchWithAuth('/api/folders/registered').then(r => r.json()).then((d: Array<{ path: string; file_count: number }>) => setIndexedFolders(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
+  }, [demo.restricted]);
 
   async function saveConfig(updated: KnowledgeConfig) {
     setConfig(updated);
@@ -528,7 +559,10 @@ function EngagementKnowledgeSources({ engagement, onReload }: { engagement: Enga
   }
 
   const activePacks = packs.filter(p => p.is_active);
-  const enabledCount = [config.webSearchEnabled, config.indexedKBEnabled, config.knowledgePacksEnabled].filter(Boolean).length;
+  const enabledCount = [config.webSearchEnabled, config.indexedKBEnabled && !demo.restricted, config.knowledgePacksEnabled].filter(Boolean).length;
+  // A visitor may still switch web search OFF (an engagement saved with it on
+  // is refused at execution), never on.
+  const webSearchLocked = demo.restricted && !config.webSearchEnabled;
 
   return (
     <div className="bg-adv-card border border-border rounded-xl overflow-hidden">
@@ -546,15 +580,26 @@ function EngagementKnowledgeSources({ engagement, onReload }: { engagement: Enga
       <div className="border-t border-border p-4 space-y-3">
         {/* Web Search */}
         <div
-          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-            config.webSearchEnabled ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/30'
+          role="checkbox"
+          aria-checked={!!config.webSearchEnabled}
+          aria-disabled={webSearchLocked}
+          className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+            webSearchLocked ? 'border-border opacity-60 cursor-not-allowed' : 'cursor-pointer'
+          } ${
+            config.webSearchEnabled ? 'border-adv-teal bg-adv-teal-dim' : webSearchLocked ? '' : 'border-border hover:border-adv-teal/30'
           }`}
-          onClick={() => saveConfig({ ...config, webSearchEnabled: !config.webSearchEnabled })}
+          onClick={() => { if (!webSearchLocked) saveConfig({ ...config, webSearchEnabled: !config.webSearchEnabled }); }}
         >
           <Globe className={`h-4 w-4 mt-0.5 shrink-0 ${config.webSearchEnabled ? 'text-adv-teal' : 'text-adv-gray'}`} />
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-medium ${config.webSearchEnabled ? 'text-adv-teal' : 'text-adv-off-white'}`}>Web Search</p>
-            <p className="text-xs text-adv-gray">Claude searches the internet for latest regulatory publications during execution.</p>
+            <p className="text-xs text-adv-gray">
+              {demo.restricted
+                ? config.webSearchEnabled
+                  ? 'The models on this demo cannot search the web: execution is refused while this is on. Click to switch it off.'
+                  : 'Not available on this demo: its models cannot search the web, so a deliverable here has no web sources.'
+                : 'The model searches the internet for latest regulatory publications during execution (Claude models only — on other models the run is refused while this is on).'}
+            </p>
           </div>
           <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center ${config.webSearchEnabled ? 'bg-adv-teal border-adv-teal' : 'border-adv-gray-med'}`}>
             {config.webSearchEnabled && <CheckCircle className="h-3 w-3 text-adv-dark" />}
@@ -572,7 +617,8 @@ function EngagementKnowledgeSources({ engagement, onReload }: { engagement: Enga
           </div>
         )}
 
-        {/* Indexed Knowledge Base (Mode 5a) */}
+        {/* Indexed Knowledge Base (Mode 5a) — folders on the server; not on a public demo */}
+        {!demo.restricted && (
         <div
           className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
             config.indexedKBEnabled ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/30'
@@ -594,6 +640,7 @@ function EngagementKnowledgeSources({ engagement, onReload }: { engagement: Enga
             {config.indexedKBEnabled && <CheckCircle className="h-3 w-3 text-adv-dark" />}
           </div>
         </div>
+        )}
 
         {/* Regulatory Knowledge Packs (Mode 6) */}
         <div

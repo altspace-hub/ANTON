@@ -10,6 +10,7 @@ import {
   ChevronRight, X, RefreshCw, Briefcase
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import type { EngagementData, EngagementDocument } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -40,7 +41,7 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
         method: 'POST',
         body: fd,
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       const created = await res.json().catch(() => null) as { id?: string } | null;
       onReload();
       // Extract straight away for the documents that define the engagement —
@@ -50,7 +51,7 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
         await extractDoc(created.id, docType);
       }
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
     } finally {
       setUploading(null);
     }
@@ -65,10 +66,10 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onReload();
     } catch (e) {
-      setError(`Extraction failed: ${String(e)}`);
+      setError(`Extraction failed: ${errorText(e)}`);
     } finally {
       setExtracting(null);
     }

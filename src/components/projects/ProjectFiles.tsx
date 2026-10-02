@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Upload, FileText, Download, Trash2, FolderOpen, X } from 'lucide-react';
+import { Upload, FileText, Download, Trash2, FolderOpen } from 'lucide-react';
+import { fetchWithAuth, errorMessageOf } from '@/lib/api';
 
 interface ProjectFile {
   id: string;
@@ -43,6 +44,7 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchFiles = useCallback(async () => {
     try {
@@ -59,33 +61,36 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
   async function handleUpload(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     setUploading(true);
+    setError(null);
     try {
       const formData = new FormData();
       for (let i = 0; i < fileList.length; i++) {
         formData.append('files', fileList[i]);
       }
-      await fetch(`/api/projects/${projectId}/files`, {
+      const res = await fetchWithAuth(`/api/projects/${encodeURIComponent(projectId)}/files`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: formData,
       });
+      // The server's own sentence: an upload limit reached, a file type not taken.
+      if (!res.ok) setError(await errorMessageOf(res, 'The files could not be uploaded.'));
       fetchFiles();
-    } catch (err) {
-      console.error('[project-files] upload error:', err);
+    } catch {
+      setError('The files could not be uploaded. Check the connection and try again.');
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDelete(fileId: string) {
+    setError(null);
     try {
-      await fetch(`/api/projects/${projectId}/files/${fileId}`, {
+      const res = await fetchWithAuth(`/api/projects/${encodeURIComponent(projectId)}/files/${encodeURIComponent(fileId)}`, {
         method: 'DELETE',
-        headers: getAuthHeader(),
       });
+      if (!res.ok) { setError(await errorMessageOf(res, 'The file could not be deleted.')); return; }
       setFiles(prev => prev.filter(f => f.id !== fileId));
-    } catch (err) {
-      console.error('[project-files] delete error:', err);
+    } catch {
+      setError('The file could not be deleted. Check the connection and try again.');
     }
   }
 
@@ -146,13 +151,15 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
         </label>
       </div>
 
+      {error && <p role="alert" className="mb-3 text-sm text-adv-red">{error}</p>}
+
       {/* File list */}
       {files.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-6 text-center">
           <FolderOpen className="mx-auto mb-2 h-8 w-8 text-adv-gray" />
           <p className="text-sm text-adv-gray">No files uploaded yet</p>
           <p className="mt-1 text-xs text-adv-gray">
-            Upload documents to share with your team and use in modules
+            Upload documents to use in this project's chats and module runs
           </p>
         </div>
       ) : (
@@ -174,15 +181,17 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
                   onClick={() => handleDownload(file.id, file.original_name)}
                   className="rounded p-1.5 text-adv-gray hover:text-adv-teal transition-colors"
                   title="Download"
+                  aria-label={`Download ${file.original_name}`}
                 >
-                  <Download className="h-4 w-4" />
+                  <Download className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => handleDelete(file.id)}
                   className="rounded p-1.5 text-adv-gray hover:text-adv-red transition-colors"
                   title="Delete"
+                  aria-label={`Delete ${file.original_name}`}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -195,7 +204,7 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
         <div className="mt-4 flex items-center gap-2 rounded-lg border border-adv-teal/20 bg-adv-teal-dim/20 px-3 py-2">
           <FolderOpen className="h-4 w-4 shrink-0 text-adv-teal" />
           <p className="text-xs text-adv-teal">
-            These files are available as a Knowledge Source in any module. Look for "Project: {projectName}" in Local Folders.
+            Chats and module runs filed under "{projectName}" read these files (the ten newest documents) with each answer.
           </p>
         </div>
       )}

@@ -21,12 +21,20 @@
  * Everything here is opt-in, admin-or-solo, and dry-run capable: the same
  * selection SQL runs in both modes, and `dryRun: true` returns what WOULD be
  * touched without touching it.
+ *
+ * On a public demo (DEMO_MODE=true) a visitor's documents are never embedded
+ * (document-indexer.ts, rag/demo-storage.ts): their text must not reach an
+ * embedding service the privacy notice does not name. An administrator's
+ * maintenance run keeps that promise — pass 1 re-indexes without vectors, and
+ * pass 2 and re-embed take only documents an administrator (or nobody, the
+ * legacy rows) uploaded (VISITOR_DOCS_EXCLUDED).
  */
 
 import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { getEmbeddingAdapter, type EmbeddingAdapter } from '../embedding-adapter.js';
 import { reindexDocument as reindexDocumentImpl, type IndexDocumentResult } from '../document-indexer.js';
+import { isDemoMode } from '../../middleware/demo-mode.js';
 import {
   RAG_CHUNK_CONTENT_TYPE,
   deleteCollectionChunkEmbeddings,
@@ -105,6 +113,10 @@ export interface MaintenanceDeps {
 
 // ── Selection SQL (exported so the dry run and the report show the same text) ──
 
+/** On a demo: only documents an administrator uploaded, or legacy ones with no uploader. Alias d = rag_documents. */
+export const VISITOR_DOCS_EXCLUDED =
+  "\n             AND (d.uploaded_by IS NULL OR d.uploaded_by IN (SELECT u.id FROM users u WHERE u.role = 'admin'))";
+
 /** Params: olderThanMinutes, [collectionId], limit. */
 export function stuckDocumentsSql(withCollection: boolean): string {
   return `SELECT d.id, d.collection_id, d.filename, d.file_path, d.uploaded_at, d.chunk_count,
@@ -116,8 +128,8 @@ export function stuckDocumentsSql(withCollection: boolean): string {
            LIMIT ?`;
 }
 
-/** Params: RAG_CHUNK_CONTENT_TYPE, model, [collectionId], limit. */
-export function unembeddedChunksSql(withCollection: boolean): string {
+/** Params: RAG_CHUNK_CONTENT_TYPE, model, [collectionId], limit. Visitors' documents are left out on a demo. */
+export function unembeddedChunksSql(withCollection: boolean, visitorsExcluded: boolean = isDemoMode()): string {
   return `SELECT c.id, c.content, c.metadata, c.document_id, c.chunk_index, d.collection_id, d.filename
             FROM rag_chunks c
             JOIN rag_documents d ON d.id = c.document_id
@@ -125,13 +137,13 @@ export function unembeddedChunksSql(withCollection: boolean): string {
              AND NOT EXISTS (
                SELECT 1 FROM embeddings e
                 WHERE e.content_type = ? AND e.content_id = c.id AND e.embedding_model = ?
-             )${withCollection ? '\n             AND d.collection_id = ?' : ''}
+             )${withCollection ? '\n             AND d.collection_id = ?' : ''}${visitorsExcluded ? VISITOR_DOCS_EXCLUDED : ''}
            ORDER BY d.uploaded_at ASC, c.chunk_index ASC
            LIMIT ?`;
 }
 
-/** Params: RAG_CHUNK_CONTENT_TYPE, model, [collectionId]. */
-export function unembeddedByCollectionSql(withCollection: boolean): string {
+/** Params: RAG_CHUNK_CONTENT_TYPE, model, [collectionId]. Visitors' documents are left out on a demo. */
+export function unembeddedByCollectionSql(withCollection: boolean, visitorsExcluded: boolean = isDemoMode()): string {
   return `SELECT d.collection_id, COUNT(*) AS chunks
             FROM rag_chunks c
             JOIN rag_documents d ON d.id = c.document_id
@@ -139,7 +151,7 @@ export function unembeddedByCollectionSql(withCollection: boolean): string {
              AND NOT EXISTS (
                SELECT 1 FROM embeddings e
                 WHERE e.content_type = ? AND e.content_id = c.id AND e.embedding_model = ?
-             )${withCollection ? '\n             AND d.collection_id = ?' : ''}
+             )${withCollection ? '\n             AND d.collection_id = ?' : ''}${visitorsExcluded ? VISITOR_DOCS_EXCLUDED : ''}
            GROUP BY d.collection_id
            ORDER BY chunks DESC`;
 }
@@ -199,7 +211,10 @@ export async function reindexStuck(
   deps: MaintenanceDeps = {},
 ): Promise<ReindexStuckResult> {
   const adapter = deps.adapter ?? getEmbeddingAdapter();
-  const reindex = deps.reindexDocument ?? reindexDocumentImpl;
+  // On a demo pass 1 stores chunks without vectors; pass 2 then embeds the
+  // administrators' documents among them and leaves the visitors' alone.
+  const reindex = deps.reindexDocument
+    ?? ((d: DatabaseAdapter, id: string, collectionId: string) => reindexDocumentImpl(d, id, collectionId, undefined, { embed: !isDemoMode() }));
   const embed = deps.embedChunks ?? embedRagChunks;
   const plan = await planStuckReindex(db, options, { ...deps, adapter });
 
@@ -295,7 +310,7 @@ export async function reembedCollection(
     `SELECT c.id, c.content, c.metadata, c.document_id, c.chunk_index, d.collection_id, d.filename
        FROM rag_chunks c
        JOIN rag_documents d ON d.id = c.document_id
-      WHERE d.collection_id = ?
+      WHERE d.collection_id = ?${isDemoMode() ? VISITOR_DOCS_EXCLUDED : ''}
       ORDER BY d.id, c.chunk_index`,
     collectionId,
   );

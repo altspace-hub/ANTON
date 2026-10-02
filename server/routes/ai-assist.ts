@@ -13,6 +13,8 @@ import { Router, Request, Response } from 'express';
 import { callChat } from '../services/provider-router.js';
 import { modelCallErrorStatus } from '../services/side-route-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
+import { findCandidateModules, formatCandidatesForPrompt, type CandidateModule } from '../services/module-recommendation.js';
+import { isDemoMode, demoModuleHidden } from '../middleware/demo-mode.js';
 
 /** Set by the factory; lets an azure:/compat: default resolve its endpoint. */
 let routesDb: DatabaseAdapter | undefined;
@@ -119,6 +121,40 @@ export function normaliseProjectScaffold(raw: unknown, allowedIds: readonly stri
     phases: phases.slice(0, 12),
     successCriteria: asList(obj.successCriteria).map((c) => asText(c)).filter(Boolean).slice(0, 12),
   };
+}
+
+/** How many modules the project scaffold puts in front of the model. */
+export const PROJECT_SCAFFOLD_CANDIDATES = 30;
+
+const MODULE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,99}$/i;
+
+/**
+ * The modules the project scaffold may recommend, chosen on the server: the
+ * catalogue ranked against the project's name and goal (findCandidateModules,
+ * the keyword pre-filter Discover and the Task Agent use), so the list is
+ * relevant rather than the first 30 in catalogue order. `offeredIds` is the
+ * page's own catalogue (the modules this person is shown): when given, only
+ * those stay. On a public demo a visitor never gets a module the demo keeps
+ * off (demoModuleHidden: DEMO_HIDDEN_MODULES / DEMO_HIDDEN_AREAS), whatever
+ * the page sent; an admin, as everywhere on the demo, gets every module.
+ */
+export async function projectScaffoldCandidates(
+  req: { user?: { role?: string } },
+  text: string,
+  offeredIds: unknown,
+  limit: number = PROJECT_SCAFFOLD_CANDIDATES,
+): Promise<CandidateModule[]> {
+  const offered = new Set(
+    (Array.isArray(offeredIds) ? offeredIds : [])
+      .slice(0, 5000)
+      .filter((id): id is string => typeof id === 'string' && MODULE_ID_RE.test(id)),
+  );
+  const visitor = isDemoMode() && req.user?.role !== 'admin';
+  const ranked = await findCandidateModules(text, Number.MAX_SAFE_INTEGER);
+  return ranked
+    .filter((m) => offered.size === 0 || offered.has(m.id))
+    .filter((m) => !visitor || !demoModuleHidden(m.id, m.areaId))
+    .slice(0, Math.max(0, limit));
 }
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -421,10 +457,13 @@ What are the meaningful differences?`
     try {
       const name = bodyText(req.body?.name, 200);
       const goal = bodyText(req.body?.goal, 2000);
-      const availableModuleIds = (Array.isArray(req.body?.availableModuleIds) ? req.body.availableModuleIds as unknown[] : [])
-        .filter((id): id is string => typeof id === 'string' && /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(id))
-        .slice(0, 30);
       if (!name) return res.status(400).json({ error: 'name required' });
+      // The modules to choose from: the catalogue ranked against the project
+      // (not the first 30 ids the page sent), limited to the ones the page
+      // offers, and on a demo never one kept off it for a visitor. The model
+      // may recommend only these; with none, it recommends nothing.
+      const candidates = await projectScaffoldCandidates(req, `${name}\n${goal}`, req.body?.availableModuleIds);
+      const candidateIds = candidates.map((m) => m.id);
 
       // The shape ProjectsPage reads (recommended modules with a reason, and
       // milestones), normalised whatever the model returns: the page crashed
@@ -442,11 +481,13 @@ Return one JSON object:
 dayOffset is the number of days from today. Return ONLY the JSON object. Pick recommendedModules from the available list only.`,
         `Project: "${name}"
 ${goal ? `Goal: ${goal}` : ''}
-${availableModuleIds.length ? `Available modules: ${availableModuleIds.join(', ')}` : ''}
+${candidates.length ? `Available modules (id: name — description):\n${formatCandidatesForPrompt(candidates)}` : 'No modules are available: return an empty recommendedModules list.'}
 Suggest project structure, phases, 3-6 milestones, and up to 4 relevant modules.`,
         { jsonMode: true, purpose: 'project-scaffold', chargeUser: req.user },
       );
-      res.json(normaliseProjectScaffold(data, availableModuleIds));
+      const scaffold = normaliseProjectScaffold(data, candidateIds);
+      // normaliseProjectScaffold keeps any id when the allowed list is empty.
+      res.json(candidateIds.length > 0 ? scaffold : { ...scaffold, recommendedModules: [] });
     } catch (err) {
       console.error('[ai-assist/project-scaffold]', err instanceof Error ? err.message : 'error');
       res.status(modelCallErrorStatus(err)).json({ error: publicErrorMessage(err) });

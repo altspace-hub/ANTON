@@ -129,7 +129,7 @@ A free-disk alert, `/etc/cron.d/anton-disk` — every 15 minutes, a journal line
 ```
 
 - **Watch for `anton-disk`** in the journal (`journalctl -t anton-disk`), or point your monitoring at it.
-- **ANTON also caps each visitor:** `DEMO_USER_UPLOAD_MB` and `DEMO_USER_UPLOAD_FILES` per account, and `DEMO_USER_WRITES_PER_10_MIN` uploads, exports and version saves per account (section 7). The separate filesystem is the backstop when many accounts are used at once.
+- **ANTON also caps each visitor:** `DEMO_USER_UPLOAD_MB` and `DEMO_USER_UPLOAD_FILES` per account, `DEMO_USER_WRITES_PER_10_MIN` uploads, exports and version saves per account, and `DEMO_USER_EDITS_PER_10_MIN` small engagement edits (section 7). The separate filesystem is the backstop when many accounts are used at once.
 
 ## 3. Node 22, pnpm, PostgreSQL 16, Ollama
 
@@ -406,20 +406,30 @@ Do not add NextBit back to `only`, and do not swap `only` for `order` with fallb
   - their own sessions, uploads, exports and ratings;
   - the module catalogue;
   - the settings the page reads;
-  - the Work tools: My Work, Explain for, the citation check, Review, Rerun with another model, the Transform panel, Find the right module, the AI Council's dissent ledger and Build Module (their own modules, the guided builder and its test run). Each route is listed exactly, so a sibling stays closed: community sharing of a module, the `.anton` export, `/reviews/orchestrate` and the rest of `/ai-assist` answer 404.
+  - the Work tools: My Work, Explain for, the citation check, Review, Rerun with another model, the Transform panel, Find the right module, the AI Council's dissent ledger and Build Module (their own modules, the guided builder and its test run). Each route is listed exactly, so a sibling stays closed: community sharing of a module, `/reviews/orchestrate` and the rest of `/ai-assist` answer 404;
+  - the features opened on 2026-10-02, each holding the visitor's own rows only (the routes check the owner in SQL, and another visitor's row answers 404):
+    - **Engagement Tasks.** Closed: the host-folder index (`rag-directory`), linking a project, and the web-search benchmark. A step that needs web search is refused with a sentence that says why. The list is `ENGAGEMENT_WORK_ROUTES` in `server/services/engagement-demo-routes.ts`.
+    - **Projects**, their files and notes, filing a session under one, and the AI Scaffold button. Sharing (members, invitations) is refused. A visitor keeps at most 25 projects and 200 notes.
+    - **The Knowledge Base**: their own collections (at most 25) and documents. A visitor's documents and queries are never embedded: search is by keyword only. Collection edits, queries, re-indexing and maintenance stay closed.
+    - **The ANTON Task Agent.** Running a task as a mission, completing it with a score, the backfill and the webhook intake stay closed. Hidden modules are never planned or run.
+    - **Discover.** Writing interview state directly, status changes, the follow-up list and single packs stay closed. The healthcare pack is hidden.
+    - **Orchestration, Intelligence and Horizon Radar, read only**: the visitor's own insights and continuity profiles, the organisation context, the visitor's own and the shared knowledge, and the shared radar feed. Triage, sources, scans, settings, patterns, the A/B and memory switches and the Intelligence Brief stay with admins. With learning off, Intelligence shows only knowledge the operator has shared.
+    - **Exchange**: the `.anton` download of a module the visitor built, always unsigned. Imports, validation, the bundle exports and the signing identity stay closed.
+  - Coding and the App Gateway stay closed.
 - **The answer tools call the model.** A visitor gets the model asked for only when `DEMO_OFFERED_MODELS` lists it, else the default (Review and Rerun preselect another offered model than the one that answered, so a second model checks the first). Their tokens count against the visitor's monthly budget, and each counts against `DEMO_USER_WRITES_PER_10_MIN` and the per-address model-call limiter.
+- **So do the features of 2026-10-02.** The engagement steps, the Task Agent's chat and steps, Discover's turns, insights and report, the AI Scaffold button and Intelligence's "Generate insights" check the monthly budget first and are charged after. The model steps that also store something (engagement steps, the Discover report, AI Scaffold, Generate insights) count against `DEMO_USER_WRITES_PER_10_MIN`, as do an engagement's creation, uploads and export; every other engagement write (scope items, workstreams, the team, client intelligence, each change or deletion) counts against `DEMO_USER_EDITS_PER_10_MIN`, and a visitor keeps at most 200 scope items, 50 workstreams, 50 team members and 100 resources in one engagement; the conversational turns (Task Agent chat and steps, Discover answers) count against the per-address model-call limiter only, as Open Chat does. `server/index.ts` mounts the limiters, path by path.
 - **Transform files are deleted.** The Transform panel writes files under `OUTPUT_DIR/renderer-artifacts/<session>/`. They go when the visitor deletes the session or the account expires, and the daily pass also removes those of sessions that no longer exist and a visitor's older than `DEMO_ACCOUNT_TTL_DAYS`.
 - **Everything else** answers 404: other pillars, agents, data import, Code Studio, Settings changes. The list is `WORK_ROUTES` in `server/middleware/demo-mode.ts`.
 - **Hidden modules.** Areas in `DEMO_HIDDEN_AREAS` and modules in `DEMO_HIDDEN_MODULES` are left out of the catalogue for visitors (the server's listings, the community modules and, from the lists in `/api/config`, the web client's catalogue), and a run of one is refused. They invite health, employment, credit or criminal-offence data, which the demo must not receive, and the privacy notice says the demo does not offer them.
   - **The recommended lists are built in.** With both settings left out, demo mode hides the areas health, community health, HR and workers' rights, and the modules on credit risk and credit scoring (`credit-risk`, `fintech-credit-risk-assessment`, `microfinance-credit-scoring`, `credit-score-builder`), CV writing (`cv-writer`), employment and social protection (`employment-rights`, `social-protection-navigator`), and criminal law and investigations (`court-process-demystifier`, `alert-investigation`, `investigation-support`, `ivts-detection-investigation`, `blockchain-investigation`, `investigative-research`, `sar-quality-check`, `daily-screening-review`, `sanctions-advisory`). The rest of the `fcp` area stays open. `.env.demo.example` repeats the lists.
   - **A list you set replaces the built-in one.** The server warns at start about each recommended id it leaves out. `none` turns a list off.
-- **Storage per visitor is capped.** An upload that would take an account past `DEMO_USER_UPLOAD_MB` or `DEMO_USER_UPLOAD_FILES` is refused before it is written. Uploads, exports, version saves, saved modules and the answer tools are also limited to `DEMO_USER_WRITES_PER_10_MIN` per account.
+- **Storage per visitor is capped.** An upload that would take an account past `DEMO_USER_UPLOAD_MB` or `DEMO_USER_UPLOAD_FILES` is refused before it is written. It is one total over everything the account keeps: run attachments, engagement files, project files, Knowledge Base documents and Task Agent attachments. Before a visitor's file is stored, its bytes must match its extension, and an Office file (a ZIP archive) may expand to at most `ZIP_MAX_EXPANSION_RATIO` (100) times its size and 100 MB when read; each entry is really inflated to check, so an archive that misstates its sizes is caught too. Uploads, exports, version saves, saved modules, new projects, collections, engagements, tasks and interviews, and the answer tools are also limited to `DEMO_USER_WRITES_PER_10_MIN` per account.
 - **Administrators** are not restricted.
 
 Opening more:
 
 - **`DEMO_ENABLED_PILLARS`** turns on pillars besides Work, e.g. `pathfinder`. Each adds its API prefix and appears in the pillar switch and the sidebar.
-- **`DEMO_EXTRA_ROUTES`** adds API prefixes, each optionally limited to methods, e.g. `/discovery`. An entry is a prefix: `POST:/projects` also opens every POST below `/projects` (members, invitations). Most features call the model, so they spend budget.
+- **`DEMO_EXTRA_ROUTES`** adds API prefixes, each optionally limited to methods, e.g. `/evidence-packs`. An entry is a prefix: it opens every route below it, siblings included, whether or not that route checks who is asking. Most features call the model, so they spend budget.
 - Anything you open is processing the privacy notice has to describe. Check the notice before you open it.
 
 ## 7. The demo settings
@@ -438,6 +448,7 @@ Opening more:
 | `DEMO_USER_UPLOAD_MB` | 50 | Megabytes of uploads one account may keep (0 = no cap). |
 | `DEMO_USER_UPLOAD_FILES` | 50 | Uploaded files one account may keep (0 = no cap). |
 | `DEMO_USER_WRITES_PER_10_MIN` | 30 | Uploads, exports, version saves, saved modules and answer-tool requests per account per 10 minutes. |
+| `DEMO_USER_EDITS_PER_10_MIN` | 300 | Small engagement edits (scope items, workstreams, team, client intelligence, each change or deletion) per account per 10 minutes. |
 | `DEMO_OFFERED_MODELS` | — | Full model ids the picker offers visitors. |
 | `DEMO_HIDDEN_AREAS` | the recommended list | Area ids kept off the demo for visitors (section 6). `none` turns it off; warned about at start when both lists are `none`, or when a list leaves out a recommended id. |
 | `DEMO_HIDDEN_MODULES` | the recommended list | Module ids kept off the demo for visitors (section 6). `none` turns it off. |
@@ -474,6 +485,7 @@ OpenRouter's activity page shows the same from their side.
 The privacy notice states how long each of these is kept. Configure exactly that, and change the notice if you configure something else.
 
 - **Accounts are deleted after the TTL.** `server/services/demo-retention.ts` runs this 5 minutes after start and then every 24 hours. It logs a line `[demo-retention] expired=… deleted=…`; the line carries counts, never ids.
+- **What an expired account takes with it.** Its sessions and everything keyed by them, its uploads (run attachments and engagement documents, in `UPLOAD_DIR`), its Knowledge Base documents (`UPLOAD_DIR/rag-documents`), the `WORKSPACES_DIR/<project id>` directory of each project it owns, and every row it owns: engagements, tasks, interviews, projects, collections and the rest. A session another account filed under one of its projects is unlinked, not deleted. `tests/services/demo-retention-features.db.test.ts` checks this.
 - **The spend ledger keeps its rows** without the person, so the day's total does not drop. A custom module a visitor shared with the community stays too, without its author.
 - **An account retention cannot delete** (a table still refers to it) is switched off and tried again the next day, after the newer expiries. The log names the constraint that held it: `[demo-retention] … users(23503 <constraint>)`.
 - **Backups hold visitors' data too.** Keep 7 days, readable by nobody but the `anton` user, and encrypted to a key that is not on the VM:

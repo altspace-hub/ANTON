@@ -149,6 +149,117 @@ describe('POST /engagements/:id/quality-gate/run', () => {
   });
 });
 
+/**
+ * Replies of the showcase's models (GLM, DeepSeek, Kimi): fenced, wrapped in a
+ * sentence, or cut off at the token limit. Before 2026-10-02 a reply with no
+ * readable JSON was stored as { raw } and counted as passed — left out of the
+ * failed checks and of the score — so a cut-off scope check dropped out and
+ * the gate could say release-ready with the scope never checked.
+ */
+describe('quality gate replies from weaker models', () => {
+  const FENCE = '```';
+  const GOOD_SCOPE = '{"score": 92, "addressed": ["A"], "partial": [], "missing": [], "notes": ""}';
+  const GOOD_CONSISTENCY = '{"score": 88, "conflicts": [], "notes": ""}';
+  const GOOD_LENS = '{"verdict":"positive","key_points":["ok"],"top_concern":""}';
+
+  function replies(over: { scope?: string; consistency?: string; lens?: string } = {}): void {
+    callChatMock.mockImplementation(async (opts: { system?: string; messages: Array<{ content: string }> }) => {
+      const system = String(opts.system ?? '');
+      const reply = (text: string) => ({ text, thinking: '', inputTokens: 1, outputTokens: 1 });
+      if (/executive summaries/.test(system)) return reply('Summary.');
+      if (/perspective of a Pragmatist/.test(system)) return reply(over.lens ?? GOOD_LENS);
+      if (/perspective of a/.test(system)) return reply(GOOD_LENS);
+      if (/Assess whether/.test(opts.messages[0].content)) return reply(over.scope ?? GOOD_SCOPE);
+      return reply(over.consistency ?? GOOD_CONSISTENCY);
+    });
+  }
+
+  const UNREADABLE = "The reviewer's answer could not be read — re-run this check.";
+
+  it('a scope check cut off mid-answer is a failed check: the gate is partial, never release-ready', async () => {
+    replies({ scope: `${FENCE}json\n{"score": 40, "addressed": ["Scope 1", "Scope 2"], "partial": [], "missing": ["Sanctions screening calibr` });
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await handler(db, '/:id/quality-gate/run'))(req(), res);
+
+    const evts = frames(res);
+    const scopeError = evts.find((e) => e.type === 'check_error' && e.check === '8A');
+    expect(scopeError?.error).toBe(UNREADABLE);
+    expect(evts.some((e) => e.type === 'check_done' && e.check === '8A')).toBe(false);
+    const done = evts.find((e) => e.type === 'done');
+    expect(done?.release_ready).toBe(false);
+    expect(done?.failed_checks).toEqual(['8A']);
+    expect(done?.status).toBe('partial');
+    // The score is the checks that were read: 8C alone.
+    expect(done?.overall_score).toBe(88);
+    const final = runs.find((r) => /UPDATE engagement_quality_gates SET overall_score/.test(r.sql));
+    expect(final!.params[1]).toBe(0);
+    expect(final!.params[3]).toBe('partial');
+    const stored = runs.find((r) => /SET scope_completeness = \?/.test(r.sql));
+    expect(JSON.parse(String(stored!.params[0]))).toEqual({ error: UNREADABLE });
+
+    // The scope check asks for JSON and has room for a long list of titles.
+    const scopeCall = callChatMock.mock.calls.find(([o]) => /Assess whether/.test(o.messages[0].content))![0] as unknown as { jsonMode?: boolean; maxTokens?: number };
+    expect(scopeCall.jsonMode).toBe(true);
+    expect(scopeCall.maxTokens).toBeGreaterThanOrEqual(4096);
+  });
+
+  it('a check whose answer has no numeric score from 0 to 100 is failed too', async () => {
+    for (const scope of ['{"score": "high", "missing": []}', '{"score": 140, "missing": []}', 'The deliverable covers every item well.']) {
+      replies({ scope });
+      const { db } = fakeDb();
+      const res = mockRes();
+      await (await handler(db, '/:id/quality-gate/run'))(req(), res);
+      const done = frames(res).find((e) => e.type === 'done');
+      expect(done?.release_ready, scope).toBe(false);
+      expect(done?.failed_checks, scope).toEqual(['8A']);
+    }
+  });
+
+  it('reads a fenced or sentence-wrapped reply, and is release-ready when every check reads well (negative control)', async () => {
+    replies({
+      scope: `Here is my assessment.\n${FENCE}json\n${GOOD_SCOPE}\n${FENCE}\nAll items are covered.`,
+      consistency: `Assessment: ${GOOD_CONSISTENCY}`,
+      lens: `${FENCE}json\n${GOOD_LENS}\n${FENCE}`,
+    });
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await handler(db, '/:id/quality-gate/run'))(req(), res);
+    const done = frames(res).find((e) => e.type === 'done');
+    expect(done?.failed_checks).toEqual([]);
+    expect(done?.release_ready).toBe(true);
+    expect(done?.overall_score).toBe(90);
+    const final = runs.find((r) => /UPDATE engagement_quality_gates SET overall_score/.test(r.sql));
+    expect(final!.params[3]).toBe('completed');
+  });
+
+  it('a lens whose review cannot be read is a failed check, not an empty card on a passed gate', async () => {
+    replies({ lens: '{"verdict": "concerns", "key_points": ["The timeline assumes' });
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await handler(db, '/:id/quality-gate/run'))(req(), res);
+    const evts = frames(res);
+    expect(evts.find((e) => e.type === 'check_error' && e.check === '8F-pragmatist')?.error).toBe(UNREADABLE);
+    const done = evts.find((e) => e.type === 'done');
+    expect(done?.failed_checks).toEqual(['8F-pragmatist']);
+    expect(done?.release_ready).toBe(false);
+    const expertWrite = [...runs].reverse().find((r) => /SET expert_reviews = \?/.test(r.sql));
+    const expert = JSON.parse(String(expertWrite!.params[0])) as Record<string, { verdict?: string; error?: string }>;
+    expect(expert.pragmatist).toEqual({ error: UNREADABLE });
+    expect(expert.devil_advocate.verdict).toBe('positive');
+  });
+
+  it('a missing-items answer that is not a list does not break the gate', async () => {
+    replies({ scope: '{"score": 95, "addressed": ["A"], "missing": "none"}' });
+    const { db } = fakeDb();
+    const res = mockRes();
+    await (await handler(db, '/:id/quality-gate/run'))(req(), res);
+    const done = frames(res).find((e) => e.type === 'done');
+    expect(done?.blockers).toEqual([]);
+    expect(done?.release_ready).toBe(true);
+  });
+});
+
 describe('POST /engagements/:id/complete and /reopen', () => {
   it('refuses without an iteration', async () => {
     const { db } = fakeDb({ iteration: false });

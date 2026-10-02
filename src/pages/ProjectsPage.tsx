@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FolderOpen, Plus, Trash2, Pencil, Check, X, Clock, MessageSquare, ChevronDown, ChevronRight, Link2, Unlink, FileText, StickyNote, Users, BarChart3, Brain, Loader2 } from 'lucide-react';
-import { fetchProjects, createProject, deleteProject, updateProject, fetchProject, fetchSessions, assignSessionToProject } from '@/lib/api';
+import { fetchProjects, deleteProject, updateProject, fetchProject, fetchSessions, assignSessionToProject, fetchWithAuth, errorMessageOf } from '@/lib/api';
 import { MODULES, AREAS } from '@/lib/constants';
 import type { Session } from '@/lib/types';
 import ProjectFiles from '@/components/projects/ProjectFiles';
 import ProjectNotes from '@/components/projects/ProjectNotes';
 import ProjectMembers from '@/components/projects/ProjectMembers';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
 import { normaliseScaffold, type ProjectScaffold } from '@/lib/project-scaffold';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 interface Project {
   id: string;
@@ -79,6 +83,18 @@ const PROJECT_TEMPLATES = [
   { id: 'regulatory-response', name: 'Regulatory Response', description: 'Respond to a regulatory finding, inspection, or supervisory enquiry.' },
 ];
 
+/**
+ * POST /api/projects, with the server's own sentence when it refuses (a name
+ * too long, or a demo account's project limit reached).
+ */
+async function createProjectOrExplain(data: { name: string; description?: string }): Promise<Project> {
+  const res = await fetchWithAuth('/api/projects', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await errorMessageOf(res, 'The project could not be created.'));
+  return res.json() as Promise<Project>;
+}
+
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('openexpert-token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -104,6 +120,15 @@ export default function ProjectsPage() {
   const [sessionSearch, setSessionSearch] = useState('');
   const { deploymentMode } = useSettingsStore();
   const isTeamMode = deploymentMode === 'team';
+  // Public demo: a visitor's projects are theirs alone. Members and
+  // invitations are not offered (the server refuses them too).
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
+  const showMembers = isTeamMode && !demoLimited;
+  // The modules this person is offered: on a demo a visitor's list leaves out
+  // the ones kept off it, so AI Scaffold neither asks for nor shows one.
+  const catalogue = useDemoCatalogue();
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects().then(setProjects).catch(() => {});
@@ -128,7 +153,7 @@ export default function ProjectsPage() {
       const r = await fetch('/api/ai-assist/project-scaffold', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ name: newName.trim(), goal: newDesc.trim(), availableModuleIds: MODULES.map((m) => m.id) }),
+        body: JSON.stringify({ name: newName.trim(), goal: newDesc.trim(), availableModuleIds: catalogue.modules.map((m) => m.id) }),
       });
       // The answer is a model's: any part can be missing or misshapen, so it is
       // read through normaliseScaffold and never trusted to have every list.
@@ -146,7 +171,14 @@ export default function ProjectsPage() {
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
-    const project = await createProject({ name: newName.trim(), description: newDesc.trim() || undefined });
+    setCreateError(null);
+    let project: Project;
+    try {
+      project = await createProjectOrExplain({ name: newName.trim(), description: newDesc.trim() || undefined });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'The project could not be created.');
+      return;
+    }
     setProjects((prev) => [project, ...prev]);
     setNewName('');
     setNewDesc('');
@@ -227,8 +259,13 @@ export default function ProjectsPage() {
   });
 
   const handleCreateFromTemplate = async (template: typeof PROJECT_TEMPLATES[0]) => {
-    const project = await createProject({ name: template.name, description: template.description });
-    setProjects((prev) => [project, ...prev]);
+    setCreateError(null);
+    try {
+      const project = await createProjectOrExplain({ name: template.name, description: template.description });
+      setProjects((prev) => [project, ...prev]);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'The project could not be created.');
+    }
   };
 
   return (
@@ -238,6 +275,13 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-2xl font-bold text-adv-white">Projects</h1>
           <p className="mt-1 text-sm text-adv-gray">Group related sessions into projects. Track progress across modules and areas.</p>
+          {demoLimited && (
+            <p className="mt-2 text-sm text-adv-gray">
+              Your projects are private to your demo account. A project's files are sent to the AI with each answer
+              in that project, count toward your upload limit, and are deleted with the account
+              {demoConfig.retentionDays > 0 ? ` after ${demoConfig.retentionDays} days` : ''}.
+            </p>
+          )}
         </div>
         <button
           onClick={() => setShowNew(!showNew)}
@@ -247,6 +291,8 @@ export default function ProjectsPage() {
           New Project
         </button>
       </div>
+
+      {createError && <p role="alert" className="mb-4 text-sm text-adv-red">{createError}</p>}
 
       {/* New project form */}
       {showNew && (
@@ -278,12 +324,12 @@ export default function ProjectsPage() {
           {scaffoldError && <p role="alert" className="mb-3 text-xs text-adv-red">{scaffoldError}</p>}
           {scaffoldData && (
             <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3 space-y-2">
-              {scaffoldData.recommendedModules.length > 0 && (
+              {scaffoldData.recommendedModules.some((m) => !catalogue.moduleHidden(m.id)) && (
                 <div>
                   <p className="text-xs font-medium text-adv-teal mb-1">Recommended modules</p>
                   <div className="flex flex-wrap gap-1">
-                    {scaffoldData.recommendedModules.map((m) => {
-                      const mod = MODULES.find((x) => x.id === m.id);
+                    {scaffoldData.recommendedModules.filter((m) => !catalogue.moduleHidden(m.id)).map((m) => {
+                      const mod = catalogue.modules.find((x) => x.id === m.id);
                       return (
                         <span key={m.id} className="rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal" title={m.reason}>
                           {mod?.shortLabel || m.id}
@@ -453,7 +499,7 @@ export default function ProjectsPage() {
                       { id: 'sessions' as const, label: 'Sessions', icon: MessageSquare, count: projectSessions.length },
                       { id: 'files' as const, label: 'Files', icon: FileText },
                       { id: 'notes' as const, label: 'Notes', icon: StickyNote },
-                      ...(isTeamMode ? [{ id: 'members' as const, label: 'Members', icon: Users }] : []),
+                      ...(showMembers ? [{ id: 'members' as const, label: 'Members', icon: Users }] : []),
                       { id: 'stats' as const, label: 'Stats', icon: BarChart3 },
                     ] as const).map(tab => {
                       const Icon = tab.icon;
@@ -591,7 +637,7 @@ export default function ProjectsPage() {
                       <ProjectNotes projectId={project.id} />
                     )}
 
-                    {activeTab === 'members' && isTeamMode && (
+                    {activeTab === 'members' && showMembers && (
                       <ProjectMembers projectId={project.id} />
                     )}
 

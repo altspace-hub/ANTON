@@ -6,6 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 
 import { randomUUID } from 'crypto';
 
@@ -77,10 +78,17 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
     }
   });
 
+  // A profile is its author's (user_id). In team mode a non-admin reads,
+  // changes and deletes only their own: the owner check is in the SQL, and a
+  // colleague's profile answers the same 404 as a missing one (ownerFilter is
+  // empty for solo and admins). Until 2026-10-02 these three routes took any id.
+  const ownScope = (req: Request) => ownerFilter(req as unknown as OwnedRequest, 'user_id');
+
   // ── Get profile ────────────────────────────────────────────────────────────
   router.get('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
-      const row = await db.get('SELECT * FROM continuity_profiles WHERE id = ?', String(req.params.id)) as RawProfileRow | undefined;
+      const scope = ownScope(req);
+      const row = await db.get(`SELECT * FROM continuity_profiles WHERE id = ?${scope.sql}`, [String(req.params.id), ...scope.params]) as RawProfileRow | undefined;
       if (!row) return res.status(404).json({ error: 'Profile not found' });
       res.json({ profile: parseProfile(row) });
     } catch (err) {
@@ -130,7 +138,8 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
   router.put('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
       const id = String(req.params.id);
-      const existing = await db.get('SELECT id FROM continuity_profiles WHERE id = ?', id);
+      const scope = ownScope(req);
+      const existing = await db.get(`SELECT id FROM continuity_profiles WHERE id = ?${scope.sql}`, [id, ...scope.params]);
       if (!existing) return res.status(404).json({ error: 'Profile not found' });
 
       const allowed = ['profile_name','role','area_ids','expertise_summary','active_projects','key_decisions','critical_knowledge','handover_notes','status'] as const;
@@ -150,10 +159,11 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
 
       if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
       updates.push("updated_at = NOW()");
-      values.push(id);
+      values.push(id, ...scope.params);
 
-      await db.run(`UPDATE continuity_profiles SET ${updates.join(', ')} WHERE id = ?`, ...values);
-      const updated = await db.get('SELECT * FROM continuity_profiles WHERE id = ?', id) as RawProfileRow;
+      await db.run(`UPDATE continuity_profiles SET ${updates.join(', ')} WHERE id = ?${scope.sql}`, values);
+      const updated = await db.get(`SELECT * FROM continuity_profiles WHERE id = ?${scope.sql}`, [id, ...scope.params]) as RawProfileRow | undefined;
+      if (!updated) return res.status(404).json({ error: 'Profile not found' });
       res.json({ profile: parseProfile(updated) });
     } catch (err) {
       res.status(500).json({ error: 'Failed to update profile' });
@@ -163,7 +173,8 @@ export async function createContinuityRoutes(db: DatabaseAdapter): Promise<Route
   // ── Delete profile ─────────────────────────────────────────────────────────
   router.delete('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
-      const result = await db.run('DELETE FROM continuity_profiles WHERE id = ?', String(req.params.id));
+      const scope = ownScope(req);
+      const result = await db.run(`DELETE FROM continuity_profiles WHERE id = ?${scope.sql}`, [String(req.params.id), ...scope.params]);
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ deleted: true });
     } catch (err) {

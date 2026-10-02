@@ -10,6 +10,7 @@ import {
   AlertTriangle, FileText, Target, List, Shield
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import { responseErrorMessage, errorText } from './engagement-demo';
 import EngagementIntakeChat from './EngagementIntakeChat';
 import type { EngagementData, ScopeItem, Deliverable, Boundary } from '@/pages/EngagementWorkspacePage';
 
@@ -29,6 +30,8 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
   const [newScopeDesc, setNewScopeDesc] = useState('');
   const [newScopeCat, setNewScopeCat] = useState('Analysis');
   const [saving, setSaving] = useState(false);
+  // A refusal (the demo's row cap or write limit) is shown, not swallowed.
+  const [addError, setAddError] = useState<string | null>(null);
 
   const activeScope = engagement.scope_items.filter(si => si.status !== 'removed');
   const confirmed = activeScope.filter(si => si.status === 'confirmed').length;
@@ -37,14 +40,18 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
   async function addScopeItem() {
     if (!newScopeTitle.trim()) return;
     setSaving(true);
+    setAddError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}/scope-items`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/scope-items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newScopeTitle, description: newScopeDesc, category: newScopeCat }),
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       setNewScopeTitle(''); setNewScopeDesc(''); setAddingScope(false);
       onReload();
+    } catch (e) {
+      setAddError(errorText(e));
     } finally {
       setSaving(false);
     }
@@ -151,8 +158,9 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
                 >
                   {SCOPE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
+                {addError && <p role="alert" className="text-sm text-adv-red">{addError}</p>}
                 <div className="flex gap-2 ml-auto">
-                  <button onClick={() => setAddingScope(false)} className="px-3 py-1.5 text-sm text-adv-gray hover:text-adv-off-white">Cancel</button>
+                  <button onClick={() => { setAddingScope(false); setAddError(null); }} className="px-3 py-1.5 text-sm text-adv-gray hover:text-adv-off-white">Cancel</button>
                   <button
                     onClick={addScopeItem}
                     disabled={!newScopeTitle.trim() || saving}

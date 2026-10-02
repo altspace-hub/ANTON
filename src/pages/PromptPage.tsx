@@ -998,8 +998,9 @@ export default function PromptPage() {
           onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
           onClear={() => { setLens(null); setLensDeclined(true); }}
         />
-        {/* Projects stay with admins on a public demo (their routes are not a visitor's). */}
-        {!demoLimited && (
+        {/* On a public demo a visitor files chats under their own projects too
+            (GET/POST /projects and PATCH /sessions/:id/project are open to them;
+            the routes scope both to the caller). */}
         <ProjectChip
           project={project}
           disabled={isStreaming}
@@ -1013,7 +1014,6 @@ export default function PromptPage() {
             if (sessionId) void assignSessionToProject(sessionId, null).catch(() => undefined);
           }}
         />
-        )}
       </div>
 
       {/* Input area */}

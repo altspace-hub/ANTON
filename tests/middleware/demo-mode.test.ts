@@ -20,8 +20,9 @@ import {
   demoPublicConfig, demoEnabledPillars, demoSignupPolicy, demoAccountTtlDays,
   demoRouteAllowed, demoRouteRules, createDemoAllowlistMiddleware, demoModeWarnings,
   DEMO_TERMS_VERSION, DEFAULT_DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_MODULES,
-  demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, qualityScorerModelEnv,
+  demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, qualityScorerModelEnv, WORK_ROUTES,
 } from '../../server/middleware/demo-mode.js';
+import { ENGAGEMENT_WORK_ROUTES } from '../../server/services/engagement-demo-routes.js';
 
 const ENV_KEYS = [
   'DEMO_MODE', 'DEPLOYMENT_MODE', 'DEMO_ENABLED_PILLARS', 'DEMO_EXTRA_ROUTES', 'DEMO_OFFERED_MODELS',
@@ -254,16 +255,16 @@ describe('the route allowlist (pure)', () => {
   });
 
   it('DEMO_EXTRA_ROUTES adds prefixes, optionally for one method', () => {
-    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/discovery, POST:/projects, not-a-path, GET|POST:/quality/' });
-    expect(allowed('GET', '/discovery/sessions')).toBe(false);
-    expect(demoRouteAllowed('GET', '/discovery/sessions', extra)).toBe(true);
-    expect(demoRouteAllowed('POST', '/discovery/sessions/x/respond', extra)).toBe(true);
-    expect(demoRouteAllowed('POST', '/projects', extra)).toBe(true);
-    expect(demoRouteAllowed('POST', '/projects/p1/notes', extra)).toBe(true);
-    expect(demoRouteAllowed('GET', '/projects', extra)).toBe(false);
+    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/evidence-packs, POST:/folders, not-a-path, GET|POST:/quality/' });
+    expect(allowed('GET', '/evidence-packs')).toBe(false);
+    expect(demoRouteAllowed('GET', '/evidence-packs', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/evidence-packs/x/build', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/folders', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/folders/f1/scan', extra)).toBe(true);
+    expect(demoRouteAllowed('GET', '/folders', extra)).toBe(false);
     expect(demoRouteAllowed('GET', '/quality/leaderboard', extra)).toBe(true);
     expect(demoRouteAllowed('DELETE', '/quality/x', extra)).toBe(false);
-    expect(demoRouteAllowed('GET', '/discoveryX', extra)).toBe(false);
+    expect(demoRouteAllowed('GET', '/evidence-packsX', extra)).toBe(false);
   });
 
   it('opens the Work tools of 2026-10-01 — each exactly, never its siblings', () => {
@@ -296,14 +297,92 @@ describe('the route allowlist (pure)', () => {
       ['POST', '/modules/community'],
       ['GET', '/council/s1/dissent-ledger'], ['POST', '/council/s1'],
       ['POST', '/custom-modules/x/share'], ['PUT', '/custom-modules/custom-1'],
-      ['POST', '/ai-assist/project-scaffold'], ['POST', '/ai-assist/skill-draft'], ['POST', '/ai-assist/module-prompt/x'],
+      ['POST', '/ai-assist/skill-draft'], ['POST', '/ai-assist/module-prompt/x'],
       ['POST', '/versions/output/x/y'], ['POST', '/versions/session/s1'], ['DELETE', '/versions/module/custom-1'],
-      ['POST', '/exchange/export/custom-1'], ['GET', '/projects'], ['GET', '/discovery/sessions'], ['GET', '/task-agent/tasks'],
-      ['POST', '/pathfinder/search'], ['GET', '/coding/projects'], ['GET', '/intelligence/dashboard'], ['GET', '/radar/items'],
-      ['GET', '/collections'], ['GET', '/orchestrator/status'],
+      ['POST', '/pathfinder/search'], ['GET', '/coding/projects'], ['GET', '/intelligence/dashboard'],
+      ['GET', '/orchestrator/status'],
     ] as const) {
       expect(allowed(m, p), `${m} ${p}`).toBe(false);
     }
+  });
+
+  it('opens the features of 2026-10-02 — each exactly, never its siblings', () => {
+    // Opened: Engagement Tasks, Projects, the Knowledge Base, the Task Agent,
+    // Discover, read-only Orchestration / Intelligence / Horizon Radar, and
+    // the (unsigned) download of a built module.
+    for (const [m, p] of [
+      ['GET', '/engagements'], ['POST', '/engagements'], ['GET', '/engagements/e1'], ['PATCH', '/engagements/e1'],
+      ['DELETE', '/engagements/e1'], ['POST', '/engagements/e1/execute'], ['GET', '/engagements/e1/execute/stream'],
+      ['POST', '/engagements/e1/quality-gate/run'], ['POST', '/engagements/e1/export'], ['GET', '/engagements/peer-library'],
+      ['GET', '/projects'], ['POST', '/projects'], ['GET', '/projects/p1'], ['PATCH', '/projects/p1'], ['DELETE', '/projects/p1'],
+      ['GET', '/projects/p1/stats'], ['GET', '/projects/p1/files'], ['POST', '/projects/p1/files'],
+      ['GET', '/projects/p1/files/f1/download'], ['DELETE', '/projects/p1/files/f1'],
+      ['GET', '/projects/p1/notes'], ['POST', '/projects/p1/notes'], ['DELETE', '/projects/p1/notes/n1'],
+      ['PATCH', '/sessions/s1/project'], ['POST', '/ai-assist/project-scaffold'],
+      ['GET', '/collections'], ['POST', '/collections'], ['DELETE', '/collections/c1'], ['GET', '/collections/c1/documents'],
+      ['POST', '/documents/upload'], ['GET', '/documents/collection/c1'], ['DELETE', '/documents/d1'],
+      ['GET', '/task-agent/capabilities'], ['GET', '/task-agent/stats'], ['GET', '/task-agent/tasks'], ['POST', '/task-agent/tasks'],
+      ['GET', '/task-agent/tasks/t1'], ['DELETE', '/task-agent/tasks/t1'], ['POST', '/task-agent/tasks/t1/message'],
+      ['POST', '/task-agent/tasks/t1/select-approach'], ['POST', '/task-agent/tasks/t1/intake-ready'],
+      ['POST', '/task-agent/tasks/t1/execute-step'], ['GET', '/task-agent/tasks/t1/execute-step/stream'],
+      ['POST', '/task-agent/tasks/t1/upload'], ['DELETE', '/task-agent/tasks/t1/upload/f1'], ['PUT', '/task-agent/tasks/t1/knowledge-packs'],
+      ['GET', '/discovery/sessions'], ['POST', '/discovery/sessions'], ['GET', '/discovery/sessions/d1'], ['DELETE', '/discovery/sessions/d1'],
+      ['GET', '/discovery/sessions/d1/start'], ['POST', '/discovery/sessions/d1/respond'], ['GET', '/discovery/sessions/d1/insights'],
+      ['POST', '/discovery/sessions/d1/generate'], ['GET', '/discovery/sessions/d1/output'], ['POST', '/discovery/sessions/d1/export'],
+      ['PATCH', '/discovery/sessions/d1/upgrade'], ['POST', '/discovery/sessions/d1/pack'], ['POST', '/discovery/sessions/d1/followup'],
+      ['GET', '/discovery/packs'],
+      ['GET', '/org-context'], ['GET', '/insights'], ['GET', '/insights/unread-count'], ['GET', '/continuity/profiles'],
+      ['GET', '/intelligence/summary'], ['GET', '/intelligence/distribution'], ['GET', '/intelligence/top-entities'],
+      ['GET', '/intelligence/insights'], ['GET', '/intelligence/export'], ['GET', '/intelligence/temporal/atoms-per-day'],
+      ['GET', '/intelligence/temporal/entity-activity'], ['GET', '/intelligence/temporal/quality-trend'],
+      ['GET', '/knowledge-graph/entities'],
+      ['GET', '/radar/summary'], ['GET', '/radar/items'], ['GET', '/radar/sources'], ['GET', '/radar/scan-status'],
+      ['POST', '/exchange/export/custom-1'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(true);
+    }
+    // Negative controls: the siblings a prefix would have opened, the
+    // features' admin and sharing routes, and Coding and the App Gateway.
+    for (const [m, p] of [
+      // Engagement Tasks: the host-folder index, project linking, web search
+      ['POST', '/engagements/e1/rag-directory'], ['DELETE', '/engagements/e1/rag-directory'],
+      ['POST', '/engagements/e1/rag-directory/reindex'], ['PATCH', '/engagements/e1/project'],
+      ['POST', '/engagements/e1/peer-benchmarks/web-search'], ['PUT', '/engagements/e1'],
+      // Projects: sharing, and the invitation flow
+      ['GET', '/projects/p1/members'], ['POST', '/projects/p1/members'], ['PATCH', '/projects/p1/members/m1'],
+      ['DELETE', '/projects/p1/members/m1'], ['GET', '/projects/p1/invitations'], ['POST', '/projects/p1/invitations'],
+      ['DELETE', '/projects/p1/invitations/i1'], ['GET', '/projects/invitations/accept/tok'], ['PUT', '/projects/p1'],
+      ['GET', '/projects/p1/files/f1'], ['PATCH', '/sessions/s1/project/x'],
+      // The Knowledge Base: edits, queries, maintenance, host folders
+      ['PUT', '/collections/c1'], ['GET', '/collections/c1'], ['POST', '/collections/c1/query'], ['GET', '/collections/health/check'],
+      ['POST', '/knowledge/reembed'], ['POST', '/knowledge/reindex-stuck'], ['POST', '/documents/upload-multiple'],
+      ['GET', '/documents/d1'], ['POST', '/documents/d1/reindex'], ['GET', '/documents/collection/c1/stats'],
+      ['GET', '/rag/folders'], ['GET', '/folders/registered'], ['POST', '/embeddings/search/atoms'], ['POST', '/embeddings/similar'],
+      // The Task Agent: missions, completion with a score, PATCH, admin intake
+      ['POST', '/task-agent/tasks/t1/execute-as-mission'], ['POST', '/task-agent/tasks/t1/sync-mission'],
+      ['POST', '/task-agent/tasks/t1/complete'], ['PATCH', '/task-agent/tasks/t1'], ['GET', '/task-agent/tasks/t1/execute-step/status'],
+      ['POST', '/task-agent/backfill-atoms'], ['POST', '/task-agent/ingest'],
+      // Discover: state writes, status, follow-ups, single packs
+      ['PUT', '/discovery/sessions/d1'], ['PATCH', '/discovery/sessions/d1/status'], ['GET', '/discovery/followups/pending'],
+      ['PUT', '/discovery/followups/f1'], ['GET', '/discovery/packs/healthcare'], ['PATCH', '/discovery/sessions/d1'],
+      // Orchestration, Intelligence, Radar, Exchange: writes, switches, triage, imports, signing
+      ['PUT', '/org-context'], ['GET', '/org-context/history'], ['PATCH', '/insights/i1/read'], ['POST', '/insights/generate'],
+      ['GET', '/continuity/profiles/cp1'], ['POST', '/continuity/profiles'], ['GET', '/intelligence/atom-ab'],
+      ['POST', '/intelligence/atom-injection/mode'], ['GET', '/intelligence/temporal/patterns-per-week'], ['GET', '/patterns'],
+      ['POST', '/ai-assist/intelligence-brief'], ['GET', '/knowledge-graph/entities/org/acme'], ['POST', '/knowledge-graph/build'],
+      ['PUT', '/radar/items/r1/status'], ['POST', '/radar/scan'], ['GET', '/radar/settings'], ['POST', '/radar/sources'],
+      ['POST', '/exchange/import'], ['POST', '/exchange/validate'], ['GET', '/exchange/signing-identity'],
+      ['POST', '/exchange/export-bundle/market-index'], ['POST', '/exchange/export-run'], ['POST', '/exchange/export/a/b'],
+      // Coding and the App Gateway stay with admins
+      ['GET', '/coding/projects'], ['POST', '/coding/studio/p1/run'], ['GET', '/app/radar/items'], ['GET', '/app-gateway/devices'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(false);
+    }
+  });
+
+  it('takes the Engagement Task entries from services/engagement-demo-routes.ts, unchanged', () => {
+    const inWork = WORK_ROUTES.filter(([, p]) => p.startsWith('/engagements')).map(([m, p]) => `${m} ${p}`);
+    expect(inWork).toEqual(ENGAGEMENT_WORK_ROUTES.map(([m, p]) => `${m} ${p}`));
   });
 
   it('covers the calls the opened Work tools make, read from src/', () => {
@@ -316,6 +395,14 @@ describe('the route allowlist (pure)', () => {
     expect(read('pages/BuildYourOwnModule.tsx')).toContain('/api/custom-modules/guide-generate');
     expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews`');
     expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews/modes`');
+    // The features of 2026-10-02.
+    expect(read('pages/AntonTaskAgentPage.tsx')).toContain('/api/task-agent/tasks');
+    expect(read('pages/DiscoverPage.tsx')).toContain('/api/discovery/sessions');
+    expect(read('pages/KnowledgeBasePage.tsx')).toContain('/api/collections');
+    expect(read('pages/RadarPage.tsx')).toContain('/api/radar/items');
+    expect(read('pages/ExchangePage.tsx')).toContain('`${API_BASE}/exchange/export/${moduleId}');
+    expect(read('pages/OrchestrationDashboard.tsx')).toContain('/api/insights');
+    expect(read('pages/IntelligenceDashboard.tsx')).toContain('/api/intelligence/summary');
   });
 
   it('covers the calls the Work page makes when it loads and runs', () => {
@@ -385,7 +472,18 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
       ['POST', '/modules/smart-search', '/modules/community'],
       ['POST', '/council/s1/dissent-ledger', '/council/s1/members'],
       ['POST', '/custom-modules/test-run', '/custom-modules/x/share'],
-      ['POST', '/ai-assist/module-inputs', '/ai-assist/project-scaffold'],
+      ['POST', '/ai-assist/module-inputs', '/ai-assist/skill-draft'],
+      // Opened 2026-10-02
+      ['POST', '/engagements/e1/execute', '/engagements/e1/rag-directory'],
+      ['GET', '/projects/p1', '/projects/p1/members'],
+      ['POST', '/projects/p1/notes', '/projects/p1/invitations'],
+      ['POST', '/documents/upload', '/documents/upload-multiple'],
+      ['GET', '/collections', '/collections/health/check'],
+      ['POST', '/task-agent/tasks/t1/execute-step', '/task-agent/tasks/t1/execute-as-mission'],
+      ['GET', '/discovery/sessions/d1/start', '/discovery/followups/pending'],
+      ['GET', '/radar/items', '/radar/settings'],
+      ['GET', '/continuity/profiles', '/continuity/profiles/cp1'],
+      ['POST', '/exchange/export/custom-1', '/exchange/import'],
     ] as const) {
       expect((await call(m, p, 'analyst')).status, `${m} ${p}`).toBe(200);
       expect((await call(m, sibling, 'analyst')).status, `${m} ${sibling}`).toBe(404);
@@ -411,9 +509,9 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
     process.env.DEMO_ENABLED_PILLARS = 'pathfinder';
     expect((await call('GET', '/pathfinder/threads', 'analyst')).status).toBe(200);
     delete process.env.DEMO_ENABLED_PILLARS;
-    expect((await call('GET', '/discovery/sessions', 'analyst')).status).toBe(404);
-    process.env.DEMO_EXTRA_ROUTES = '/discovery';
-    expect((await call('GET', '/discovery/sessions', 'analyst')).status).toBe(200);
+    expect((await call('GET', '/evidence-packs', 'analyst')).status).toBe(404);
+    process.env.DEMO_EXTRA_ROUTES = '/evidence-packs';
+    expect((await call('GET', '/evidence-packs', 'analyst')).status).toBe(200);
   });
 
   it('index.ts mounts it after the auth middleware and before every authenticated route', () => {

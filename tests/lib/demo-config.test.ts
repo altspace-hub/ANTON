@@ -98,11 +98,13 @@ describe('who is held to the demo surface', () => {
 
   it('hides every sidebar entry but the visitor\'s Work features and the enabled pillars\' entries from a visitor', () => {
     const hidden = demoHiddenNavItems(cfg, 'analyst', ALL_IDS);
-    const visitorWork = ['home', 'my-work', 'prompt', 'council', 'brief', 'build-module'];
+    const visitorWork = ['home', 'my-work', 'prompt', 'council', 'brief', 'build-module',
+      // Opened 2026-10-02: each holds the visitor's own rows only, or is read only.
+      'engagements', 'discover', 'task-agent', 'projects', 'knowledge-base', 'exchange', 'orchestration', 'intelligence', 'radar'];
     for (const id of [...visitorWork, 'pathfinder', 'pathfinder-history']) expect(hidden.has(id), id).toBe(false);
     // What stays with admins (C8), and the other tools.
-    for (const id of ['agents', 'markets', 'coding', 'workflows', 'school', 'task-agent', 'projects', 'engagements',
-      'knowledge-base', 'exchange', 'orchestration', 'intelligence', 'radar', 'discover', 'app-gateway']) {
+    for (const id of ['agents', 'markets', 'coding', 'workflows', 'school', 'app-gateway', 'knowledge', 'graph',
+      'patterns', 'datasets', 'coworkers', 'skills', 'governance', 'audit']) {
       expect(hidden.has(id), id).toBe(true);
     }
     const shown = new Set([...visitorWork, 'pathfinder', 'pathfinder-history']);

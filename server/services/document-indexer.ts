@@ -11,6 +11,14 @@
  * separately (embeddedCount) and can be topped up later with
  * POST /api/knowledge/reindex-stuck, so an embedding provider that is down
  * never fails an upload.
+ *
+ * A public demo's visitor gets no vectors at all ({ embed: false }): the demo
+ * has no local embedder, and an embedding service would be a recipient of
+ * their text that the privacy notice does not name. Their documents are
+ * searched by keyword (rag/demo-storage.ts).
+ *
+ * Deleting a document or a collection removes its files from disk too (inside
+ * UPLOAD_DIR/rag-documents only - rag/demo-storage.ts ragUploadDir).
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
@@ -19,7 +27,14 @@ import fs from 'fs-extra';
 import { extractTextFromFile } from './text-extractor.js';
 import { chunkDocument, type ChunkingOptions } from './chunker.js';
 import { createRAGDocument, updateRAGDocument, createRAGChunk, getDocumentChunks } from './collection-manager.js';
-import { embedRagChunks, deleteRagChunkEmbeddings, countEmbeddedChunks } from './rag/chunk-embedder.js';
+import { embedRagChunks, deleteRagChunkEmbeddings, countEmbeddedChunks, deleteCollectionChunkEmbeddings } from './rag/chunk-embedder.js';
+import { ragUploadDir, removeFileInside } from './rag/demo-storage.js';
+import { safeError } from '../lib/error-response.js';
+
+export interface IndexOptions {
+  /** Embed the chunks (default true). False stores them for keyword search only and sends their text nowhere. */
+  embed?: boolean;
+}
 
 export interface IndexDocumentResult {
   success: boolean;
@@ -47,6 +62,7 @@ async function storeAndEmbedChunks(
   collectionId: string,
   filename: string,
   chunks: ReturnType<typeof chunkDocument>,
+  embed = true,
 ): Promise<{ embeddedCount: number; embeddingModel?: string }> {
   const stored: StoredChunk[] = [];
   for (const chunk of chunks) {
@@ -59,6 +75,8 @@ async function storeAndEmbedChunks(
     });
     stored.push({ id, content: chunk.content, metadata: chunk.metadata as Record<string, unknown> });
   }
+
+  if (!embed) return { embeddedCount: 0 };
 
   try {
     const outcome = await embedRagChunks(
@@ -98,7 +116,8 @@ export async function indexDocument(
   collectionId: string,
   uploadedBy: string | null,
   customMetadata?: Record<string, unknown>,
-  chunkingOptions?: Partial<ChunkingOptions>
+  chunkingOptions?: Partial<ChunkingOptions>,
+  options: IndexOptions = {},
 ): Promise<IndexDocumentResult> {
   let documentId: string | null = null;
 
@@ -144,7 +163,7 @@ export async function indexDocument(
     }
 
     // 5. Store chunk rows (primary) + vectors (derived index)
-    const { embeddedCount, embeddingModel } = await storeAndEmbedChunks(db, documentId, collectionId, filename, chunks);
+    const { embeddedCount, embeddingModel } = await storeAndEmbedChunks(db, documentId, collectionId, filename, chunks, options.embed !== false);
 
     // 6. Update document status to indexed
     await updateRAGDocument(db, documentId, {
@@ -155,14 +174,15 @@ export async function indexDocument(
 
     return { success: true, documentId, chunkCount: chunks.length, embeddedCount, embeddingModel };
   } catch (error) {
-    console.error('[document-indexer] Error indexing document:', error);
+    console.error('[document-indexer] Error indexing document:', error instanceof Error ? error.message : 'error');
     // Mark document as failed if we have its id
     if (documentId) {
       try {
         await updateRAGDocument(db, documentId, { index_status: 'failed' });
       } catch { /* best effort */ }
     }
-    return { success: false, error: String(error) };
+    // The route sends this to the browser: scrubbed in production.
+    return { success: false, documentId: documentId ?? undefined, error: safeError(error) };
   }
 }
 
@@ -174,7 +194,8 @@ export async function reindexDocument(
   db: DatabaseAdapter,
   documentId: string,
   collectionId: string,
-  chunkingOptions?: Partial<ChunkingOptions>
+  chunkingOptions?: Partial<ChunkingOptions>,
+  options: IndexOptions = {},
 ): Promise<IndexDocumentResult> {
   try {
     // 1. Get existing document
@@ -221,7 +242,7 @@ export async function reindexDocument(
     }
 
     // 4. Store new chunk rows + vectors
-    const { embeddedCount, embeddingModel } = await storeAndEmbedChunks(db, documentId, collectionId, doc.filename, chunks);
+    const { embeddedCount, embeddingModel } = await storeAndEmbedChunks(db, documentId, collectionId, doc.filename, chunks, options.embed !== false);
 
     // 5. Update document
     await updateRAGDocument(db, documentId, {
@@ -232,17 +253,19 @@ export async function reindexDocument(
 
     return { success: true, documentId, chunkCount: chunks.length, embeddedCount, embeddingModel };
   } catch (error) {
-    console.error('[document-indexer] Error reindexing document:', error);
+    console.error('[document-indexer] Error reindexing document:', error instanceof Error ? error.message : 'error');
     try {
       await updateRAGDocument(db, documentId, { index_status: 'failed' });
     } catch { /* best effort */ }
-    return { success: false, error: String(error) };
+    return { success: false, error: safeError(error) };
   }
 }
 
 /**
- * Delete a document, its chunks and their vectors. rag_chunks cascade from
- * rag_documents; embeddings has no FK, so its rows go first.
+ * Delete a document, its chunks and their vectors, and its file. rag_chunks
+ * cascade from rag_documents; embeddings has no FK, so its rows go first.
+ * The file goes last, once no row points at it, and only from inside
+ * UPLOAD_DIR/rag-documents: a document indexed from elsewhere keeps its file.
  */
 export async function deleteDocument(
   db: DatabaseAdapter,
@@ -250,23 +273,58 @@ export async function deleteDocument(
   _collectionId: string
 ): Promise<boolean> {
   try {
+    const doc = await db.get<{ file_path: string | null }>('SELECT file_path FROM rag_documents WHERE id = ?', documentId);
     const chunks = await getDocumentChunks(db, documentId);
     if (chunks.length > 0) {
       await deleteRagChunkEmbeddings(db, chunks.map((c) => c.id));
     }
     await db.run('DELETE FROM rag_documents WHERE id = ?', documentId);
+    try {
+      await removeFileInside(ragUploadDir(), doc?.file_path);
+    } catch {
+      console.warn('[document-indexer] document deleted; its file could not be removed');
+    }
     return true;
   } catch (error) {
-    console.error('[document-indexer] Error deleting document:', error);
+    console.error('[document-indexer] Error deleting document:', error instanceof Error ? error.message : 'error');
     return false;
   }
+}
+
+/**
+ * Delete a whole collection: the chunk vectors (no FK), the collection row
+ * (its documents and chunks go by CASCADE), then every document's file inside
+ * UPLOAD_DIR/rag-documents. Returns the vectors and files removed.
+ */
+export async function deleteCollectionWithFiles(
+  db: DatabaseAdapter,
+  collectionId: string,
+): Promise<{ removedVectors: number; removedFiles: number }> {
+  const files = await db.all<{ file_path: string | null }>('SELECT file_path FROM rag_documents WHERE collection_id = ?', collectionId);
+  const removedVectors = await deleteCollectionChunkEmbeddings(db, collectionId);
+  await db.run('DELETE FROM knowledge_collections WHERE id = ?', collectionId);
+  const root = ragUploadDir();
+  let removedFiles = 0;
+  for (const f of files) {
+    try {
+      if (await removeFileInside(root, f.file_path)) removedFiles++;
+    } catch {
+      console.warn('[document-indexer] collection deleted; a file could not be removed');
+    }
+  }
+  return { removedVectors, removedFiles };
 }
 
 /**
  * Indexing statistics for a collection, including vector coverage for the
  * current embedding model.
  */
-export async function getCollectionIndexStats(db: DatabaseAdapter, collectionId: string): Promise<{
+export async function getCollectionIndexStats(
+  db: DatabaseAdapter,
+  collectionId: string,
+  /** Owner scope on rag_documents (ownerFilter(req, 'uploaded_by')); the vector coverage is the collection's. */
+  scope: { sql: string; params: string[] } = { sql: '', params: [] },
+): Promise<{
   totalDocuments: number;
   indexedDocuments: number;
   failedDocuments: number;
@@ -289,8 +347,8 @@ export async function getCollectionIndexStats(db: DatabaseAdapter, collectionId:
        SUM(CASE WHEN index_status = 'indexing' THEN 1 ELSE 0 END) AS stuck_documents,
        SUM(chunk_count) AS total_chunks
      FROM rag_documents
-     WHERE collection_id = ?`,
-    collectionId,
+     WHERE collection_id = ?${scope.sql}`,
+    [collectionId, ...scope.params],
   );
   const coverage = await countEmbeddedChunks(db, collectionId);
 

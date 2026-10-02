@@ -14,6 +14,7 @@ import { fetchWithAuth } from '@/lib/api';
 import ModelSelector from '@/components/shared/ModelSelector';
 import type { ModelId } from '@/lib/types';
 import type { EngagementData } from '@/pages/EngagementWorkspacePage';
+import { useEngagementDemo, responseErrorMessage, errorText } from './engagement-demo';
 
 // Shown when switching Auto → Specific before a model is picked.
 const FALLBACK_MODEL: ModelId = 'claude-opus-5-5';
@@ -109,6 +110,11 @@ const REVIEW_LENSES = [
 export default function EngagementExpertConfig({ engagement, onUpdate, onNext, onReload }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Public demo: a visitor picks among the demo's models only (the server
+  // refuses any other), and "Specific" starts on the demo's own model.
+  const demo = useEngagementDemo();
+  const specificStart = (demo.restricted && demo.demoModel ? demo.demoModel : FALLBACK_MODEL) as ModelId;
 
   // Parse existing values
   const parseJson = (val: string | undefined, fallback: unknown) => {
@@ -137,10 +143,11 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
     setSaved(false);
   }
 
-  async function save() {
+  async function save(): Promise<boolean> {
     setSaving(true);
+    setSaveError(null);
     try {
-      await fetchWithAuth(`/api/engagements/${engagement.id}`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -150,16 +157,20 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           review_modes: reviewLenses,
         }),
       });
+      if (!res.ok) throw new Error(await responseErrorMessage(res));
       onUpdate({ thinking_level: thinkingLevel, exec_model: execModel, expert_panel: JSON.stringify(expertPanel) });
       setSaved(true);
+      return true;
+    } catch (e) {
+      setSaveError(errorText(e));
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
   async function saveAndNext() {
-    await save();
-    onNext();
+    if (await save()) onNext();
   }
 
   return (
@@ -233,7 +244,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
             {execModel === null && <Check className="h-4 w-4" />}
           </button>
           <button
-            onClick={() => { if (execModel === null) { setExecModel(FALLBACK_MODEL); setSaved(false); } }}
+            onClick={() => { if (execModel === null) { setExecModel(specificStart); setSaved(false); } }}
             className={`rounded-lg border px-3 py-2 text-sm transition ${
               execModel !== null
                 ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
@@ -247,9 +258,9 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           <ModelSelector value={execModel as ModelId} onChange={(m) => { setExecModel(m); setSaved(false); }} variant="dropdown" />
         )}
         <p className="text-xs text-adv-gray">
-          Auto follows the product-wide default model (Settings → Default model). A specific model pins this
-          engagement's execution regardless of product settings; either way the choice routes through your
-          configured provider.
+          {demo.restricted
+            ? `Auto runs on this demo's default model${demo.demoModel ? ` (${demo.demoModel})` : ''}. A specific model must be one of the models this demo offers. None of them can search the web.`
+            : "Auto follows the product-wide default model (Settings → Default model). A specific model pins this engagement's execution regardless of product settings; either way the choice routes through your configured provider."}
         </p>
       </div>
 
@@ -326,6 +337,10 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           <p>Review lenses: <span className="text-adv-off-white">{reviewLenses.length > 0 ? reviewLenses.map(id => REVIEW_LENSES.find(l => l.id === id)?.label).join(', ') : 'None selected'}</span></p>
         </div>
       </div>
+
+      {saveError && (
+        <p role="alert" className="text-sm text-adv-red text-right">{saveError}</p>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-3 justify-end pt-2">

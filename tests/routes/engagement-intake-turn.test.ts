@@ -37,7 +37,7 @@ vi.mock('../../server/services/rag/indexer.js', () => ({ indexFolder: vi.fn() })
 vi.mock('../../server/services/rag/retriever.js', () => ({ retrieveChunks: vi.fn(async () => []) }));
 vi.mock('../../server/services/engagement-session-bridge.js', () => ({ bridgeIterationToSession: vi.fn() }));
 
-import { createEngagementsRoutes } from '../../server/routes/engagements.js';
+import { createEngagementsRoutes, readIntakeUpdate } from '../../server/routes/engagements.js';
 
 type Handler = (req: unknown, res: unknown) => Promise<void>;
 
@@ -101,7 +101,26 @@ const req = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-beforeEach(() => { streamChatMock.mockClear(); delete process.env.DEPLOYMENT_MODE; });
+beforeEach(() => { streamChatMock.mockClear(); delete process.env.DEPLOYMENT_MODE; delete process.env.DEMO_MODE; });
+
+/** The next model reply is `text` (streamed as one delta). */
+function replyOnce(text: string): void {
+  streamChatMock.mockImplementationOnce(async (opts: Record<string, unknown>, res: { write: (s: string) => void }) => {
+    res.write(`data: ${JSON.stringify({ type: 'text_delta', content: text })}\n\n`);
+    return { text, thinking: '', inputTokens: 1, outputTokens: 1, model: String(opts.model) };
+  });
+}
+
+const FENCE = '```';
+
+const updateFrame = (res: ReturnType<typeof mockRes>) => res.frames.map((f) => f.replace(/^data: /, '').trim()).filter(Boolean)
+  .map((f) => JSON.parse(f) as { type: string; applied?: Record<string, unknown> })
+  .find((f) => f.type === 'intake_update');
+
+const storedTurns = (runs: Array<{ sql: string; params: unknown[] }>) => {
+  const convo = runs.find((r) => /UPDATE engagements SET intake_conversation/.test(r.sql));
+  return JSON.parse(String(convo!.params[0])) as Array<{ role: string; content: string }>;
+};
 
 describe('POST /engagements/:id/intake/turn', () => {
   it('opens the interview from the letter and what is already known, on the routed default model', async () => {
@@ -204,5 +223,74 @@ describe('POST /engagements/:id/intake/turn', () => {
 
     expect(res.frames.some((f) => /"type":"error"/.test(f))).toBe(true);
     expect(runs.some((r) => /UPDATE engagements SET intake_conversation/.test(r.sql))).toBe(false);
+  });
+
+  // GLM, DeepSeek and Kimi (the showcase's models) fence the JSON inside the
+  // tags or put a sentence before it; a strict JSON.parse refused both, so
+  // nothing the consultant confirmed was saved (2026-10-02).
+  it('reads a fenced block (the GLM shape), applies it, and keeps it out of the conversation', async () => {
+    const visible = 'Thanks. Which products are in scope?';
+    replyOnce(`${visible}\n\n<intake_update>\n${FENCE}json\n{"client_intelligence": {"engagement_trigger": "2025 inspection"}, "scope_items": [{"title": "Sanctions screening calibration", "category": "analysis"}], "boundaries": [], "done": false}\n${FENCE}\n</intake_update>`);
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await intakeHandler(db))(req(), res);
+
+    expect(updateFrame(res)?.applied).toEqual({ client_intelligence: 1, scope_items: 1, boundaries: 0, done: false });
+    const ciUpdate = runs.find((r) => /UPDATE engagement_client_intelligence SET/.test(r.sql));
+    expect(ciUpdate!.params).toContain('2025 inspection');
+    const scopeInserts = runs.filter((r) => /INSERT INTO engagement_scope_items/.test(r.sql));
+    expect(scopeInserts).toHaveLength(1);
+    expect(scopeInserts[0].params).toContain('Sanctions screening calibration');
+    expect(storedTurns(runs)[0].content).toBe(visible);
+  });
+
+  it('reads a block with a sentence inside and no closing tag (cut off), and still hides it', async () => {
+    const visible = 'Noted — the ECB supervises the client.';
+    replyOnce(`${visible}\n<intake_update>\nHere is the update:\n{"client_intelligence": {"regulatory_supervisors": ["ECB"]}, "done": true}`);
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await intakeHandler(db))(req(), res);
+
+    expect(updateFrame(res)?.applied).toEqual({ client_intelligence: 1, scope_items: 0, boundaries: 0, done: true });
+    const ciUpdate = runs.find((r) => /UPDATE engagement_client_intelligence SET/.test(r.sql));
+    expect(ciUpdate!.params).toContain(JSON.stringify(['ECB']));
+    expect(storedTurns(runs)[0].content).toBe(visible);
+  });
+
+  it('saves nothing from a block that cannot be read, and the reader still never sees it', async () => {
+    const visible = 'Which supervisors are involved?';
+    replyOnce(`${visible}\n<intake_update>\n{"client_intelligence": {"engagement_trigger": "2025 insp`);
+    const { db, runs } = fakeDb();
+    const res = mockRes();
+    await (await intakeHandler(db))(req(), res);
+
+    expect(updateFrame(res)?.applied).toEqual({ client_intelligence: 0, scope_items: 0, boundaries: 0, done: false });
+    expect(runs.some((r) => /engagement_client_intelligence|INSERT INTO engagement_scope_items|INSERT INTO engagement_boundaries/.test(r.sql))).toBe(false);
+    expect(storedTurns(runs)[0].content).toBe(visible);
+  });
+});
+
+describe('readIntakeUpdate', () => {
+  it('reads the canonical, fenced, sentence-wrapped and unclosed shapes, and strips every block', () => {
+    const json = '{"done": true, "scope_items": []}';
+    for (const block of [
+      `<intake_update>\n${json}\n</intake_update>`,
+      `<intake_update>\n${FENCE}json\n${json}\n${FENCE}\n</intake_update>`,
+      `<intake_update>Here is the update: ${json} — that is all.</intake_update>`,
+      `<INTAKE_UPDATE>\n${json}\n</INTAKE_UPDATE >`,
+      `<intake_update>\n${json}`,
+    ]) {
+      const out = readIntakeUpdate(`Two questions.\n\n${block}`);
+      expect(out.update, block).toEqual({ done: true, scope_items: [] });
+      expect(out.visible, block).toBe('Two questions.');
+    }
+  });
+
+  it('keeps text after a closed block, and gives no update for a reply without one', () => {
+    expect(readIntakeUpdate('Before.\n<intake_update>{"done": false}</intake_update>\nAfter.'))
+      .toEqual({ update: { done: false }, visible: 'Before.\n\nAfter.' });
+    expect(readIntakeUpdate('Just a question?')).toEqual({ update: null, visible: 'Just a question?' });
+    // A JSON array is not an update.
+    expect(readIntakeUpdate('Q?\n<intake_update>[1, 2]</intake_update>')).toEqual({ update: null, visible: 'Q?' });
   });
 });
