@@ -106,8 +106,8 @@ async function workspaceFeatures(h: Headers, defaultModel: string): Promise<void
 
   // Knowledge Base: a collection, one document, and a run that uses it (keyword search).
   const co = await fetch(`${BASE}/api/collections`, { method: 'POST', headers: h(), body: JSON.stringify({ name: `smoke-${randomBytes(3).toString('hex')}`, displayName: 'Smoke policies' }) });
-  const coBody = await json<{ id?: string; collection?: { id?: string }; error?: string }>(co);
-  const collectionId = coBody.id ?? coBody.collection?.id;
+  const coBody = await json<{ id?: string; collectionId?: string; collection?: { id?: string }; error?: string }>(co);
+  const collectionId = coBody.collectionId ?? coBody.id ?? coBody.collection?.id;
   check(co.ok && !!collectionId, 'Knowledge Base: create collection', `HTTP ${co.status}${coBody.error ? `, ${coBody.error}` : ''}`);
   if (collectionId) {
     const form = new FormData();
