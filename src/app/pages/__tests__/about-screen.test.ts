@@ -142,12 +142,32 @@ describe('the About screen', () => {
     expect(text()).not.toContain(about.ABOUT_MODELS_GENERAL);
   });
 
-  it('says "this model" for a single one and marks no default the instance did not name', async () => {
-    state.listModels.mockResolvedValue({ models: [MODELS.models[3]], defaultModel: 'sdk:claude-opus-5-5' });
+  it('says "this model" for a single one that is the default', async () => {
+    state.listModels.mockResolvedValue({ models: [MODELS.models[2]], defaultModel: 'claude-opus-5-5' });
     await open('org-1');
     expect(text()).toContain('On Acme ANTON, answers come from this model.');
-    expect(text()).not.toContain('You can choose one');
+    expect(text()).not.toContain('You can choose');
+  });
+
+  it('when the org default is not one of them, it does not claim answers come from the listed models', async () => {
+    // A chat with no model picked runs on the org default (app-gateway
+    // processQuery); the instance lists only its API-key models, so an
+    // sdk:/compat: default is missing from the list.
+    state.listModels.mockResolvedValue({ models: [MODELS.models[3]], defaultModel: 'sdk:claude-opus-5-5' });
+    await open('org-1');
+    expect(text()).not.toContain('answers come from this model');
+    expect(text()).toContain(
+      "On Acme ANTON, you can choose this model in the model list before a run. Without a choice, answers come from your organisation's default model.",
+    );
     expect([...container.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['GPT-4oMade by OpenAI']);
+
+    await act(async () => { root.unmount(); });
+    root = createRoot(container);
+    state.listModels.mockResolvedValue({ models: MODELS.models, defaultModel: null });
+    await open('org-1');
+    expect(text()).not.toContain('answers come from these models');
+    expect(text()).toContain('On Acme ANTON, you can choose one of these models in the model list before a run.');
+    expect(text()).not.toContain('· default');
   });
 
   it('shows the instance it is paired with', async () => {

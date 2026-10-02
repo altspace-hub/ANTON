@@ -183,7 +183,11 @@ describe('the About screen opens from', () => {
     await click(buttonSaying('Settings', container.querySelector('[role="dialog"]') ?? container), 'the Settings tile');
     expect(container.querySelector('h1')?.textContent).toBe('Settings');
 
-    await click(container.querySelector('button[aria-label="About ANTON"]'), 'Settings’ About entry');
+    const entry = [...container.querySelectorAll('button')].find((b) => b.textContent?.startsWith('ANTON Companion'));
+    // Its name is what it shows (no aria-label overriding the visible words).
+    expect(entry?.getAttribute('aria-label') ?? null).toBeNull();
+    expect(entry?.textContent).toContain('Created by Daniel Bardun');
+    await click(entry, 'Settings’ About entry');
     expect(aboutDialog()).not.toBeNull();
     expect(text()).toContain('Created by Daniel Bardun.');
 

@@ -26,7 +26,7 @@ import { getActiveInstance } from '../services/instances';
 import { listModels } from '../services/models';
 import {
   ABOUT_CHECK_NOTICE, ABOUT_COMPANION, ABOUT_CREDIT, ABOUT_MODELS_GENERAL, ABOUT_WHAT_ANTON_IS,
-  getAppVersion, modelLineup, type AboutModelEntry, type AppVersion,
+  getAppVersion, modelLineup, modelsSentence, type AboutModelEntry, type AppVersion,
 } from '../services/about';
 
 interface Props {
@@ -138,15 +138,12 @@ export default function AboutScreen({ onClose, orgId = null }: Props): JSX.Eleme
             </SectionLabel>
             <div className="rounded-[var(--radius-r2)] px-4 py-3" style={CARD}>
               {modelsLoading ? (
-                <div className="flex justify-center py-2" aria-label="Loading the models">
-                  <Spinner size="md" />
+                <div className="flex justify-center py-2">
+                  <Spinner size="md" label="Loading the models" />
                 </div>
               ) : lineup.length > 0 ? (
                 <>
-                  <p>
-                    On {instanceName}, answers come from {lineup.length === 1 ? 'this model' : 'these models'}.
-                    {lineup.length > 1 && ' You can choose one in the model list before a run.'}
-                  </p>
+                  <p>{modelsSentence(instanceName, lineup)}</p>
                   <ul className="mt-3 space-y-2">
                     {lineup.map((m) => (
                       <li

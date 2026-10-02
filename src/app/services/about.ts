@@ -65,6 +65,24 @@ export function modelLineup(list: ModelList | null | undefined): AboutModelEntry
   }));
 }
 
+/**
+ * The sentence above the model list. The desktop's "answers come from these
+ * models" holds only when the org's default is one of them: a chat with no
+ * model picked runs on the org's default (app-gateway processQuery), and the
+ * instance lists only its API-key models, so that default (an `sdk:` or
+ * `compat:` id, say) can be missing from the list. Then the list is what one
+ * can choose, and the default is named for what it is.
+ */
+export function modelsSentence(where: string, lineup: readonly AboutModelEntry[]): string {
+  const one = lineup.length === 1;
+  if (lineup.some((m) => m.isDefault)) {
+    return `On ${where}, answers come from ${one ? 'this model' : 'these models'}.`
+      + (one ? '' : ' You can choose one in the model list before a run.');
+  }
+  return `On ${where}, you can choose ${one ? 'this model' : 'one of these models'} in the model list before a run. `
+    + "Without a choice, answers come from your organisation's default model.";
+}
+
 export interface AppVersion {
   version: string;
   build: string;

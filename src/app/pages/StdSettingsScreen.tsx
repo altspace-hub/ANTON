@@ -250,7 +250,7 @@ export default function StdSettingsScreen({ onBack: _onBack, onOpenAbout }: Prop
           );
         })}
 
-        {/* About — the one row here that opens something: who made ANTON,
+        {/* About — opens the About screen: who made ANTON,
             the models this ANTON offers, the version (AboutScreen). */}
         {onOpenAbout && (
           <button

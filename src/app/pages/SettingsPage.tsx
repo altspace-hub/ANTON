@@ -25,7 +25,7 @@ import { getAppVersion, type AppVersion } from '../services/about';
 interface Props {
   onBack: () => void;
   /** Opens the About screen (who made ANTON, the models, the version). */
-  onOpenAbout?: () => void;
+  onOpenAbout: () => void;
 }
 
 export default function SettingsPage({ onBack, onOpenAbout }: Props) {
@@ -334,8 +334,8 @@ export default function SettingsPage({ onBack, onOpenAbout }: Props) {
           <section>
             <SectionLabel className="mb-2.5">About</SectionLabel>
             <button
+              type="button"
               onClick={onOpenAbout}
-              aria-label="About ANTON"
               className="flex w-full items-center gap-3 rounded-[var(--radius-r2)] px-4 py-3.5 text-left transition active:scale-[0.99]"
               style={{
                 background: 'var(--color-surface)',
