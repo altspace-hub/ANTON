@@ -3,67 +3,145 @@
     "ref_id": "REG-MAS-N626",
     "entity_type": "regulation",
     "entity_id": "MAS-NOTICE-626",
-    "canonical_name": "MAS Notice 626 — AML/CFT Notice to Banks (revised 30 June 2025)",
-    "description": "MAS's primary AML/CFT notice for banks (issued under the Banking Act). Revised effective 30 June 2025 to: (a) introduce a mandatory proliferation-financing (PF) risk assessment dimension in the entity-wide risk-based approach + customer risk profile (aligning with FATF R.1 update); (b) streamline STR thresholds + content requirements; (c) update PEP treatment incl. Singapore Government PEPs; (d) clarify beneficial-ownership identification + verification expectations; (e) tighten training programme expectations.",
+    "canonical_name": "MAS Notice 626 — Prevention of Money Laundering and Countering the Financing of Terrorism – Banks (as amended with effect from 1 July 2025)",
+    "description": "MAS's AML/CFT Notice for banks in Singapore, as defined in section 2 of the Banking Act 1970. It is issued under section 16 of the Financial Services and Markets Act 2022 (para 1.1), not under the Banking Act. Until 31 March 2024 the Notice was issued under the Monetary Authority of Singapore Act 1970 (section 27B); that version, dated 24 April 2015 and last revised on 1 March 2022, was cancelled with effect from 1 April 2024, when the current Notice dated 28 March 2024 took effect. MAS Notice 626 (Amendment) 2025, dated 30 June 2025, took effect on 1 July 2025 and made three changes MAS consulted on in April 2025: (a) money laundering in the Notice includes proliferation financing, so the bank's risk assessment covers proliferation financing risks (para 2.1 footnote 1; para 4.1 footnote 3); (b) the identification and verification of connected parties and beneficial owners of legal persons and legal arrangements was revised to follow the revised FATF Recommendation 25 (paragraph 6, including paragraphs 6.14 to 6.14D); (c) a copy of an STR now goes to MAS only on request (para 14.2). Since 1 July 2025 a foreign or group entity holding only a payment services or digital token service licence is not a 'third party' a bank may rely on (para 9.1). The STR filing timelines of 5 business days, or 1 business day for sanctioned parties, are in the Guidelines to the Notice, not in the Notice.",
     "metadata": {
       "issued_by": "MAS",
-      "in_force_current": "2025-06-30",
-      "supervisor": "MAS"
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "notice_dated": "2024-03-28",
+      "notice_in_force": "2024-04-01",
+      "amended_by": "MAS Notice 626 (Amendment) 2025, dated 30 June 2025",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/notices/amld/notice-626/mas-notice-626-amendment-2022-4.pdf",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/notices/amld/notice-626/mas-notice-626---cancellation-notice-2024.pdf",
+        "https://www.mas.gov.sg/-/media/consultation-paper-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/response-to-feedback-received-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 1.1: \"This Notice is issued under section 16 of the Financial Services and Markets Act 2022\""
     }
   },
   {
     "ref_id": "REG-MAS-N824",
     "entity_type": "regulation",
     "entity_id": "MAS-NOTICE-824",
-    "canonical_name": "MAS Notice 824 — AML/CFT Notice to Approved Trustees",
-    "description": "Parallel AML/CFT notice for approved trustees under the Securities and Futures Act. Substantially aligned with MAS 626 in structure + content. Updated in tandem with the June 2025 MAS Notice 626 amendments.",
+    "canonical_name": "MAS Notice 824 — Prevention of Money Laundering and Countering the Financing of Terrorism – Finance Companies",
+    "description": "MAS's AML/CFT Notice for finance companies licensed under section 6 of the Finance Companies Act 1967 (para 1.1). It is not the Notice for approved trustees, which is MAS Notice SFA13-N01. Issued under section 16 of the Financial Services and Markets Act 2022; dated 30 June 2025 and in effect from 1 July 2025 (para 1.2). As in the other AML/CFT Notices amended in 2025, money laundering in it includes proliferation financing (footnote 1).",
     "metadata": {
       "issued_by": "MAS",
-      "supervisor": "MAS"
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-824.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-sfa13-n01.pdf",
+        "https://www.mas.gov.sg/-/media/consultation-paper-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 824 para 1.1: \"applies to all finance companies in Singapore, as licensed under section 6 of the Finance Companies Act 1967\""
     }
   },
   {
     "ref_id": "REG-MAS-NSFA04",
     "entity_type": "regulation",
     "entity_id": "MAS-NOTICE-SFA04-N02",
-    "canonical_name": "MAS Notice SFA04-N02 — AML/CFT Notice to Capital Markets Intermediaries",
-    "description": "AML/CFT notice for CMIs (asset managers, fund managers, broker-dealers, advisors) under the SFA. Aligned with MAS 626; refreshed 30 June 2025 with the same PF / STR / PEP / BO updates as MAS 626.",
+    "canonical_name": "MAS Notice SFA04-N02 — Prevention of Money Laundering and Countering the Financing of Terrorism – Capital Markets Intermediaries",
+    "description": "MAS's AML/CFT Notice for holders of a capital markets services licence under the Securities and Futures Act 2001 and for persons exempted under paragraphs 3(1)(d), 3A(1)(d) and 7(1)(b) of the Second Schedule to the Securities and Futures (Licensing and Conduct of Business) Regulations (para 1.1). Issued under section 16 of the Financial Services and Markets Act 2022; dated 30 June 2025 and in effect from 1 July 2025 (para 1.2). Financial advisers have their own Notice, FAA-N06. Money laundering in it includes proliferation financing (footnote 1).",
     "metadata": {
       "issued_by": "MAS",
-      "supervisor": "MAS"
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-sfa04-n02.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-faa-n06.pdf",
+        "https://www.mas.gov.sg/-/media/consultation-paper-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice SFA04-N02 para 1.1: \"holders of a capital markets services licence under the Securities and Futures Act 2001\""
     }
   },
   {
     "ref_id": "REG-MAS-N314",
     "entity_type": "regulation",
     "entity_id": "MAS-NOTICE-314",
-    "canonical_name": "MAS Notice 314 — AML/CFT Notice to Direct Insurers",
-    "description": "AML/CFT notice for direct insurers (life sector primarily). Similar 2025 PF/STR/PEP refresh; sector-specific adaptations for insurance-specific risks (policy redemption, single-premium, surrender).",
+    "canonical_name": "MAS Notice 314 — Prevention of Money Laundering and Countering the Financing of Terrorism – Direct Life Insurers",
+    "description": "MAS's AML/CFT Notice for direct life insurers licensed under section 11 of the Insurance Act 1966 (para 1.1). Apart from paragraphs 13.3 to 13.9, it applies only to the insurer's business concerned with life policies and excludes the reinsurance of liabilities under life policies (para 1.2). Issued under section 16 of the Financial Services and Markets Act 2022; dated 30 June 2025 and in effect from 1 July 2025 (para 1.3). Money laundering in it includes proliferation financing (footnote 1).",
     "metadata": {
       "issued_by": "MAS",
-      "supervisor": "MAS"
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-314.pdf",
+        "https://www.mas.gov.sg/-/media/consultation-paper-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 314 para 1.1: \"applies to all direct life insurers licensed under section 11 of the Insurance Act 1966\""
     }
   },
   {
     "ref_id": "REG-MAS-PSN01",
     "entity_type": "regulation",
     "entity_id": "MAS-NOTICE-PSN01",
-    "canonical_name": "MAS Notice PSN01/PSN02 — AML/CFT Notice to Payment Service Providers",
-    "description": "AML/CFT notices for PSA-licensed payment institutions + Major Payment Institutions. Cover account-issuance, domestic + cross-border money transfer, merchant acquisition, e-money issuance, digital payment token services. Substantially aligned with MAS 626 + with the June 2025 refresh.",
+    "canonical_name": "MAS Notices PSN01 and PSN02 — Prevention of Money Laundering and Countering the Financing of Terrorism – Holders of a Payment Services Licence",
+    "description": "Two AML/CFT Notices, each issued under section 16 of the Financial Services and Markets Act 2022, dated 2 April 2024, in effect from 4 April 2024 and last revised on 30 June 2025 (amendment in effect from 1 July 2025). PSN01 applies to licensees under the Payment Services Act 2019 that carry on a business of providing a specified payment service — an account issuance, domestic money transfer, cross-border money transfer or money-changing service — and to persons exempt under section 13(1) of that Act that offer a specified product. PSN02 applies to every payment services licensee that carries on a business of providing a digital payment token service. Both require suspicious transaction reports to STRO, and in both money laundering includes proliferation financing (footnote 1).",
     "metadata": {
       "issued_by": "MAS",
-      "supervisor": "MAS"
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "notice_in_force": "2024-04-04",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-psn01.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-psn02.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice PSN02 para 1.1: \"that carry on a business of providing a digital payment token service\""
     }
   },
   {
-    "ref_id": "REG-MAS-FSM-N01",
+    "ref_id": "REG-MAS-VCC-N01",
     "entity_type": "regulation",
-    "entity_id": "MAS-NOTICE-FSM-N01",
-    "canonical_name": "MAS Notice FSM-N01 — AML/CFT Notice to Variable Capital Companies",
-    "description": "AML/CFT notice for VCCs (Singapore's bespoke fund-vehicle structure). Allocates AML obligations to the VCC's eligible financial-institution administrator (typically a fund manager or fund administrator). Aligned with the broader MAS notice set.",
+    "entity_id": "MAS-NOTICE-VCC-N01",
+    "canonical_name": "MAS Notice VCC-N01 — Prevention of Money Laundering and Countering the Financing of Terrorism – Variable Capital Companies",
+    "description": "MAS's AML/CFT Notice for variable capital companies. Unlike the other AML/CFT Notices it is issued under section 84 of the Variable Capital Companies Act 2018, not under the Financial Services and Markets Act 2022, and it applies to all VCCs under that Act (para 1.1). Dated and in effect from 14 January 2020; last revised on 30 June 2025, with MAS Notice VCC-N01 (Amendment) 2025 in effect from 1 July 2025. Money laundering in it includes proliferation financing (footnote 1).",
     "metadata": {
       "issued_by": "MAS",
-      "supervisor": "MAS"
+      "issued_under": "Variable Capital Companies Act 2018, section 84",
+      "in_force": "2020-01-14",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-vcc-n01.pdf",
+        "https://sso.agc.gov.sg/Act/VCCA2018"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice VCC-N01 para 1.1: \"This Notice is issued pursuant to section 84 of the Variable Capital Companies 2018\""
+    }
+  },
+  {
+    "ref_id": "REG-MAS-FSM-N27",
+    "entity_type": "regulation",
+    "entity_id": "MAS-NOTICE-FSM-N27",
+    "canonical_name": "MAS Notice FSM-N27 — Prevention of Money Laundering and Countering the Financing of Terrorism – Holders of Digital Token Service Licence",
+    "description": "MAS's AML/CFT Notice for digital token service providers: it applies to holders of a licence granted under section 138 of the Financial Services and Markets Act 2022 and is issued under section 16 of that Act (para 1.1). Dated 30 May 2025, in effect from 30 June 2025 (para 1.2), last revised on 30 June 2025 with the amendment in effect from 1 July 2025. It covers the risk assessment, new products and technologies, customer due diligence, simplified and enhanced measures, reliance on third parties, correspondent accounts, agency arrangements, value transfers, record keeping, suspicious transaction reporting to STRO, and internal policies, compliance, audit and training; money laundering in it includes proliferation financing (footnote 1).",
+    "metadata": {
+      "issued_by": "MAS",
+      "issued_under": "Financial Services and Markets Act 2022, section 16",
+      "in_force": "2025-06-30",
+      "in_force_current": "2025-07-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-fsm-n27.pdf",
+        "https://www.mas.gov.sg/-/media/guidelines-on-licensing-for-digital-token-service-providers.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice FSM-N27 para 1.1: \"applies to a holder of a licen ce granted under section 138 of the FSM Act\""
     }
   },
   {
@@ -71,22 +149,37 @@
     "entity_type": "regulation",
     "entity_id": "FSMA-2022-SG",
     "canonical_name": "Financial Services and Markets Act 2022 (FSMA)",
-    "description": "Cross-sectoral supervisory + enforcement statute consolidating MAS's powers across the financial-services ecosystem. Includes: enhanced AML/CFT enforcement; PSA + SFA + BA interlocking provisions; technology-risk + operational-resilience; Part 9 Digital Token Service Provider framework (in force 30 June 2025); mediation framework; targeted financial-measures regime.",
+    "description": "A cross-sector Act giving MAS powers over financial institutions generally. Its Parts cover: general powers over financial institutions (Part 2); prohibition orders (Part 3); directions or regulations to discharge obligations binding on Singapore by a UN Security Council decision (section 15) and requirements for the prevention of money laundering and terrorism financing (section 16, under which most MAS AML/CFT Notices are issued) (Part 4); an information-sharing scheme for prescribed financial institutions (Part 4A); technology risk management (Part 5, section 29); dispute resolution schemes (Part 6); control and resolution of financial institutions (Parts 7 and 8); digital token service providers (Part 9); inspection and investigation (Parts 10 and 10A). It commenced in phases: Phase 1 on 28 April 2023, Phase 2A on 10 May 2024, Phase 2B on 31 July 2024 and Phase 3 (Part 9) on 30 June 2025.",
     "metadata": {
-      "in_force": "2024-04-28",
+      "in_force": "2023-04-28",
+      "phase_2a": "2024-05-10",
+      "phase_2b": "2024-07-31",
       "dtsp_part9_in_force": "2025-06-30",
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://www.mas.gov.sg/regulation/acts/financial-services-and-markets-act-2022"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "FSMA section 16(1): \"The Authority may, from time to time, issue such directions, or make such regulations under section 192, concerning any financial institution or class of financial institutions as the Authority considers necessary for the prevention of money laundering or the financing of terrorism.\""
     }
   },
   {
     "ref_id": "REG-FSMA-PART9-DTSP",
     "entity_type": "regulation",
     "entity_id": "FSMA-PART-9",
-    "canonical_name": "FSMA Part 9 — Digital Token Service Providers (DTSP)",
-    "description": "Closes the Singapore-domiciled outbound-only VASP loophole: any Singapore-incorporated person providing digital token services solely to persons outside Singapore now requires an MAS DTSP licence (previously fell outside both PSA + SFA scope). High approval bar — most affected firms had to either apply for licensing OR exit Singapore. Same AML/CFT + technology-risk + capital + conduct obligations as PSA-regulated DPT service providers.",
+    "canonical_name": "FSMA Part 9 — Digital Token Service Providers (sections 136 to 167)",
+    "description": "Licensing and supervision of Singapore-based providers of digital token services outside Singapore. An individual or partnership must not, from a place of business in Singapore, carry on a business of providing any type of digital token service outside Singapore without a licence (s.137(1)); a Singapore corporation, including a limited liability partnership, must not carry on such a business, whether from Singapore or elsewhere, without a licence (s.137(3), s.137(7)). Businesses licensed or exempted under the Securities and Futures Act 2001, the Financial Advisers Act 2001 or the Payment Services Act 2019 for the relevant activity are excluded (s.137(5)). Part 9 came into force on 30 June 2025 with no transitional arrangement: providers caught by s.137 had to suspend or cease their services outside Singapore by that date, and MAS said it would grant a licence only in extremely limited circumstances (MAS response to feedback, 30 May 2025). AML/CFT duties are in MAS Notice FSM-N27; technology risk in MAS Notice FSM-N30.",
     "metadata": {
       "in_force": "2025-06-30",
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://www.mas.gov.sg/-/media/response-to-feedback-received-from-dtsp-cp.pdf",
+        "https://www.mas.gov.sg/-/media/guidelines-on-licensing-for-digital-token-service-providers.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "FSMA section 137(3): \"a Singapore corporation must not carry on a business, whether from Singapore or elsewhere, of providing any type of digital token service outside Singapore unless the Singapore corporation has in force a licence.\""
     }
   },
   {
@@ -94,51 +187,79 @@
     "entity_type": "regulation",
     "entity_id": "PSA-2019",
     "canonical_name": "Payment Services Act 2019 (PSA)",
-    "description": "Singapore's primary payment-services statute. Licensing for 7 payment activities incl. account-issuance, domestic + cross-border transfers, merchant acquisition, e-money, digital payment token (DPT) services, money-changing. Three licence tiers (Money-Changing, Standard Payment Institution, Major Payment Institution). April 2024 amendments expanded DPT user-protection requirements (segregation, custody, risk warnings).",
+    "description": "Singapore's payment services statute, in force from 28 January 2020 (except sections 111, 113 and 114). It regulates seven payment services (First Schedule Part 1): account issuance, domestic money transfer, cross-border money transfer, merchant acquisition, e-money issuance, digital payment token and money-changing services. There are three licence classes: money-changing, standard payment institution and major payment institution (s.6(2)); a major payment institution licence is needed above the transaction-value thresholds in s.6(5), e.g. a monthly average over a calendar year exceeding S$3 million for any one of the listed services or S$6 million for two or more. Amendments by Act 1 of 2021 in force from 4 April 2024 widened the digital payment token service to include custody and transmission services (s.2(1)) and added s.21A, under which regulations set customer-asset safeguarding and other requirements for DPT service providers.",
     "metadata": {
       "in_force": "2020-01-28",
       "dpt_amendments_in_force": "2024-04-04",
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/PSA2019",
+        "https://www.mas.gov.sg/news/media-releases/2024/mas-expands-scope-of-regulated-payment-services"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "PSA section 6(2): \"( a ) a money‑changing licence; ( b ) a standard payment institution licence; ( c ) a major payment institution licence.\""
     }
   },
   {
     "ref_id": "REG-SFA",
     "entity_type": "regulation",
     "entity_id": "SFA-SG",
-    "canonical_name": "Securities and Futures Act (Cap 289)",
-    "description": "Singapore's foundational capital-markets statute. Capital-markets-product offerings, securities, futures, fund management, market conduct, prospectus regime. CMS licensing regime; AML/CFT notice (SFA04-N02) issued under it. Includes Part XII market-conduct regime + Part XIIIB civil-penalty enforcement.",
+    "canonical_name": "Securities and Futures Act 2001",
+    "description": "Singapore's capital markets statute (formerly cited as Cap. 289). Its Parts include organised markets, clearing facilities, the central depository system, holders of a capital markets services licence and their representatives (Part 4), conduct of business, disclosure of interests, short selling, market conduct (Part 12) and offers of investments (Part 13). Collective investment schemes authorised under section 286 have approved trustees under section 289. MAS's AML/CFT Notices for capital markets intermediaries (SFA04-N02) and approved trustees (SFA13-N01) take their scope from this Act but are issued under section 16 of the Financial Services and Markets Act 2022.",
     "metadata": {
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/SFA2001",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-sfa04-n02.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-sfa13-n01.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-BA-SG",
     "entity_type": "regulation",
     "entity_id": "BANKING-ACT-SG",
-    "canonical_name": "Banking Act (Cap 19)",
-    "description": "Singapore's banking statute. Licensing of commercial + merchant banks, Qualifying Full Banks, branches of foreign banks. Includes Basel III + MAS Notice 637 capital framework. AML/CFT Notice 626 issued under the Banking Act for banks.",
+    "canonical_name": "Banking Act 1970",
+    "description": "Singapore's banking statute (formerly cited as Cap. 19). It provides for the licensing of banks (Part 3) and of merchant banks (Part 7B), and for credit card and charge card businesses (Part 8). MAS Notice 637 on risk-based capital adequacy requirements for banks incorporated in Singapore is issued under sections 10(2), 10A(1), 10B(1) and 65(2) of this Act. MAS Notice 626 applies to banks as defined in section 2 of this Act but is issued under section 16 of the Financial Services and Markets Act 2022, not under the Banking Act.",
     "metadata": {
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/BA1970",
+        "https://www.mas.gov.sg/regulation/notices/notice-637",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-INSURANCE-ACT-SG",
     "entity_type": "regulation",
     "entity_id": "INSURANCE-ACT-SG",
-    "canonical_name": "Insurance Act (Cap 142)",
-    "description": "Singapore's insurance statute. Licensing of direct insurers, reinsurers, captives, brokers; conduct of insurance business; insurance intermediary regulation. MAS Notice 314 issued under it for life-sector AML/CFT.",
+    "canonical_name": "Insurance Act 1966",
+    "description": "Singapore's insurance statute (formerly cited as Cap. 142). Its Parts cover the conduct of insurance business, foreign insurer schemes, insurance intermediaries, returns, inspections, investigations, winding up and transfers of business. Direct life insurers licensed under section 11 are subject to MAS Notice 314, which is issued under section 16 of the Financial Services and Markets Act 2022, not under this Act.",
     "metadata": {
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/IA1966",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-314.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-FAA-SG",
     "entity_type": "regulation",
     "entity_id": "FAA-SG",
-    "canonical_name": "Financial Advisers Act (Cap 110)",
-    "description": "Singapore's financial advisory statute. Licensing of financial advisers; product-recommendation + suitability framework; the Balanced Scorecard remuneration framework. MAS conducts coordinated supervision with SFA / Insurance Act for cross-cutting matters.",
+    "canonical_name": "Financial Advisers Act 2001",
+    "description": "Singapore's financial advisory statute (formerly cited as Cap. 110). Its Parts cover financial advisers and representatives, conduct of business, accounts and audit, prohibited businesses, MAS's powers, supervision and investigation, and offences. Licensed financial advisers and certain exempt financial advisers are subject to MAS Notice FAA-N06 on AML/CFT, issued under section 16 of the Financial Services and Markets Act 2022.",
     "metadata": {
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FAA2001",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-faa-n06.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -146,42 +267,68 @@
     "entity_type": "regulation",
     "entity_id": "PDPA-SG-2012",
     "canonical_name": "Personal Data Protection Act 2012 (PDPA)",
-    "description": "Singapore's data-protection statute. Substantially aligned with international norms (GDPR-equivalent in many respects). 2020 amendments introduced mandatory data-breach notification + financial penalties up to S$1m or 10% of annual turnover. PDPC AI Model Governance Framework (Jan 2024) + Children's Personal Data Guidelines (Mar 2024) clarify expectations.",
+    "description": "Singapore's data protection statute. Its data protection provisions came into force on 2 July 2014 and the Do Not Call provisions on 2 January 2014. The Personal Data Protection (Amendment) Act 2020 added mandatory data breach notification (Part 6A) for breaches on or after 1 February 2021, and raised the maximum financial penalty under section 48J to 10% of annual turnover in Singapore for an organisation whose turnover there exceeds S$10 million (otherwise S$1 million), for contraventions from 1 October 2022. Nothing in Parts 3 to 6B affects obligations imposed by or under the law, and other written law prevails where it is inconsistent with those Parts (s.4(6)). The Info-communications Media Development Authority is designated as the Personal Data Protection Commission (s.5). PDPC guidance includes the Advisory Guidelines on the PDPA for Children's Personal Data in the Digital Environment (28 March 2024).",
     "metadata": {
       "in_force": "2014-07-02",
-      "supervisor": "PDPC"
+      "breach_notification_in_force": "2021-02-01",
+      "enhanced_penalty_in_force": "2022-10-01",
+      "supervisor": "PDPC",
+      "source": [
+        "https://sso.agc.gov.sg/Act/PDPA2012",
+        "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/advisory-guidelines/advisory-guidelines-on-the-pdpa-for-children's-personal-data-in-the-digital-environment_mar24.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "PDPA section 48J(3)(a): \"by an organisation whose annual turnover in Singapore exceeds $10 million — 10% of the annual turnover in Singapore of the organisation\""
     }
   },
   {
     "ref_id": "REG-MAS-TRM",
     "entity_type": "regulation",
     "entity_id": "MAS-TRM-2021",
-    "canonical_name": "MAS Technology Risk Management (TRM) Guidelines 2021",
-    "description": "Comprehensive technology-risk framework for MAS-regulated FIs. Covers technology-risk governance, IT asset management, system development, security controls, cybersecurity, IT incident management, cloud computing, IT third-party services. Aligned with international cyber frameworks (NIST CSF, ISO 27001) but with MAS-specific expectations.",
+    "canonical_name": "MAS Technology Risk Management Guidelines (January 2021) — Guidelines on Risk Management Practices – Technology Risk",
+    "description": "MAS guidelines issued on 18 January 2021 setting risk management principles and practices for technology risk. Chapters cover technology risk governance and oversight (including appointing a Chief Information Officer, Chief Technology Officer or head of IT, and a Chief Information Security Officer or head of information security), the technology risk management framework, IT project management and security-by-design, software application development, IT service management (incident and problem management), IT resilience, access control, cryptography, data and infrastructure security, cyber security operations, cyber security assessment, online financial services and IT audit. They are guidelines; the binding incident-notification and availability rules are in MAS Notices on technology risk management, such as FSM-N05 for banks and FSM-N30 for digital token service providers.",
     "metadata": {
       "issued": "2021-01-18",
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/mas/regulations-and-financial-stability/regulatory-and-supervisory-framework/risk-management/trm-guidelines-18-january-2021.pdf",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/notices/trpd/notice-fsm-n05/mas-notice-fsm-n05.pdf",
+        "https://www.mas.gov.sg/regulation/notices/fsm-n30-trm"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-MAS-BCM",
     "entity_type": "regulation",
     "entity_id": "MAS-BCM-2022",
-    "canonical_name": "MAS Business Continuity Management (BCM) Guidelines 2022",
-    "description": "Operational-resilience framework. Identifies critical business functions, sets recovery-time + recovery-point objectives, mandates impact tolerance + scenario testing. Significantly tightened post-2022 to reflect cyber + third-party + climate operational-resilience expectations.",
+    "canonical_name": "MAS Guidelines on Business Continuity Management (June 2022)",
+    "description": "MAS guidelines issued on 6 June 2022, replacing the 2003 BCM Guidelines and a 2006 circular. They contain sound BCM principles that financial institutions are encouraged to adopt, commensurate with their nature, size, risk profile and complexity. Chapters cover critical business services and functions, Service Recovery Time Objectives, dependency mapping, concentration risk, continuous review and improvement, testing, audit, incident and crisis management, and the responsibilities of the board and senior management. MAS expected a BCM audit plan within 12 months of issuance and the first BCM audit within 24 months.",
     "metadata": {
       "issued": "2022-06-06",
-      "supervisor": "MAS"
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/mas/regulations-and-financial-stability/regulatory-and-supervisory-framework/risk-management/bcm-guidelines/guidelines-on-bcm-june-2022.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-MAS-OUTSOURCING",
     "entity_type": "regulation",
     "entity_id": "MAS-OUT-2024",
-    "canonical_name": "MAS Outsourcing Guidelines (revised 2024)",
-    "description": "Third-party-risk management framework. Pre-contract due diligence, contractual minimums, ongoing monitoring, audit access, sub-outsourcing controls, exit-strategy planning. Notification + non-objection for material outsourcings. Updated 2024 to reflect cloud-specific + AI-vendor specific expectations.",
+    "canonical_name": "MAS Guidelines on Outsourcing (Banks) and Guidelines on Outsourcing (Financial Institutions other than Banks)",
+    "description": "Two sets of MAS outsourcing guidelines. The Guidelines on Outsourcing (Banks), published 11 December 2023 and effective 11 December 2024, apply to banks and merchant banks alongside the binding MAS Notices 658 and 1121 on management of outsourced relevant services. The Guidelines on Outsourcing (Financial Institutions other than Banks), in their January 2025 version, apply to other MAS-regulated institutions and ask for a register of outsourcing arrangements to be submitted to MAS at least annually or on request. Both cover board and senior management responsibilities, evaluation of risks, assessment of service providers, outsourcing agreements, confidentiality and security, business continuity, monitoring and control, audit and inspection, and outsourcing outside Singapore and within a group, with an annex on cloud computing; the banks' Guidelines also cover the use of sub-contractors.",
     "metadata": {
-      "supervisor": "MAS"
+      "banks_effective": "2024-12-11",
+      "non_banks_version": "2025-01",
+      "supervisor": "MAS",
+      "source": [
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/guidelines/bd/guidelines-on-outsourcing/guidelines-on-outsourcing-banks-updated.pdf",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/guidelines/bd/guidelines-on-outsourcing/guidelines-on-outsourcing--financial-institutions-other-than-banks-updated.pdf",
+        "https://www.mas.gov.sg/regulation/notices/notice-658"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -189,10 +336,18 @@
     "entity_type": "regulation",
     "entity_id": "VCC-ACT-2018",
     "canonical_name": "Variable Capital Companies Act 2018",
-    "description": "Establishes the VCC as a Singapore-bespoke corporate structure for collective investment schemes. Permits umbrella + sub-fund structures with ring-fenced liability; supports retail + accredited + institutional investor segments. Managed by an MAS-regulated CMS-holder. Captured by MAS Notice FSM-N01 for AML/CFT.",
+    "description": "Provides for the incorporation, operation and regulation of variable capital companies, a corporate structure for collective investment schemes; in force from 14 January 2020. An umbrella VCC may have sub-funds whose assets and liabilities are segregated (s.29). A VCC's manager must be a holder of a capital markets services licence for fund management, a person mentioned in section 99(1)(a) to (d) of the Securities and Futures Act 2001, or a prescribed person. The Act is administered by ACRA; under section 84 MAS may issue AML/CFT directions to VCCs, which it has done in MAS Notice VCC-N01.",
     "metadata": {
       "in_force": "2020-01-14",
-      "supervisor": "MAS + ACRA"
+      "administered_by": "ACRA",
+      "aml_cft_supervisor": "MAS",
+      "source": [
+        "https://sso.agc.gov.sg/Act/VCCA2018",
+        "https://www.acra.gov.sg/regulations/legislation/",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-vcc-n01.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "VCC Act section 84(1): \"MAS may, from time to time, issue such directions or make such regulations concerning any VCC or class of VCCs as MAS considers necessary for the prevention of money laundering, the financing of terrorism or proliferation financing.\""
     }
   },
   {
@@ -200,41 +355,88 @@
     "entity_type": "regulation",
     "entity_id": "WFA-SG-2025",
     "canonical_name": "Workplace Fairness Act 2025",
-    "description": "Statutory anti-discrimination framework codifying prior TAFEP guidelines. Prohibits workplace discrimination on protected characteristics (age, nationality, sex, marital status, pregnancy, race, religion, language, disability, mental health). Tribunal-based enforcement. In force 2025 with phased implementation through 2026.",
+    "description": "Protects individuals against discrimination by employers on the ground of protected characteristics and establishes fair employment practices. The protected characteristics are age, nationality, sex, marital status, pregnancy, caregiving responsibilities, race, religion, language ability, disability and mental health condition (s.8). It does not apply to employers with fewer than the prescribed number of employees, set at 25 (s.4, except section 26). It is not yet in force: it comes into operation on a date the Minister appoints, and MOM has said it aims for the Act to take effect in end-2027. Under the companion Workplace Fairness (Dispute Resolution) Act 2025, parties must attempt mediation before a claim proceeds to the Employment Claims Tribunals (claims up to S$250,000) or the High Court.",
     "metadata": {
-      "in_force": "2025-04-01",
-      "supervisor": "MOM + Workplace Fairness Tribunal"
+      "in_force": null,
+      "target_commencement": "end-2027 (MOM)",
+      "administered_by": "MOM",
+      "source": [
+        "https://sso.agc.gov.sg/Act/WFA2025/Uncommenced/20250304073414?DocDate=20250213",
+        "https://www.mom.gov.sg/newsroom/press-releases/2025/workplace-fairness--dispute-resolution----bill-press-release",
+        "https://sso.agc.gov.sg/Act/WFDRA2025/Uncommenced/20260114161301?DocDate=20251223"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "Workplace Fairness Act 2025 section 8: \"( a ) age; ( b ) nationality; ( c ) sex; ( d ) marital status; ( e ) pregnancy; ( f ) caregiving responsibilities; ( g ) race; ( h ) religion; ( i ) language ability; ( j ) disability; and ( k ) mental health condition.\""
     }
   },
   {
     "ref_id": "REG-SGX-SUST",
     "entity_type": "regulation",
     "entity_id": "SGX-SUST-REPORTING",
-    "canonical_name": "SGX Sustainability Reporting Rules + IFRS S1/S2 phased adoption",
-    "description": "Mainboard + Catalist listed companies must publish sustainability reports on a 'comply or explain' basis (covering material ESG factors, climate, governance). Phased adoption of IFRS S1 + S2 climate-related disclosures aligned with ISSB standards from FY2025 (large-cap issuers) through FY2027 (broader). Assurance regime phased in similarly.",
+    "canonical_name": "SGX sustainability reporting rules and the ACRA / SGX RegCo climate reporting timeline",
+    "description": "SGX Mainboard Rule 711A requires every listed issuer to prepare an annual sustainability report describing its practices with reference to the primary components in Rule 711B on a 'comply or explain' basis; climate-related disclosures are a primary component that may not be excluded. Under the timeline ACRA and SGX RegCo announced on 25 August 2025: Scope 1 and 2 greenhouse gas emissions reporting is mandatory for all listed companies from FY2025; other ISSB-based climate-related disclosures are mandatory for Straits Times Index constituents from FY2025, for other listed companies with market capitalisation of S$1 billion or more from FY2028 and for the rest from FY2030; Scope 3 reporting is mandatory for STI constituents from FY2026 and voluntary for others; external limited assurance on Scope 1 and 2 is deferred to FY2029. For large non-listed companies, ISSB-based climate disclosures are deferred to FY2030 and assurance to FY2032.",
     "metadata": {
-      "supervisor": "SGX + ACRA + MAS for FI listings"
+      "supervisor": "SGX RegCo (listed issuers); ACRA (non-listed companies)",
+      "source": [
+        "https://rulebook.sgx.com/rulebook/sustainability-report",
+        "https://www.acra.gov.sg/news-events/news-announcements/887/"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "REG-CPIB-PCA",
     "entity_type": "regulation",
     "entity_id": "PCA-SG",
-    "canonical_name": "Prevention of Corruption Act + amendments",
-    "description": "Singapore's primary anti-corruption statute. Active + passive bribery of public servants + private-sector bribery; extraterritorial reach for Singapore-citizen / resident conduct. Penalties up to 7 years' imprisonment + significant fines. Investigated + prosecuted by the CPIB.",
+    "canonical_name": "Prevention of Corruption Act 1960",
+    "description": "Singapore's anti-corruption statute, covering corrupt solicitation, receipt, giving or offering of gratification in the public and private sectors (s.5) and corrupt transactions with agents (s.6). The base penalty is a fine of up to S$100,000, imprisonment of up to 5 years, or both; it rises to 7 years where the matter concerns a contract with the Government or a public body (s.7), and for some offences involving Members of Parliament and public bodies. The Act applies to Singapore citizens outside as well as within Singapore (s.37). CPIB investigates; prosecutions need the consent of the Public Prosecutor (s.33).",
     "metadata": {
       "supervisor": "CPIB",
-      "max_imprisonment_years": 7
+      "max_imprisonment_years": 7,
+      "base_max_imprisonment_years": 5,
+      "source": [
+        "https://sso.agc.gov.sg/Act/PCA1960",
+        "https://www.cpib.gov.sg/who-we-are/our-work/roles-functions/"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "PCA section 37(1): \"The provisions of this Act have effect, in relation to citizens of Singapore, outside as well as within Singapore\""
     }
   },
   {
     "ref_id": "REG-CDSA",
     "entity_type": "regulation",
     "entity_id": "CDSA-SG",
-    "canonical_name": "Corruption, Drug Trafficking and Other Serious Crimes (Confiscation of Benefits) Act (CDSA)",
-    "description": "Singapore's underlying ML statute. Defines the predicate-offence framework + the ML offences (Sections 43-47); creates the statutory STR obligation (Section 39); tipping-off prohibition (Section 48). Operates with the MAS AML/CFT notices for licensed sector + with the AGD AML supervision for non-licensed designated persons.",
+    "canonical_name": "Corruption, Drug Trafficking and Other Serious Crimes (Confiscation of Benefits) Act 1992 (CDSA)",
+    "description": "Singapore's principal money laundering statute, in force from 30 November 1993. Section numbers below are those of the 2020 Revised Edition. Section 5 establishes the Suspicious Transaction Reporting Office. Section 45 requires a person who knows or has reasonable grounds to suspect, in the course of trade, profession, business or employment, that property represents proceeds of, or was or is intended to be used in connection with, drug dealing or criminal conduct to disclose it to a Suspicious Transaction Reporting Officer as soon as reasonably practicable, whether or not the transaction was completed (fine up to S$250,000 and/or 3 years for an individual; up to S$500,000 otherwise). The money laundering offences are in sections 50 to 55A and tipping-off in section 57.",
     "metadata": {
-      "supervisor": "Singapore Police (CAD/STRO) + AGD for non-MAS sector"
+      "in_force": "1993-11-30",
+      "str_section": "45",
+      "ml_offences": "50-55A",
+      "tipping_off_section": "57",
+      "source": [
+        "https://sso.agc.gov.sg/Act/CDTOSCCBA1992"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "CDSA section 45(1): \"the person must disclose the knowledge or suspicion or the information or other matter on which that knowledge or suspicion is based to a Suspicious Transaction Reporting Officer as soon as is reasonably practicable after it comes to the person’s attention.\""
+    }
+  },
+  {
+    "ref_id": "REG-SG-TFS",
+    "entity_type": "regulation",
+    "entity_id": "SG-TFS-REGS",
+    "canonical_name": "MAS targeted financial sanctions regulations (FSMA section 15) and the Terrorism (Suppression of Financing) Act 2002",
+    "description": "The duties to freeze, and not to deal with, the funds and assets of designated persons do not come from the AML/CFT Notices. For financial institutions they come from MAS's regulations under section 192 read with section 15(1)(b) of the Financial Services and Markets Act 2022, which give effect to UN Security Council decisions (the 'FSM Sanctions Regulations'; for proliferation financing, the Guidelines to MAS Notice 626 identify those on the Democratic People's Republic of Korea and Iran as currently relevant), and from the Terrorism (Suppression of Financing) Act 2002, which prohibits dealing with property of terrorists (s.6), imposes a duty to disclose (s.8) and makes tipping-off an offence (s.10B). The Notices require screening against MAS's lists and enhanced measures that take these regulations into account.",
+    "metadata": {
+      "legal_basis": "FSMA s.15(1)(b) and s.192; TSOFA ss.6, 8, 10B",
+      "supervisor": "MAS (financial institutions)",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://sso.agc.gov.sg/Act/TSFA2002",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf",
+        "https://www.mas.gov.sg/regulation/anti-money-laundering/targeted-financial-sanctions/regulations-for-targeted-financial-sanctions"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "FSMA section 15(1): \"as the Authority considers necessary in order to discharge or facilitate the discharge of any obligation binding on Singapore by virtue of a decision of the Security Council of the United Nations.\""
     }
   },
   {
@@ -242,10 +444,16 @@
     "entity_type": "authority",
     "entity_id": "MAS",
     "canonical_name": "Monetary Authority of Singapore (MAS)",
-    "description": "Singapore's integrated central bank + financial supervisor + insurance authority + payment systems regulator. Among the most respected APAC financial regulators; known for principles-based + outcomes-focused regulation + strong fintech / digital asset / sustainability orientation. Acts under the MAS Act + sector-specific statutes (Banking / Insurance / SFA / FAA / PSA / FSMA / VCC Act).",
+    "description": "Singapore's central bank and integrated financial regulator, covering banking, capital markets, insurance and payments. It administers the Monetary Authority of Singapore Act 1970 and the sector statutes (Banking Act 1970, Insurance Act 1966, Securities and Futures Act 2001, Financial Advisers Act 2001, Payment Services Act 2019, Financial Services and Markets Act 2022), issues the AML/CFT Notices and supervises financial institutions' compliance with them, including VCCs' under the Variable Capital Companies Act 2018.",
     "metadata": {
-      "type": "Integrated financial supervisor + central bank",
-      "seat": "Singapore"
+      "type": "Central bank and integrated financial regulator",
+      "seat": "Singapore",
+      "source": [
+        "https://www.mas.gov.sg/who-we-are",
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://sso.agc.gov.sg/Act/VCCA2018"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -253,10 +461,18 @@
     "entity_type": "authority",
     "entity_id": "STRO",
     "canonical_name": "Suspicious Transaction Reporting Office (STRO)",
-    "description": "Singapore's Financial Intelligence Unit, within the Singapore Police Force's Commercial Affairs Department (CAD). Receives + analyses STRs filed under CDSA + the MAS sector AML notices; disseminates intelligence to law enforcement + foreign FIUs (Egmont Group member).",
+    "description": "Singapore's Financial Intelligence Unit, established by section 5 of the CDSA and located in the Commercial Affairs Department of the Singapore Police Force. It receives and analyses suspicious transaction reports, cash movement reports and cash transaction reports. STRO was admitted to the Egmont Group of Financial Intelligence Units in June 2002.",
     "metadata": {
       "type": "FIU",
-      "parent": "Singapore Police Force — CAD"
+      "parent": "Singapore Police Force — Commercial Affairs Department",
+      "egmont_member_since": "2002-06",
+      "source": [
+        "https://sso.agc.gov.sg/Act/CDTOSCCBA1992",
+        "https://www.police.gov.sg/Advisories/Commercial-Crimes/Suspicious-Transaction-Reporting-Office/Suspicious-Transaction-Reporting",
+        "https://www.police.gov.sg/Advisories/Commercial-Crimes/Suspicious-Transaction-Reporting-Office/International-co-operation",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -264,10 +480,16 @@
     "entity_type": "authority",
     "entity_id": "PDPC-SG",
     "canonical_name": "Personal Data Protection Commission (PDPC)",
-    "description": "Singapore's data-protection authority, within the Infocomm Media Development Authority (IMDA). Administers + enforces the PDPA; issues the AI Model Governance Framework + sector-specific guidelines; active enforcer with growing fine quantum since 2020 amendments.",
+    "description": "The Info-communications Media Development Authority (IMDA) is designated as the Personal Data Protection Commission under section 5 of the PDPA. The PDPC administers and enforces the PDPA, including financial penalties under section 48J, issues advisory guidelines (for example on children's personal data, 28 March 2024) and released the Model AI Governance Framework (second edition, 21 January 2020).",
     "metadata": {
       "type": "Data protection authority",
-      "parent": "IMDA"
+      "parent": "IMDA",
+      "source": [
+        "https://sso.agc.gov.sg/Act/PDPA2012",
+        "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/advisory-guidelines/advisory-guidelines-on-the-pdpa-for-children's-personal-data-in-the-digital-environment_mar24.pdf",
+        "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/resource-for-organisation/ai/sgmodelaigovframework2.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -275,9 +497,15 @@
     "entity_type": "authority",
     "entity_id": "ACRA",
     "canonical_name": "Accounting and Corporate Regulatory Authority (ACRA)",
-    "description": "Companies + corporate-services + accountancy + insolvency-practitioner registrar + regulator. Operates BizFile (companies registry). Maintains beneficial-ownership-information regime (the Register of Registrable Controllers — RORC); upcoming central UBO register reforms align with FATF R.24 expectations.",
+    "description": "The national regulator of business entities, public accountants and corporate service providers in Singapore, formed on 1 April 2004. It administers, among others, the Companies Act 1967, the Limited Liability Partnerships Act 2005, the Accountants Act 2004, the Variable Capital Companies Act 2018 and the Corporate Service Providers Act 2024 (under which corporate service providers must register with ACRA from 9 June 2025), and keeps the Central Register of Registrable Controllers.",
     "metadata": {
-      "type": "Companies registry + corporate regulator"
+      "type": "Business registry and corporate regulator",
+      "source": [
+        "https://www.acra.gov.sg/about-us/overview/",
+        "https://www.acra.gov.sg/regulations/legislation/",
+        "https://www.acra.gov.sg/manage/companies/legal-requirements-common-offences/maintaining-local-companys-information-registers/rorc/central-rorc/"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -285,10 +513,15 @@
     "entity_type": "authority",
     "entity_id": "CPIB",
     "canonical_name": "Corrupt Practices Investigation Bureau (CPIB)",
-    "description": "Singapore's anti-corruption agency, reporting to the Prime Minister's Office. Investigates + assists in prosecuting offences under the Prevention of Corruption Act + related statutes. Independent from MAS + Police; high-profile enforcer.",
+    "description": "Singapore's anti-corruption agency, established in 1952, under the Prime Minister's Office with its Director reporting to the Prime Minister. It is the only agency authorised to investigate corruption offences under the Prevention of Corruption Act 1960, in the public and private sectors; prosecutions under that Act need the consent of the Public Prosecutor.",
     "metadata": {
       "type": "Anti-corruption agency",
-      "parent": "PMO"
+      "parent": "Prime Minister's Office",
+      "source": [
+        "https://www.cpib.gov.sg/who-we-are/our-work/roles-functions/",
+        "https://sso.agc.gov.sg/Act/PCA1960"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -296,9 +529,13 @@
     "entity_type": "authority",
     "entity_id": "CCCS",
     "canonical_name": "Competition and Consumer Commission of Singapore (CCCS)",
-    "description": "Singapore's competition + consumer-protection authority. Antitrust enforcement, merger review (Competition Act 2004) + consumer protection (Consumer Protection (Fair Trading) Act, CPFTA).",
+    "description": "Singapore's competition and consumer protection authority. Its cases cover anti-competitive agreements, abuse of dominance and mergers under the Competition Act 2004, and unfair practices under the Consumer Protection (Fair Trading) Act 2003.",
     "metadata": {
-      "type": "Competition + consumer regulator"
+      "type": "Competition and consumer protection authority",
+      "source": [
+        "https://www.ccs.gov.sg/"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
@@ -306,228 +543,385 @@
     "entity_type": "authority",
     "entity_id": "IRAS",
     "canonical_name": "Inland Revenue Authority of Singapore (IRAS)",
-    "description": "Singapore's tax authority. Administers Income Tax Act + GST + Stamp Duty + Property Tax + international tax cooperation (FATCA + CRS reporting). Designated AML supervisor for certain non-FI designated persons (e.g. precious-metals dealers).",
+    "description": "Singapore's tax authority. For international tax cooperation, Singapore-based financial institutions report financial account information to IRAS under the Common Reporting Standard (Singapore committed to begin automatic exchange in 2018; financial institutions establish customers' tax residence with effect from 1 January 2017) and, since 2015, information on accounts of specified US persons under FATCA, which IRAS passes to the US Internal Revenue Service. IRAS is not an AML/CFT supervisor of financial institutions.",
     "metadata": {
-      "type": "Tax authority + AML supervisor (non-FI)"
-    }
-  },
-  {
-    "ref_id": "AUTH-AGD",
-    "entity_type": "authority",
-    "entity_id": "AGD-SG",
-    "canonical_name": "Accounting and Governance Development (AGD) — DNFBP supervisor",
-    "description": "Supervises certain Designated Non-Financial Business and Professions (DNFBPs) outside MAS scope — corporate service providers, certain professional services. Coordinates AML supervision with MAS + IRAS + Bar Council + ACRA.",
-    "metadata": {
-      "type": "DNFBP AML supervisor"
+      "type": "Tax authority",
+      "source": [
+        "https://www.iras.gov.sg/taxes/international-tax/foreign-account-tax-compliance-act-(fatca)/fatca-compliance",
+        "https://www.iras.gov.sg/taxes/international-tax/common-reporting-standard-(crs)/basic-information-for-account-holders-of-financial-institutions"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "AUTH-MOM",
     "entity_type": "authority",
     "entity_id": "MOM-SG",
-    "canonical_name": "Ministry of Manpower (MOM) + Workplace Fairness Tribunal",
-    "description": "Labour + employment + workplace-fairness regulator. Administers Employment Act + the new Workplace Fairness Act 2025 + work-pass regimes for foreign employees. The Workplace Fairness Tribunal hears anti-discrimination claims under the WFA.",
+    "canonical_name": "Ministry of Manpower (MOM)",
+    "description": "The ministry responsible for the Workplace Fairness Act 2025, which provides for a Commissioner for Workplace Fairness (s.37) and which MOM aims to bring into force in end-2027. Workplace discrimination claims are heard after mediation by the Employment Claims Tribunals (up to S$250,000) or the High Court, not by a separate workplace fairness tribunal.",
     "metadata": {
-      "type": "Labour regulator + tribunal"
+      "type": "Government ministry",
+      "source": [
+        "https://www.mom.gov.sg/newsroom/press-releases/2025/workplace-fairness--dispute-resolution----bill-press-release",
+        "https://sso.agc.gov.sg/Act/WFA2025/Uncommenced/20250304073414?DocDate=20250213"
+      ],
+      "source_checked": "2026-10-02"
     }
-  },
-  {
-    "ref_id": "AUTH-MAS-AGC-SANC",
-    "entity_type": "authority",
-    "entity_id": "MAS-SANCTIONS-COORD",
-    "canonical_name": "MAS + AGC sanctions coordination",
-    "description": "MAS issues sanctions notices implementing UN + targeted financial measures into Singapore law; the Attorney-General's Chambers (AGC) handles policy. UN + targeted financial measures notices are published by MAS for FIs; non-FI persons subject to direct UN designations also bound.",
-    "metadata": {}
   },
   {
     "ref_id": "MAS626-PF-RISK",
     "entity_type": "duty",
     "entity_id": "MAS626-PFRA",
-    "canonical_name": "MAS Notice 626 — Proliferation Financing risk assessment (NEW 2025)",
-    "description": "Mandatory PF risk assessment as a distinct dimension within the entity-wide ML/TF risk assessment + customer risk profile. Aligns with FATF R.1 update (Oct 2020) requiring PF risk to be assessed. Banks must identify, assess + understand PF risks arising from customers, geographies, products, transactions + delivery channels; calibrate controls accordingly. Effective 30 June 2025.",
+    "canonical_name": "MAS Notice 626 — proliferation financing within the risk assessment (from 1 July 2025)",
+    "description": "Since MAS Notice 626 (Amendment) 2025 took effect on 1 July 2025, money laundering in the Notice includes proliferation financing and every reference to money laundering risks is read accordingly (para 2.1 footnote 1); the risks a bank must identify, assess and understand under para 4.1 include proliferation financing risks (footnote 3). PF therefore runs through the risk assessment, CDD, screening and suspicious transaction reporting rather than being a separate regime. MAS has said PF risk assessments may be done on their own or as part of the existing ML/TF risk assessments, and should be done as soon as possible if not already in place. The change follows the FATF's October 2020 amendments to Recommendations 1 and 2, which require countries and the private sector to identify and assess the risk of potential breach, non-implementation or evasion of the proliferation-related targeted financial sanctions in Recommendation 7, and to mitigate it.",
     "metadata": {
-      "in_force": "2025-06-30",
-      "fatf_alignment": "R.1 (PF)"
+      "in_force": "2025-07-01",
+      "paragraph": "2.1 fn 1; 4.1 fn 3",
+      "fatf_alignment": "R.1 (amended October 2020)",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/response-to-feedback-received-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf",
+        "https://www.fatf-gafi.org/en/publications/Fatfgeneral/Outcomes-fatf-plenary-october-2020.html"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 2.1 footnote 1: \"In this Notice, money laundering includes proliferation financing, and all references in this Notice to money laundering (including money laundering risks) shall be construed accordingly.\""
     }
   },
   {
     "ref_id": "MAS626-RBA",
     "entity_type": "duty",
     "entity_id": "MAS626-EWRA",
-    "canonical_name": "Entity-wide risk-based approach + risk assessment",
-    "description": "Bank to identify, assess, monitor + manage ML/TF/PF risks proportionate to its size, nature + complexity. Documented risk assessment covering customer, geographic, product/service/transaction, delivery-channel risk factors; refreshed at least annually + on material change; senior-management approved.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — risk assessment and risk mitigation (paragraphs 4 and 5)",
+    "description": "A bank must take appropriate steps to identify, assess and understand its money laundering and terrorism financing risks in relation to its customers, the countries its customers are from or in, the countries it operates in, and its products, services, transactions (including digital token transactions) and delivery channels (para 4.1). Those steps include documenting the risk assessments, considering all relevant risk factors before deciding the overall risk level and mitigation, keeping the assessments up to date and having mechanisms to provide them to MAS (para 4.2). Policies, procedures and controls to manage the risks must be approved by senior management, monitored and enhanced where necessary, with enhanced measures where higher risks are identified (para 4.3). New products, business practices, delivery mechanisms and technologies must be risk-assessed before launch or use (para 5). The Notice sets no fixed review frequency.",
+    "metadata": {
+      "paragraph": "4-5",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 4.2(c): \"keeping the bank’s risk assessments up-to-date\""
+    }
   },
   {
     "ref_id": "MAS626-CDD",
     "entity_type": "duty",
     "entity_id": "MAS626-CDD-OBL",
-    "canonical_name": "Customer due diligence (MAS Notice 626 Section 6)",
-    "description": "Standard CDD chain: identify + verify the customer using reliable, independent sources; identify the beneficial owner + take reasonable measures to verify (using the registers / corporate searches / external sources); understand the purpose + intended nature of the business relationship; conduct ongoing monitoring (transaction scrutiny + record refresh). Risk-based intensity; reliance on third-party CDD only under specified conditions.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — customer due diligence (paragraph 6)",
+    "description": "CDD is performed when a bank establishes business relations; undertakes, for a customer without business relations, a transaction exceeding S$20,000 (other than a digital token transaction), any digital token transaction, any domestic wire transfer, a cross-border wire transfer exceeding S$1,500 or any digital token value transfer; suspects money laundering or terrorism financing; or doubts information previously obtained (para 6.3). The bank identifies and verifies the customer using reliable, independent source data, documents or information (paras 6.5-6.9), identifies connected parties of a legal person or arrangement (para 6.8) and persons acting for the customer (paras 6.10-6.11), inquires whether there is any beneficial owner (para 6.13), identifies beneficial owners (para 6.14) and takes reasonable steps to verify them (para 6.14B); the Notice sets no ownership percentage. It understands the purpose and intended nature of the relationship (para 6.18) and monitors business relations on an ongoing basis (para 6.19). Reliance on third parties is allowed only under paragraph 9, never for ongoing monitoring.",
+    "metadata": {
+      "paragraph": "6",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 6.13: \"Subject to paragraph 6.16, a bank shall inquire if there exists any beneficial owner in relation to a customer.\""
+    }
   },
   {
     "ref_id": "MAS626-EDD",
     "entity_type": "duty",
     "entity_id": "MAS626-EDD-OBL",
-    "canonical_name": "Enhanced due diligence — higher-risk situations",
-    "description": "EDD required for higher-risk situations: foreign + domestic + IO PEPs; customers + transactions from FATF-listed high-risk jurisdictions; complex / unusual / large transactions without apparent economic purpose; correspondent-banking relationships; new technologies / products. Senior-management approval required; source-of-wealth + source-of-funds verification; enhanced ongoing monitoring.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — enhanced CDD for higher-risk customers (paragraphs 8.5-8.8 and 10)",
+    "description": "A bank must have systems to determine whether a customer presents a higher ML/TF risk (para 8.5). Higher-risk circumstances include a customer or beneficial owner from or in a jurisdiction for which the FATF has called for countermeasures (to be treated as higher risk), or one known to have inadequate AML/CFT measures (para 8.6). The enhanced measures of para 8.3 — senior management approval, source of wealth and source of funds, enhanced ongoing monitoring — apply to customers the bank determines, or MAS or other Singapore authorities notify, as higher risk (para 8.7), and must take account of the laws, regulations and directions MAS administers, including sanctions regulations (para 8.8). Correspondent banking requires additional measures (para 10).",
+    "metadata": {
+      "paragraph": "8.5-8.8; 10",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 8.7: \"A bank shall perform the appropriate enhanced CDD measures in paragraph 8.3 for business relations with or transactions for any customer\""
+    }
   },
   {
     "ref_id": "MAS626-PEPS",
     "entity_type": "duty",
     "entity_id": "MAS626-PEP-OBL",
-    "canonical_name": "PEP obligations (incl. Singapore Government PEPs)",
-    "description": "Foreign PEPs always trigger heightened risk + EDD. Domestic PEPs + IO PEPs assessed on a risk-sensitive basis. 2025 refresh clarifies treatment of Singapore Government PEPs (those holding prominent public functions in Singapore — assessed on risk-sensitive basis, with PEPs from politically-aligned positions still typically requiring EDD). Family members + close associates within scope.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — politically exposed persons (paragraphs 8.1-8.4)",
+    "description": "A bank must determine whether a customer, a person acting for it, a connected party or a beneficial owner is a politically exposed person or a family member or close associate of one (para 8.2). For them it must at least obtain senior management approval to establish or continue the relationship, establish source of wealth and source of funds by appropriate and reasonable means, and conduct enhanced ongoing monitoring (para 8.3). A risk-based approach to whether, and how far, to apply those measures is allowed only for domestic PEPs, international organisation PEPs and PEPs who have stepped down (considering their continuing influence), with their family members and close associates, and not where the relationship presents a higher risk (para 8.4). Foreign PEPs therefore always receive enhanced CDD. The Notice has no separate category of 'Singapore Government PEPs' and sets no fixed period after a PEP leaves office.",
+    "metadata": {
+      "paragraph": "8.1-8.4",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 8.3(a): \"obtain approval from the bank’s senior management to establish or continue business relations with, or undertake any transaction without an account being opened for the customer\""
+    }
   },
   {
     "ref_id": "MAS626-SOW-SOF",
     "entity_type": "duty",
     "entity_id": "MAS626-SOWSOF",
-    "canonical_name": "Source of wealth / source of funds verification",
-    "description": "Required for higher-risk customers + relationships. SoW = overall economic activities that generated the customer's net worth; SoF = origin of the specific funds in the transaction. Documented; corroborated against independent evidence where possible; refreshed on material change.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — source of wealth and source of funds (paragraph 8.3(b))",
+    "description": "For PEPs and other higher-risk customers a bank must establish, by appropriate and reasonable means, the source of wealth and source of funds of the customer and any beneficial owner (para 8.3(b), applied by para 8.7). The Guidelines to the Notice explain that source of wealth refers to the origin of the customer's and beneficial owner's entire body of wealth and how it was acquired, distinct from identifying the assets they own (Guidelines 8-5-5), and source of funds to the origin of the particular funds or assets that are the subject of the business relations (Guidelines 8-5-6).",
+    "metadata": {
+      "paragraph": "8.3(b)",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 8.3(b): \"establish, by appropriate and reasonable means, the source of wealth and source of funds of the customer and any beneficial owner of the customer\""
+    }
   },
   {
     "ref_id": "MAS626-STR",
     "entity_type": "duty",
     "entity_id": "MAS626-STR-OBL",
-    "canonical_name": "Suspicious Transaction Reporting (STR) — 2025 streamlining",
-    "description": "Bank must promptly file STRs with STRO when it knows or has reasonable grounds to suspect that any property is connected to drug trafficking, serious crime (predicate offences per CDSA), terrorism financing, or proliferation financing. 2025 refresh streamlined: clearer trigger thresholds; structured STR content requirements; tipping-off prohibition under CDSA Section 48 + TSOFA Section 12. Quality + timeliness of STRs increasingly emphasised by MAS + STRO.",
+    "canonical_name": "MAS Notice 626 — suspicious transaction reporting (paragraph 14)",
+    "description": "A bank must keep in mind the CDSA and TSOFA provisions on reporting suspicious transactions and have internal policies to meet them, including a single reference point for internal referrals and records of all transactions referred to STRO with the internal findings (para 14.1). It must promptly submit suspicious transaction reports, including on attempted transactions and regardless of amount, to STRO and give MAS a copy on request (para 14.2, as amended from 1 July 2025: previously a copy of every STR went to MAS). It must consider, and document, whether to file where it cannot complete CDD or the customer is reluctant, withdraws or ends the relationship (para 14.3), and where CDD would tip off the customer it may stop, must document why and must file an STR (para 14.4). Tipping-off is an offence under CDSA s.57 and TSOFA s.10B. The Guidelines to the Notice (as revised with effect from 1 July 2025) expect an STR to be filed no later than 5 business days after suspicion was first established, and no later than 1 business day for sanctioned parties and those acting for them. The 2025 amendments did not change what triggers an STR or prescribe STR content.",
     "metadata": {
-      "report_to": "STRO"
+      "report_to": "STRO",
+      "paragraph": "14",
+      "guideline_filing_days": 5,
+      "guideline_filing_days_sanctioned": 1,
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/consultation-paper-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/response-to-feedback-received-on-proposed-amendments-to-amlcft-notices-and-guidelines.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 14.2: \"A bank shall promptly submit reports on suspicious transactions (including attempted transactions), regardless of the amount of the transaction, to STRO, and extend a copy to the Authority upon request.\""
     }
   },
   {
     "ref_id": "MAS626-SANCTIONS",
     "entity_type": "duty",
     "entity_id": "MAS626-SANC-OBL",
-    "canonical_name": "Sanctions screening + targeted financial measures",
-    "description": "Banks must implement sanctions-screening programs against UN + Singapore targeted financial measures + relevant designated lists. Particularly DPRK + Iran focus given strong Singapore enforcement signal. MAS publishes guidance + targeted-measures notices; AGC manages designations policy.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — screening (paragraphs 6.39-6.42) and sanctions",
+    "description": "A bank must screen customers, persons acting for them, connected parties and beneficial owners against relevant ML/TF information sources and the lists and information provided by MAS or other Singapore authorities (para 6.39): at onboarding, for occasional transactions, periodically and when the lists or the persons change (para 6.40); screen originators and beneficiaries of wire and value transfers (para 6.41); and document the results (para 6.42). Enhanced CDD must take account of MAS's sanctions regulations and directions (para 8.8). The duty to freeze designated persons' assets without delay comes from MAS's sanctions regulations under FSMA section 15 and from the TSOFA, not from the Notice; the Guidelines expect an STR on a positive sanctions hit no later than 1 business day after suspicion is established.",
+    "metadata": {
+      "paragraph": "6.39-6.42; 8.8",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf",
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://sso.agc.gov.sg/Act/TSFA2002"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 6.39: \"against relevant money laundering and terrorism financing information sources, as well as li sts and information provided by the Authority or other relevant authorities in Singapore\""
+    }
   },
   {
     "ref_id": "MAS626-POLICIES-GOVERNANCE",
     "entity_type": "duty",
     "entity_id": "MAS626-IP",
-    "canonical_name": "Internal policies, procedures + governance",
-    "description": "Documented written AML/CFT internal policies, procedures + controls; senior-management approved; reviewed at least annually + on material change. Designated AML compliance officer at senior management level + alternate compliance officer. Independent audit + compliance function review. Customer + transaction monitoring systems calibrated to the risk assessment.",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — internal policies, compliance and audit (paragraph 15)",
+    "description": "A bank must develop and implement adequate internal policies, procedures and controls, taking account of its ML/TF risks and the size of its business, and communicate them to employees (para 15.1); they must meet all the Notice's requirements (para 15.2). A Singapore-incorporated bank must apply a group AML/CFT policy to its branches and subsidiaries (paras 15.3-15.9). It must appoint an AML/CFT compliance officer at the management level (para 15.10) who is suitably qualified, adequately resourced and has timely access to customer records (para 15.11); maintain an adequately resourced, independent audit function that regularly assesses the policies and compliance (para 15.12); and screen employees and officers when hiring (para 15.13). The Notice sets no annual review cycle and requires no alternate compliance officer.",
+    "metadata": {
+      "paragraph": "15.1-15.13",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 15.10: \"the appointment of an AML/CFT compliance officer at the management level\""
+    }
   },
   {
     "ref_id": "MAS626-TRAINING",
     "entity_type": "duty",
     "entity_id": "MAS626-TR",
-    "canonical_name": "AML/CFT training programme",
-    "description": "All employees with AML/CFT-relevant responsibilities trained on: applicable laws + MAS notices + internal policies; current ML/TF/PF typologies + red flags; their role in the AML/CFT framework; how to escalate suspicion. Refresher training on regulatory + typology changes. Records retained; training effectiveness assessed (testing or scenario-based assessment).",
-    "metadata": {}
+    "canonical_name": "MAS Notice 626 — training (paragraph 15.14)",
+    "description": "A bank must take all appropriate steps to ensure its employees and officers, in Singapore or elsewhere, are regularly and appropriately trained on AML/CFT laws and regulations, in particular CDD measures and detecting and reporting suspicious transactions; prevailing money laundering and terrorism financing techniques, methods and trends (money laundering including proliferation financing); and the bank's internal AML/CFT policies, procedures and controls and their own roles and responsibilities (para 15.14). Training records and effectiveness testing are good practice that the Notice does not itself prescribe.",
+    "metadata": {
+      "paragraph": "15.14",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 15.14: \"are regularly and appropriately trained on\""
+    }
   },
   {
     "ref_id": "MAS626-RECORD-RETENTION",
     "entity_type": "duty",
     "entity_id": "MAS626-RR",
-    "canonical_name": "Record retention — 5 years minimum",
-    "description": "CDD records + transaction records retained for at least 5 years after the end of the business relationship or the completion of the occasional transaction; longer retention required where ongoing investigation or supervisory request. Records sufficient to enable reconstruction of individual transactions + accessibility to STRO + MAS on request.",
+    "canonical_name": "MAS Notice 626 — record keeping, at least 5 years (paragraph 12)",
+    "description": "A bank must prepare, maintain and retain records of all data, documents and information the Notice requires (para 12.1) so that legal requirements are met, any individual transaction can be reconstructed as evidence, authorities and auditors can review compliance and enquiries can be answered in a reasonable time (para 12.2). CDD information, account files, business correspondence and results of analysis are kept for at least 5 years after the business relations end or the wire transfer, value transfer or transaction is completed, and transaction records for at least 5 years after the transaction (para 12.3). Records about a matter under investigation or the subject of an STR are kept as STRO or other authorities request (para 12.5).",
     "metadata": {
-      "retention_years": 5
+      "retention_years": 5,
+      "paragraph": "12",
+      "source": [
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice 626 para 12.3(a): \"a period of at least 5 years following the termination of such business relations or completion of such wire transfers, value transfers or transactions\""
     }
   },
   {
     "ref_id": "FSMA-PART9-SCOPE",
     "entity_type": "concept",
     "entity_id": "DTSP-SCOPE",
-    "canonical_name": "DTSP scope — Singapore-domiciled outbound-only services",
-    "description": "Singapore-incorporated person providing one or more digital token services (similar to PSA DPT services) solely to customers outside Singapore. Captures Singapore-domiciled entities that previously fell outside the PSA scope (which captures only services to Singapore customers) + the SFA (which doesn't typically cover DPT). Closes a deliberate regulatory-arbitrage opportunity. Same digital token service activities as PSA DPT (dealing, exchange, custody, transmission, advice).",
+    "canonical_name": "DTSP scope — digital token services provided outside Singapore (FSMA s.136-137, First Schedule)",
+    "description": "Part 9 catches an individual or partnership operating from a place of business in Singapore, and any Singapore corporation (including an LLP) wherever it operates, that carries on a business of providing digital token services outside Singapore (s.137(1), (3)). A digital token service provided alongside another business is presumed to be a business of its own, and proof that it is related or incidental does not rebut that (s.137(2), (4)). 'Digital token' covers digital payment tokens and digital representations of capital markets products (s.136(1)). The First Schedule lists ten services: dealing; facilitating exchange; accepting tokens for transmission; arranging transmission; inducing persons to buy or sell; safeguarding tokens or digital token instruments the provider controls; carrying out customer instructions over them; and advice or research on the sale of digital tokens. Technical service providers that never possess money or tokens, central bank digital token services and limited purpose tokens are excluded. A person required to be licensed, approved or recognised, or exempted, under the SFA, the FAA or the Payment Services Act 2019 for the relevant activity is outside s.137, as are persons in the Second Schedule and prescribed classes (s.137(5)).",
     "metadata": {
-      "in_force": "2025-06-30"
+      "in_force": "2025-06-30",
+      "section": "136-137; First Schedule",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FSMA2022"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "FSMA section 137(1): \"an individual or a partnership must not from a place of business in Singapore carry on a business of providing any type of digital token service outside Singapore unless the individual or the partnership has in force a licence.\""
     }
   },
   {
     "ref_id": "FSMA-PART9-LICENSING",
     "entity_type": "duty",
     "entity_id": "DTSP-LIC",
-    "canonical_name": "DTSP licensing — high approval bar",
-    "description": "MAS DTSP licence required for in-scope activities. Application requirements include: fit-and-proper directors + key officers + substantial shareholders; minimum capital; AML/CFT framework aligned with MAS notices; technology-risk management; conduct framework; safe-keeping + custody arrangements for customer assets. MAS approval bar deliberately narrow — many existing outbound-only entities chose to exit Singapore rather than apply.",
-    "metadata": {}
+    "canonical_name": "DTSP licensing (FSMA s.138-147)",
+    "description": "MAS may grant a licence with or without conditions or refuse one, after giving the applicant a chance to be heard (s.138(2), (5)). It must not grant one unless the applicant has a permanent place of business in Singapore, a Singapore-resident executive director (corporation) or partner or manager (partnership or LLP) unless a prescribed exception applies, meets the prescribed financial requirements and the operational requirements MAS specifies, and MAS is satisfied it is fit and proper, as to its financial condition, that the public interest will be served and as to any other relevant criteria (s.138(3)). A licensee must keep meeting financial and operational requirements (s.138(6)), keep a permanent place of business and books (s.143), notify MAS of specified events (s.144), report to MAS (ss.145-146) and must not grant credit facilities to individuals in Singapore (s.147). Unlicensed business is an offence: up to S$125,000 and/or 3 years for an individual, up to S$250,000 otherwise, with daily fines for continuing offences (s.137(6)). MAS said it would grant a licence only in extremely limited circumstances.",
+    "metadata": {
+      "section": "137(6); 138-147",
+      "source": [
+        "https://sso.agc.gov.sg/Act/FSMA2022",
+        "https://www.mas.gov.sg/-/media/response-to-feedback-received-from-dtsp-cp.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "FSMA section 147(1): \"A licensee must not carry on a business of granting any credit facility to any individual in Singapore.\""
+    }
   },
   {
     "ref_id": "PSA-DPT-PROTECTION",
     "entity_type": "duty",
     "entity_id": "PSA-DPT-AMEND-2024",
-    "canonical_name": "PSA Digital Payment Token user-protection (April 2024 amendments)",
-    "description": "Expanded user-protection requirements for DPT service providers: customer-asset segregation (separation of customer DPT from own holdings); custody safeguards (Bahamas-FTX-style insolvency-remote arrangements); pre-contract risk disclosures (warning on volatility + loss); ban on offering retail credit for DPT purchase; prohibition on incentivising DPT trading (loyalty rewards, referral bonuses); marketing restrictions to retail audiences.",
+    "canonical_name": "PSA digital payment token user protection — safeguarding (from 4 October 2024) and consumer access measures (from 19 June 2025)",
+    "description": "From 4 April 2024 the amended Payment Services Act 2019 brought DPT custody and transmission services within the DPT service (s.2(1)) and empowered MAS to impose safeguarding and other requirements on DPT service providers by regulation (s.21A). The Payment Services Regulations on safeguarding customers' assets took effect six months later: customers' assets must be segregated and held in a trust account for their benefit, with proper books and records and effective controls (PS Regulations reg 18B). MAS Guidelines PS-G03 (issued 2 April 2024, last revised 19 September 2024) set out the expectations: Chapters 1 to 3 (safeguarding) from 4 October 2024; from 19 June 2025 Chapters 4 to 6 — a risk awareness assessment before a retail customer may access DPT services, no incentives to entice retail customers or to have others promote or refer services to them, no credit facility, loan of DPTs, leveraged DPT transactions or DPT derivatives contracts for retail customers, management of conflicts of interest, DPT listing and governance policies, and complaints handling.",
     "metadata": {
-      "in_force": "2024-04-04"
+      "scope_in_force": "2024-04-04",
+      "safeguarding_in_force": "2024-10-04",
+      "consumer_access_in_force": "2025-06-19",
+      "source": [
+        "https://sso.agc.gov.sg/Act/PSA2019",
+        "https://www.mas.gov.sg/news/media-releases/2024/mas-expands-scope-of-regulated-payment-services",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/guidelines/pso/ps-g03-guidelines-on-consumer-protection-measures-by-digital-payment-token-service-providers/guidelines-on-provision-of-consumer-protection-safeguards-by-digital-payment-token-service-providers.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "Guidelines PS-G03 para 1.2.1: \"Chapters 1, 2 (other than paragraphs 2.3.1 to 2.3.7), 3 and paragraph 5.3 of the Guidelines take effect on 4 October 2024.\""
     }
   },
   {
     "ref_id": "PDPA-BREACH",
     "entity_type": "duty",
     "entity_id": "PDPA-BREACH-NOT",
-    "canonical_name": "PDPA mandatory breach notification (2020 amendments)",
-    "description": "Mandatory notification to PDPC + affected individuals for personal-data breaches that result (or are likely to result) in significant harm or affect 500+ individuals. Notification to PDPC as soon as practicable + no later than 3 calendar days; notification to individuals + remediation when significant harm reasonably likely. Penalties up to S$1m or 10% of annual turnover.",
+    "canonical_name": "PDPA mandatory data breach notification (Part 6A, from 1 February 2021)",
+    "description": "For a data breach on or after 1 February 2021, an organisation that has reason to believe a breach has occurred must assess, reasonably and expeditiously, whether it is notifiable (s.26C). A breach is notifiable if it results, or is likely to result, in significant harm to an affected individual, or is or is likely to be of a significant scale (s.26B) — 500 or more affected individuals under the PDP (Notification of Data Breaches) Regulations 2021, as the PDPC's guide states. A breach only within the organisation is not notifiable (s.26B(4)). The PDPC must be notified as soon as practicable and no later than 3 calendar days after the organisation assesses the breach as notifiable (s.26D(1)); affected individuals must be notified, on or after notifying the PDPC, where significant harm is likely, unless remedial action or prior measures make harm unlikely or an authority directs otherwise (s.26D(2), (5)-(7)). Contraventions can attract the section 48J financial penalties.",
     "metadata": {
       "in_force": "2021-02-01",
-      "notification_days": 3
+      "notification_days": 3,
+      "significant_scale_individuals": 500,
+      "section": "26A-26E",
+      "source": [
+        "https://sso.agc.gov.sg/Act/PDPA2012",
+        "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/other-guides/guide-on-managing-and-notifying-data-breaches-under-the-pdpa-15-mar-2021.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "PDPA section 26D(1): \"the organisation must notify the Commission as soon as is practicable, but in any case no later than 3 calendar days after the day the organisation makes that assessment.\""
     }
   },
   {
     "ref_id": "PDPC-AI-GOV",
     "entity_type": "concept",
     "entity_id": "PDPC-AI-FRAMEWORK",
-    "canonical_name": "PDPC AI Model Governance Framework (Jan 2024)",
-    "description": "Voluntary framework on responsible AI deployment: human-in-the-loop / out-of-loop / on-the-loop calibration; data + model governance; risk-based decision-making; transparency + explainability; accountability + audit. Aligned with PDPA + Singapore National AI Strategy 2.0. Implementation guidelines + sector-specific updates expected through 2026.",
+    "canonical_name": "PDPC Model AI Governance Framework (second edition, 21 January 2020)",
+    "description": "A voluntary framework released by the PDPC (first edition 2019; second edition 21 January 2020) for private-sector organisations deploying AI at scale. It gives guidance in four areas: internal governance structures and measures; determining the level of human involvement in AI-augmented decision-making (human-in-the-loop, human-out-of-the-loop and human-over-the-loop approaches); operations management; and stakeholder interaction and communication. It does not amend the PDPA.",
     "metadata": {
-      "issued": "2024-01-17"
+      "issued": "2020-01-21",
+      "edition": "2nd",
+      "binding": false,
+      "source": [
+        "https://www.pdpc.gov.sg/-/media/files/pdpc/pdf-files/resource-for-organisation/ai/sgmodelaigovframework2.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "Model AI Governance Framework (2nd ed.) para 2.3: \"This voluntary Model Framework provides guidance on the key issues to be considered and measures that can be implemented.\""
     }
   },
   {
     "ref_id": "MAS-TRM-CYBER",
     "entity_type": "duty",
     "entity_id": "TRM-CYBER",
-    "canonical_name": "MAS TRM — cybersecurity framework",
-    "description": "Technology-risk governance: CISO function (where applicable); risk-management process; system development controls; access controls + MFA; cybersecurity (network + endpoint + application + threat-intelligence); IT-incident management + reporting to MAS; cloud-computing controls; IT-third-party management. Aligned with international cyber frameworks but with MAS-specific expectations (notification thresholds, root-cause + remediation reporting).",
-    "metadata": {}
+    "canonical_name": "MAS technology risk and cyber resilience — TRM Guidelines plus the binding TRM Notices",
+    "description": "The TRM Guidelines (January 2021) set expectations: the board and senior management should appoint a Chief Information Officer (or CTO or head of IT) and a Chief Information Security Officer (or head of information security), establish a technology risk management framework, apply security-by-design, maintain incident and problem management, IT resilience and disaster recovery testing, access controls (multi-factor authentication for sensitive system functions and remote access), cryptography, data and infrastructure security, cyber security operations and assessments (vulnerability assessment, penetration testing, cyber exercises). The binding rules sit in MAS Notices: for banks, MAS Notice FSM-N05 (in effect 10 May 2024, issued under FSMA s.29) requires critical systems to be identified, unscheduled downtime of each critical system not to exceed 4 hours in any 12 months, a recovery time objective of not more than 4 hours validated at least once every 12 months, notification to MAS within 1 hour of discovering a relevant incident, and a root cause and impact analysis report within 14 days. MAS Notice FSM-N30 sets the same pattern for digital token service providers.",
+    "metadata": {
+      "incident_notification_hours": 1,
+      "rca_report_days": 14,
+      "max_unscheduled_downtime_hours_per_12m": 4,
+      "rto_hours": 4,
+      "source": [
+        "https://www.mas.gov.sg/-/media/mas/regulations-and-financial-stability/regulatory-and-supervisory-framework/risk-management/trm-guidelines-18-january-2021.pdf",
+        "https://www.mas.gov.sg/-/media/mas-media-library/regulation/notices/trpd/notice-fsm-n05/mas-notice-fsm-n05.pdf",
+        "https://www.mas.gov.sg/regulation/notices/fsm-n30-trm"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS Notice FSM-N05 para 7: \"A Bank must notify the Authority as soon as possible, but not later than 1 hour, upon the discovery of a relevant incident.\""
+    }
   },
   {
     "ref_id": "MAS-BCM-RESILIENCE",
     "entity_type": "duty",
     "entity_id": "BCM-OBL",
-    "canonical_name": "BCM Guidelines — operational resilience",
-    "description": "Identify critical business functions + dependencies; set recovery-time + recovery-point objectives proportionate to criticality; define impact tolerance; conduct scenario testing including severe-but-plausible scenarios; integrate with cyber + third-party + climate-resilience considerations. Annual board attestation on BCM framework effectiveness expected.",
-    "metadata": {}
+    "canonical_name": "MAS BCM Guidelines — business continuity expectations",
+    "description": "Financial institutions should identify critical business services and functions; set a Service Recovery Time Objective for each critical business service; map end-to-end dependencies on people, processes, technology and third parties; manage concentration risk; test plans regularly against severe but plausible disruption scenarios; audit the BCM framework and each critical business service's BCM at least once every three years by a qualified, independent party; and have incident and crisis management arrangements. Senior management should give the board an annual attestation on the state of BCM preparedness, its alignment with the Guidelines and key issues such as significant residual risk, and provide it to MAS on request (para 10.6). The Guidelines are principles FIs are encouraged to adopt proportionately, not a binding Notice.",
+    "metadata": {
+      "audit_cycle_years": 3,
+      "attestation": "annual, senior management to board",
+      "source": [
+        "https://www.mas.gov.sg/-/media/mas/regulations-and-financial-stability/regulatory-and-supervisory-framework/risk-management/bcm-guidelines/guidelines-on-bcm-june-2022.pdf"
+      ],
+      "source_checked": "2026-10-02",
+      "source_quote": "MAS BCM Guidelines para 10.6: \"The senior management should provide an annual attestation to the Board on the state of the FI’s BCM preparedness\""
+    }
   },
   {
     "ref_id": "ACRA-RORC",
     "entity_type": "concept",
     "entity_id": "ACRA-RORC-BO",
-    "canonical_name": "ACRA Register of Registrable Controllers (beneficial ownership)",
-    "description": "Singapore's beneficial-ownership transparency regime. All Singapore-registered companies + LLPs maintain a Register of Registrable Controllers identifying beneficial owners (25% threshold + senior-managing-official fallback). Filings to ACRA where required + accessible to law-enforcement + MAS for AML purposes. Upcoming central UBO register reforms align with FATF R.24 expectations.",
+    "canonical_name": "Register of Registrable Controllers (RORC) and ACRA's Central RORC",
+    "description": "Companies (private and public), foreign companies registered in Singapore and LLPs must keep a private register of their registrable controllers and, since 30 July 2020, file that information with ACRA's Central Register of Registrable Controllers; from 16 June 2025 a newly incorporated or registered entity files on the day of registration. For a company with share capital, a person has a significant interest with an interest in more than 25% of the shares or shares carrying more than 25% of the total voting power, and significant control with the right to appoint or remove directors holding a majority of voting rights, more than 25% of the voting rights, or the right or ability to exercise significant influence or control. The Central RORC is not public: access is limited to the entity's officers and corporate service providers and to law enforcement agencies administering or enforcing laws under their purview.",
     "metadata": {
-      "supervisor": "ACRA"
+      "supervisor": "ACRA",
+      "central_register_since": "2020-07-30",
+      "significant_interest_threshold": "more than 25%",
+      "source": [
+        "https://www.acra.gov.sg/manage/companies/legal-requirements-common-offences/maintaining-local-companys-information-registers/rorc/registrable-controllers/",
+        "https://www.acra.gov.sg/manage/companies/legal-requirements-common-offences/maintaining-local-companys-information-registers/rorc/central-rorc/"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "STRO-FILING",
     "entity_type": "concept",
     "entity_id": "STRO-FILING-WORKFLOW",
-    "canonical_name": "STRO filing workflow + STRONet",
-    "description": "STRs filed electronically via STRONet (the STRO secure portal); content + structured fields per STRO Guidelines. STRO disseminates intelligence to law-enforcement, MAS + foreign FIUs (Egmont Group). Quality + timeliness emphasised in MAS Enforcement Reports + STRO Annual Reports.",
+    "canonical_name": "STR filing through SONAR",
+    "description": "Suspicious transaction reports must be filed electronically through the STRO Online Notices And Reporting platform (SONAR), which is also used for cross-border cash movement reports and precious stones and metals dealers' cash transaction reports. Under CDSA section 5 STRO receives and analyses these reports. An STR filed with STRO also meets the reporting obligation under the TSOFA (Guidelines to MAS Notice 626, para 14-2).",
     "metadata": {
-      "filing_portal": "STRONet"
+      "filing_portal": "SONAR",
+      "source": [
+        "https://www.police.gov.sg/Advisories/Commercial-Crimes/Suspicious-Transaction-Reporting-Office/Suspicious-Transaction-Reporting",
+        "https://sso.agc.gov.sg/Act/CDTOSCCBA1992",
+        "https://www.mas.gov.sg/-/media/amld-amendments---30-june-2025/guidelines-to-mas-notice-626.pdf"
+      ],
+      "source_checked": "2026-10-02"
     }
   },
   {
     "ref_id": "SG-ENFORCEMENT-PATTERN",
     "entity_type": "concept",
     "entity_id": "MAS-ENF-PATTERN",
-    "canonical_name": "MAS enforcement pattern + Singapore AML cases",
-    "description": "Major Singapore AML cases since 2017 establish MAS's expectations: 1MDB-related enforcement (BSI + Falcon + Standard Chartered + Coutts + UBS + DBS — S$29.1m total fines across 8 banks); August 2023 S$3bn money-laundering case (10 foreign nationals convicted, MAS-supervised firms fined S$27.5m collectively in 2024 for related AML control gaps); ongoing DBS + UOB + others enforcement-action signals. MAS enforcement pattern + STRO output is the operational benchmark.",
+    "canonical_name": "MAS AML enforcement actions — 1MDB (2016-2017) and the August 2023 money laundering case",
+    "description": "On 30 May 2017 MAS completed its two-year review of banks involved in 1MDB-related transactions: financial penalties of S$29.1 million in aggregate had been imposed on eight banks (BSI Bank, Falcon Bank, DBS, UBS AG, Standard Chartered Bank, Coutts, Credit Suisse and UOB), and MAS shut down two merchant banks, BSI Bank and Falcon Bank. The penalties on Credit Suisse (S$0.7 million) and UOB (S$0.9 million) were for breaches of MAS Notice 626. After the money laundering case of August 2023 — ten persons arrested in police raids on 15 August 2023, all ten convicted and sentenced by June 2024 — MAS on 4 July 2025 imposed composition penalties totalling S$27.45 million on nine financial institutions (banks, capital markets services licensees and a trust company) for AML/CFT breaches related to the case, and issued prohibition orders against four individuals.",
     "metadata": {
-      "1mdb_total_fines_sgd": "29100000",
-      "2023_3bn_case_fines_sgd": "27500000"
+      "1mdb_total_penalties_sgd": "29100000",
+      "1mdb_banks": 8,
+      "2025_composition_penalties_sgd": "27450000",
+      "2025_fis": 9,
+      "2025_action_date": "2025-07-04",
+      "source": [
+        "https://www.mas.gov.sg/news/media-releases/2017/financial-penalties-imposed-on-credit-suisse-and-uob-for-1mdb-related-transactions",
+        "https://www.mas.gov.sg/regulation/enforcement/enforcement-actions/2025/mas-takes-regulatory-actions-against-9-financial-institutions-for-aml-related-breaches",
+        "https://www.police.gov.sg/media-hub/news/2024/20240610_tenth_person_sentenced_for_forgery_and_money_laundering_offences"
+      ],
+      "source_checked": "2026-10-02"
     }
   }
 ]
