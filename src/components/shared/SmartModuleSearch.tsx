@@ -133,7 +133,7 @@ export default function SmartModuleSearch() {
         {!hasSearched && (
           <>
             <p className="mb-3 text-sm text-adv-gray">
-              Describe what you need help with in plain language — Claude will find the right modules for you.
+              Describe what you need help with in plain language — the AI will find the right modules for you.
             </p>
             {/* Example prompts */}
             <div className="mb-3 flex flex-wrap gap-2">
@@ -233,7 +233,7 @@ export default function SmartModuleSearch() {
         {/* Footer link to full discovery */}
         <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
           <p className="text-[11px] text-adv-gray">
-            Powered by Claude Haiku · results in ~2 seconds
+            Matched by the AI model · results in a few seconds
           </p>
           <Link
             to="/discover"

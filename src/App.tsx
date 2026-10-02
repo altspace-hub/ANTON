@@ -65,6 +65,8 @@ const HomeV2 = lazy(() => import('./pages/HomeV2'));
 // Public demo (DEMO_MODE=true): the privacy notice and the demo terms, readable before signing in.
 const PrivacyNoticePage = lazy(() => import('./pages/PrivacyNoticePage'));
 const DemoTermsPage = lazy(() => import('./pages/DemoTermsPage'));
+// Who made ANTON, what it is and which models the server reports; readable signed in or out.
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 
 // Heavy/secondary pages — lazy-loaded to reduce initial bundle size
@@ -484,6 +486,15 @@ export default function App() {
     return (
       <Suspense fallback={<div className="min-h-screen bg-white" />}>
         {pathname === '/privacy' ? <PrivacyNoticePage /> : <DemoTermsPage />}
+      </Suspense>
+    );
+  }
+
+  // The About page, likewise: the sign-in page links it, and so does the sidebar.
+  if (pathname === '/about') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-adv-dark" />}>
+        <AboutPage />
       </Suspense>
     );
   }

@@ -4,22 +4,28 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { isApiKeyConfigured } from '../services/claude-client.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
+import { getConfiguredProvider } from '../services/provider-router.js';
 import { appVersion } from '../lib/app-version.js';
 
 /**
  * Which engines can take a model call right now. `apiKeyConfigured` alone
  * told a subscription-only instance it had no AI at all ("API Not
- * Configured"), although every run worked on the SDK engine.
+ * Configured"), although every run worked on the SDK engine. `endpoint` is a
+ * default model on an OpenAI-compatible endpoint (OpenRouter) or Ollama: the
+ * public showcase's only engine, which the header reported as "No AI engine
+ * configured" (2026-10-02).
  */
 export function engineStatus(): {
-  anthropicApi: boolean; sdk: boolean; codex: boolean; otherProviders: boolean; ready: boolean;
+  anthropicApi: boolean; sdk: boolean; codex: boolean; otherProviders: boolean; endpoint: boolean; ready: boolean;
 } {
   const anthropicApi = isApiKeyConfigured();
   const sdk = isSdkEngineEnabled();
   const codex = isCodexEngineEnabled();
   const otherProviders = !!(process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.MISTRAL_API_KEY
     || (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY));
-  return { anthropicApi, sdk, codex, otherProviders, ready: anthropicApi || sdk || codex || otherProviders };
+  const configured = getConfiguredProvider();
+  const endpoint = configured === 'openai_compatible' || configured === 'ollama';
+  return { anthropicApi, sdk, codex, otherProviders, endpoint, ready: anthropicApi || sdk || codex || otherProviders || endpoint };
 }
 
 // OBS-04: active SSE stream counter — incremented/decremented in claude.ts

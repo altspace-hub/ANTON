@@ -590,7 +590,7 @@ export interface HealthStatus {
   status: 'ok' | 'error';
   apiKeyConfigured: boolean;
   /** Which engines can take a model call (absent on older servers). */
-  engines?: { anthropicApi: boolean; sdk: boolean; codex: boolean; otherProviders: boolean; ready: boolean };
+  engines?: { anthropicApi: boolean; sdk: boolean; codex: boolean; otherProviders: boolean; endpoint?: boolean; ready: boolean };
   database: boolean;
   version: string;
 }

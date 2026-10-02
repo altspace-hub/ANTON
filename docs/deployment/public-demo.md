@@ -579,7 +579,7 @@ Test this once before launch with a copy of the database.
 - OpenRouter's Terms, DPA and sub-processor notices: anything new since the archived copies?
 - The start log since the last check shows no `[demo]` warning you have not accepted, and no `[demo] refused a call` line.
 - A `[demo-retention]` line every day, and a test account created for the check is gone after its TTL.
-- A private window loads `/`, `/login`, `/privacy`, `/terms` and a module page with no request to any other host (the browser's network panel).
+- A private window loads `/`, `/login`, `/privacy`, `/terms`, `/about` and a module page with no request to any other host (the browser's network panel).
 
 ## Compliance before launch
 
@@ -634,7 +634,7 @@ A compliance review of the demo on 2026-09-26 set twelve gates. The review itsel
 
 **From a private window**
 
-- [ ] The network panel shows no request to any host but the demo's own on `/`, `/login`, `/privacy`, `/terms` and a module page.
+- [ ] The network panel shows no request to any host but the demo's own on `/`, `/login`, `/privacy`, `/terms`, `/about` and a module page.
 - [ ] Sign-up works with the code and both ticks, and fails without the code; the new `users` row stores the terms version and the times.
 - [ ] A module runs and exports; a hidden module is not listed; `/api/agents` answers 404.
 - [ ] Deleting the session leaves no rows for it in `versions`, `embeddings` or `system_prompts`.

@@ -93,6 +93,18 @@ const idList = (v: unknown): string[] => (Array.isArray(v)
 const modelId = (v: unknown): string | null =>
   typeof v === 'string' && v.length > 0 && v.length <= 200 && /^[!-~]+$/.test(v) ? v : null;
 
+/**
+ * The running ANTON version from /api/config (`version`, the package version
+ * the server reads at boot; server/lib/app-version.ts), for the About page.
+ * '' when the server did not say, said 'unknown', or sent anything other than
+ * a short version string. Any server, demo or not.
+ */
+export function parseServerVersion(json: unknown): string {
+  if (!json || typeof json !== 'object') return '';
+  const v = (json as Record<string, unknown>).version;
+  return typeof v === 'string' && v !== 'unknown' && /^[0-9A-Za-z][0-9A-Za-z.+-]{0,39}$/.test(v) ? v : '';
+}
+
 /** Reads /api/config defensively: anything malformed means "not a demo". */
 export function parseDemoConfig(json: unknown): DemoConfig {
   if (!json || typeof json !== 'object') return DEMO_OFF;
