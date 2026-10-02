@@ -721,18 +721,26 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
         {/* Footer */}
         <div className="px-10 pb-7 text-center">
-          {/* A demo names who runs it (DEMO_OPERATOR_NAME, the controller) and links its notice and terms. */}
+          {/* A demo names who runs it (DEMO_OPERATOR_NAME, the controller) and links its notice and terms.
+              Every server links the About page (/about), which credits the software's creator. */}
           {demo.demoMode ? (
             <p className="text-sm text-gray-500">
               {demo.operatorName && <>Operated by {demo.operatorName} · </>}
               <a href={demo.privacyPath} className="text-gray-500 underline hover:text-[#0D7D6C]">Privacy notice</a>
               {' · '}
               <a href={demo.termsPath} className="text-gray-500 underline hover:text-[#0D7D6C]">Demo terms</a>
+              {' · '}
+              <a href="/about" className="text-gray-500 underline hover:text-[#0D7D6C]">About</a>
             </p>
           ) : (
-            <p className="text-[11px] text-gray-300">
-              Created by Daniel Bardun &amp; FutureChain &mdash; Enhanced by You
-            </p>
+            <>
+              <p className="text-[11px] text-gray-300">
+                Created by Daniel Bardun &amp; FutureChain &mdash; Enhanced by You
+              </p>
+              <p className="mt-1 text-sm">
+                <a href="/about" className="text-gray-500 underline hover:text-[#0D7D6C]">About</a>
+              </p>
+            </>
           )}
         </div>
       </div>

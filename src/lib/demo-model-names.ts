@@ -55,6 +55,45 @@ export function demoDefaultModel(cfg: DemoConfig): string | null {
   return cfg.offeredModels[0] ?? (cfg.defaultModel || null);
 }
 
+export interface DemoModelEntry {
+  id: string;
+  name: string;
+  /** Who made it, from an 'org/model' id; '' for an id without an org part. */
+  maker: string;
+  isDefault: boolean;
+}
+
+/** The models a demo offers for the About page: the default first, then the others in the offered order. Empty when the server named none. */
+export function demoModelLineup(cfg: DemoConfig): DemoModelEntry[] {
+  const def = demoDefaultModel(cfg);
+  if (!def) return [];
+  return [def, ...cfg.offeredModels.filter((m) => m !== def)]
+    .map((id) => ({
+      id,
+      name: modelDisplayName(id),
+      maker: bareModel(id).includes('/') ? modelMaker(id) : '',
+      isDefault: id === def,
+    }));
+}
+
+/** Who carries a request to the model, named from a compat id's endpoint slug. Only slugs listed here are named. */
+const ROUTE_NAMES: Readonly<Record<string, string>> = {
+  openrouter: 'OpenRouter',
+};
+
+/**
+ * The service every listed model is reached through ('compat:openrouter:…' →
+ * 'OpenRouter'), or null when the ids do not all name the same known one.
+ */
+export function sharedModelRoute(ids: readonly string[]): string | null {
+  const routes = new Set(ids.map((id) => {
+    const m = /^compat:([^:]+):/.exec(id);
+    return m ? ROUTE_NAMES[m[1].toLowerCase()] ?? null : null;
+  }));
+  if (routes.size !== 1) return null;
+  return [...routes][0];
+}
+
 /** "A", "A or B", "A, B or C". */
 function orList(items: readonly string[]): string {
   if (items.length <= 1) return items[0] ?? '';

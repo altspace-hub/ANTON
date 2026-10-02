@@ -46,6 +46,8 @@ import {
   Inbox,
   // Help & Knowledge Base
   HelpCircle,
+  // About page
+  Info,
   // Portals sub-nav
   Plus,
   // Visitor Layer sidebar
@@ -2958,29 +2960,51 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed ? (
           <div className="px-4 pb-3 text-xs text-adv-gray flex items-center justify-between">
             <span>Anton v0.7.5</span>
-            {/* Static Help & Knowledge Base served by Express at /help — opens in
-                a new tab (it is not a React route). Wired 2026-07-17. */}
+            <div className="flex items-center gap-3">
+              {/* The About page (/about): who made ANTON, which models the server
+                  reports, the version. Open to demo visitors too. */}
+              <NavLink
+                to="/about"
+                className="flex items-center gap-1 text-adv-gray hover:text-adv-teal transition-colors"
+                title="About ANTON"
+              >
+                <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                About
+              </NavLink>
+              {/* Static Help & Knowledge Base served by Express at /help — opens in
+                  a new tab (it is not a React route). Wired 2026-07-17. */}
+              <a
+                href="/help/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-adv-gray hover:text-adv-teal transition-colors"
+                title="Help & Knowledge Base"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                Help
+              </a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <NavLink
+              to="/about"
+              className="flex w-full items-center justify-center pb-2 text-adv-gray hover:text-adv-teal transition-colors"
+              title="About ANTON"
+              aria-label="About ANTON"
+            >
+              <Info className="h-4 w-4" aria-hidden="true" />
+            </NavLink>
             <a
               href="/help/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-adv-gray hover:text-adv-teal transition-colors"
+              className="flex w-full items-center justify-center pb-3 text-adv-gray hover:text-adv-teal transition-colors"
               title="Help & Knowledge Base"
             >
-              <HelpCircle className="h-3.5 w-3.5" />
-              Help
+              <HelpCircle className="h-4 w-4" />
             </a>
-          </div>
-        ) : (
-          <a
-            href="/help/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center pb-3 text-adv-gray hover:text-adv-teal transition-colors"
-            title="Help & Knowledge Base"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </a>
+          </>
         )}
       </div>
     </aside>
