@@ -25,6 +25,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Bundled packs live two levels up from server/services/ → project root/data/knowledge-packs/
 const BUNDLED_PACKS_DIR = path.resolve(__dirname, '../../data/knowledge-packs');
 
+/**
+ * The entity types a pack may use. entity_nodes.entity_type has no CHECK, so
+ * this list is the only gate. The legal vocabulary at the end (duty,
+ * directive, article, ...) is what the packs shipped in data/knowledge-packs
+ * use: without it 27 of the 43 bundled packs were refused by "Install" on
+ * every instance, and a fresh server had none of them (2026-10-02).
+ * tests/services/bundled-packs-valid.test.ts keeps the two in step.
+ */
+export const KNOWLEDGE_PACK_ENTITY_TYPES: ReadonlySet<string> = new Set([
+  'client', 'regulation', 'control', 'risk', 'person',
+  'system', 'product', 'geography', 'organization', 'process',
+  'document', 'obligation', 'authority', 'concept', 'threshold', 'institution',
+  'duty', 'directive', 'article', 'norm', 'term', 'offence', 'principle', 'guidance', 'definition',
+]);
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface PackManifest {
@@ -167,12 +182,7 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
   const MAX_ALIASES         = 10_000;
   const MAX_FIELD_LENGTH    = 2_000;            // canonical_name, description, entity_id
 
-  // Valid entity types — must match the 11 types defined in entity_nodes schema
-  const VALID_ENTITY_TYPES = new Set([
-    'client', 'regulation', 'control', 'risk', 'person',
-    'system', 'product', 'geography', 'organization', 'process',
-    'document', 'obligation', 'authority', 'concept', 'threshold', 'institution',
-  ]);
+  const VALID_ENTITY_TYPES = KNOWLEDGE_PACK_ENTITY_TYPES;
 
   // Valid relationship types (KG-05) — structured semantic vocabulary
   const VALID_RELATIONSHIP_TYPES = new Set([
@@ -281,14 +291,15 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
       console.warn(`[knowledge-pack] ${truncatedDescriptionCount} entity description(s) were truncated to 4000 chars. Consider shortening them in the source pack.`);
     }
 
+    // KG-05: relationship types outside the structured vocabulary are kept and
+    // reported once per import (one line per relationship flooded the log: the
+    // bundled packs use a few hundred free-text types).
+    const unknownRelationshipTypes = new Set<string>();
     const relationships: RelationshipDef[] = rawRelationships.map((r: unknown, i: number) => {
       if (typeof r !== 'object' || r === null) throw new Error(`relationships[${i}]: must be an object`);
       const obj = r as Record<string, unknown>;
       const relationship_type = validateField(obj.relationship_type, `relationships[${i}].relationship_type`);
-      // KG-05: Validate relationship type against the allowed vocabulary
-      if (!VALID_RELATIONSHIP_TYPES.has(relationship_type)) {
-        console.warn(`[knowledge-pack] relationships[${i}]: unknown relationship_type '${relationship_type}'. Valid types: ${[...VALID_RELATIONSHIP_TYPES].join(', ')}. Proceeding with import.`);
-      }
+      if (!VALID_RELATIONSHIP_TYPES.has(relationship_type)) unknownRelationshipTypes.add(relationship_type);
       return {
         from_ref:          validateField(obj.from_ref, `relationships[${i}].from_ref`),
         to_ref:            validateField(obj.to_ref, `relationships[${i}].to_ref`),
@@ -298,6 +309,9 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
         metadata:          typeof obj.metadata === 'object' && obj.metadata !== null ? obj.metadata as Record<string, unknown> : undefined,
       };
     });
+    if (unknownRelationshipTypes.size > 0) {
+      console.warn(`[knowledge-pack] ${unknownRelationshipTypes.size} relationship type(s) outside the structured vocabulary, kept as written.`);
+    }
 
     const aliases: AliasDef[] = rawAliases.map((a: unknown, i: number) => {
       if (typeof a !== 'object' || a === null) throw new Error(`aliases[${i}]: must be an object`);
