@@ -12,8 +12,13 @@ import { generateKeypair, saveIdentity, getIdentity } from '../services/identity
 import { register, registerSimple, getLanguages, saveSessionToken } from '../services/api';
 import { Btn, Pill, SectionLabel, Ico, Spinner } from '../components/ui';
 import Logo from '../components/Logo';
+import AboutLink from '../components/AboutLink';
 
-interface Props { onComplete: () => void; }
+interface Props {
+  onComplete: () => void;
+  /** Opens the About screen — readable before pairing. */
+  onAbout?: () => void;
+}
 
 const hasCryptoSubtle = typeof crypto !== 'undefined' && !!crypto.subtle;
 
@@ -25,7 +30,7 @@ const hasCryptoSubtle = typeof crypto !== 'undefined' && !!crypto.subtle;
 const isNative = typeof window !== 'undefined'
   && Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.());
 
-export default function WelcomePage({ onComplete }: Props): JSX.Element {
+export default function WelcomePage({ onComplete, onAbout }: Props): JSX.Element {
   const [name, setName]             = useState('');
   const [language, setLanguage]     = useState('en');
   const [languages, setLanguages]   = useState<Record<string, string>>({ en: 'English' });
@@ -175,6 +180,7 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
         <p className="text-center text-[0.6875rem] leading-relaxed text-[var(--color-text-faint)]">
           Your keypair is generated on this device. No email or password.
         </p>
+        {onAbout && <AboutLink onClick={onAbout} className="-mt-6" />}
       </div>
     </div>
   );

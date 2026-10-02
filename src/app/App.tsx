@@ -1,7 +1,9 @@
 /**
  * App.tsx — Companion app with tab-based navigation.
  * Flow: welcome → join → connections → [tabbed org workspace]
- * Tabs: Home, Chat, Schedule, Tasks, More (Search, Markets, Radar, Docs, Profile, Settings)
+ * Tabs: Home, Chat, Schedule, Tasks, More (Search, Markets, Radar, Docs, Profile, Settings, About)
+ * About opens as an overlay from More, Settings / You, and the Welcome, Join
+ * and Connections screens (AboutScreen).
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -51,6 +53,7 @@ import StdCalendarScreen from './pages/StdCalendarScreen';
 import StdWalletScreen from './pages/StdWalletScreen';
 import StdVoiceScreen from './pages/StdVoiceScreen';
 import StdSettingsScreen from './pages/StdSettingsScreen';
+import AboutScreen from './pages/AboutScreen';
 import type { MailMessage } from './services/mail';
 import VoiceMode from './components/VoiceMode';
 import TabBar from './components/TabBar';
@@ -111,6 +114,12 @@ export default function App() {
   // Currently selected Work module — when set, ChatPage runs inside that
   // module (system prompt + header label). Cleared on "Switch to free chat".
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  // About (who made ANTON, the models, the version) — a full-screen overlay
+  // over whichever screen opened it, paired or not; it closes back to that
+  // screen with its state intact. Android back closes it via the back-stack.
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const openAbout = useCallback(() => { setShowMore(false); setAboutOpen(true); }, []);
+  const closeAbout = useCallback(() => setAboutOpen(false), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -312,12 +321,19 @@ export default function App() {
   // open for queued-while-offline messages to actually send.
   const { flushing: flushingQueue } = useOfflineQueueFlush();
 
+  // The models it names come from the open org, so only the workspace passes one.
+  const inWorkspace = authScreen === null && Boolean(selectedOrgId);
+  const about = aboutOpen
+    ? <AboutScreen orgId={inWorkspace ? selectedOrgId : null} onClose={closeAbout} />
+    : null;
+
   // ── Auth screens ──────────────────────────────────────────────
   if (authScreen === 'welcome') {
-    return <WelcomePage onComplete={() => setAuthScreen('join')} />;
+    return <><WelcomePage onComplete={() => setAuthScreen('join')} onAbout={openAbout} />{about}</>;
   }
   if (authScreen === 'join') {
     return (
+      <>
       <JoinPage
         onJoined={() => {
           // First-time pair → invite the user to pick an accent before
@@ -327,7 +343,10 @@ export default function App() {
           setAuthScreen(personalized ? 'connections' : 'personalize');
         }}
         onBack={() => setAuthScreen('welcome')}
+        onAbout={openAbout}
       />
+      {about}
+      </>
     );
   }
   if (authScreen === 'personalize') {
@@ -342,11 +361,15 @@ export default function App() {
   }
   if (authScreen === 'connections' || !selectedOrgId) {
     return (
+      <>
       <ConnectionsPage
         onSelectOrg={(id, name) => selectOrg(id, name)}
         onJoinNew={() => setAuthScreen('join')}
         onProfile={() => { setAuthScreen(null); setActiveTab('profile'); }}
+        onAbout={openAbout}
       />
+      {about}
+      </>
     );
   }
 
@@ -476,7 +499,7 @@ export default function App() {
         />
       )}
       {activeTab === 'profile' && <ProfilePage onBack={() => setActiveTab('home')} />}
-      {activeTab === 'settings' && <SettingsPage onBack={() => setActiveTab('home')} />}
+      {activeTab === 'settings' && <SettingsPage onBack={() => setActiveTab('home')} onOpenAbout={openAbout} />}
       {activeTab === 'mail' && (
         <UnifiedMailScreen
           orgId={selectedOrgId}
@@ -558,6 +581,7 @@ export default function App() {
       {activeTab === 'std_settings' && (
         <StdSettingsScreen
           onBack={() => setActiveTab('home')}
+          onOpenAbout={openAbout}
         />
       )}
 
@@ -604,6 +628,7 @@ export default function App() {
               { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },
               { id: 'profile',  icon: 'user',        label: 'Profile',    tint: 'var(--color-text)' },
               { id: 'settings', icon: 'settings',    label: 'Settings',   tint: 'var(--color-text-muted)' },
+              { id: 'about',    icon: 'info',        label: 'About',      tint: 'var(--color-text-muted)' },
               { id: 'back',     icon: 'switchOrg',   label: 'Switch Org', tint: 'var(--color-text-body)' },
             ] },
           ] as const).map(group => (
@@ -616,6 +641,7 @@ export default function App() {
                     onClick={() => {
                       setShowMore(false);
                       if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
+                      else if (item.id === 'about') openAbout();
                       else setActiveTab(item.id as OrgTab);
                     }}
                     className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-r2)] py-3.5 transition hover:shadow-sm active:scale-[0.97]"
@@ -652,6 +678,8 @@ export default function App() {
           primary action on Chat; Voice/Capture/Approvals are reachable via
           tabs and the Home quick-action grid. The teal floating + read as
           the strongest "not-Claude" signal in the entire app. */}
+
+      {about}
 
       {/* Tab bar — mode-aware. Pro carries the Approvals badge; Standard
           shows it on the Ask tab as a more general "things waiting" cue. */}
