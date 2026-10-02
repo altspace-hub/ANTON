@@ -41,6 +41,12 @@ describe('headerEngineStatus', () => {
     expect(headerEngineStatus({ ...base, apiKeyConfigured: true, engines: engines({ anthropicApi: true, ready: true }) }).tone).toBe('ok');
   });
 
+  it('a model endpoint only (OpenRouter on the showcase) → ok, never "No AI engine configured" or an Anthropic label', () => {
+    const v = headerEngineStatus({ ...base, engines: engines({ endpoint: true, ready: true }) });
+    expect(v.tone).toBe('ok');
+    expect(v.fallback).toBe('AI models connected');
+  });
+
   it('no engine at all → not configured', () => {
     expect(headerEngineStatus({ ...base, engines: engines({}) }).tone).toBe('none');
   });

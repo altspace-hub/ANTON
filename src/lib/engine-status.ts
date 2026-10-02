@@ -27,5 +27,10 @@ export function headerEngineStatus(health: HealthStatus | null): EngineStatusVie
       ? { tone: 'ok', key: 'header.subscriptionAndApi', fallback: 'Subscription + API key' }
       : { tone: 'ok', key: 'header.subscriptionConnected', fallback: 'Subscription engine' };
   }
+  // A model endpoint (OpenRouter, Ollama) and no Claude key: not "API Connected",
+  // which reads as Anthropic's API.
+  if (engines?.endpoint && !engines.anthropicApi) {
+    return { tone: 'ok', key: 'header.endpointConnected', fallback: 'AI models connected' };
+  }
   return { tone: 'ok', key: 'header.apiConnected', fallback: 'API Connected' };
 }
