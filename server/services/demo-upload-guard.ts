@@ -225,8 +225,17 @@ function extensionsOf(file: UploadedFileLike): string[] {
  */
 export async function uploadContentRefusal(file: UploadedFileLike, opts: ContentCheckOptions): Promise<UploadContentRefusal | null> {
   const env = opts.env ?? process.env;
-  const buf = file.buffer ?? (file.path ? await fs.readFile(file.path) : Buffer.alloc(0));
   const name = shownName(file);
+  let buf = file.buffer;
+  if (!buf && file.path) {
+    // Every upload path stores under UPLOAD_DIR; nothing outside it is read.
+    const stored = path.resolve(file.path);
+    if (!stored.startsWith(path.resolve(env.UPLOAD_DIR || './uploads') + path.sep)) {
+      return { error: `"${name}" was refused: it could not be checked.`, code: 'UPLOAD_CONTENT' };
+    }
+    buf = await fs.readFile(stored);
+  }
+  buf ??= Buffer.alloc(0);
   const exts = extensionsOf(file);
 
   const expectedFor = exts.filter((e) => EXPECTED_MIME[e]);

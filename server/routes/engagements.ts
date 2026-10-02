@@ -30,7 +30,7 @@ import {
   isDemoVisitor, engagementExecModel, engagementUtilityModel, modelSearchesWeb, webSearchRefusal,
   isEngagementCallRefusal, estimateTokens, engagementBudgetRefusal, budgetRefusalBody, chargeEngagementCall,
 } from '../services/engagement-run-policy.js';
-import { engagementUploadMiddleware, renameUploadRecord } from '../services/engagement-uploads.js';
+import { engagementUploadMiddleware, renameUploadRecord, engagementUploadDir } from '../services/engagement-uploads.js';
 import { extractJsonReply, isJsonObject } from '../services/coding-workspace.js';
 import { z } from 'zod';
 
@@ -292,7 +292,9 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   /** Takes back an upload the route then refuses: its record and its file. */
   async function discardUpload(file: { filename: string; path: string }): Promise<void> {
     await db.run('DELETE FROM file_uploads WHERE id = ?', file.filename).catch(() => undefined);
-    await fs.remove(file.path).catch(() => undefined);
+    // multer wrote it under the upload folder; nothing outside it is removed.
+    const stored = path.resolve(file.path);
+    if (stored.startsWith(path.resolve(engagementUploadDir()) + path.sep)) await fs.remove(stored).catch(() => undefined);
   }
 
   // ── Helper ──────────────────────────────────────────────────────────────────

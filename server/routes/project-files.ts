@@ -149,7 +149,7 @@ export async function createProjectFilesRoutes(db: DatabaseAdapter) {
 
   // POST /api/projects/:id/files — upload file(s)
   router.post('/projects/:id/files', quotaPrecheck, receive, async (req, res) => {
-    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const files: Express.Multer.File[] = Array.isArray(req.files) ? req.files : [];
     const staging = stagingDir();
     const discardStaged = async () => { for (const f of files) await removeFileInside(staging, f.path).catch(() => false); };
     try {

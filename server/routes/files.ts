@@ -91,14 +91,20 @@ router.post('/files/upload', uploadQuotaPrecheck, upload.single('file'), async (
   }
 
   const ext = path.extname(req.file.originalname).toLowerCase();
-  const fileBuffer = await fs.readFile(req.file.path);
+  // multer wrote it under UPLOAD_DIR; nothing outside it is read.
+  const stored = path.resolve(req.file.path);
+  if (!stored.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
+    res.status(400).json({ error: 'The upload could not be stored.' });
+    return;
+  }
+  const fileBuffer = await fs.readFile(stored);
 
   // The content matches the extension, and a ZIP-based file (.docx, .xlsx)
   // does not expand past ZIP_MAX_EXPANSION_RATIO (SEC-09) — for every caller,
   // as before; a demo visitor is also held to the expansion ceiling
   // (services/demo-upload-guard.ts, shared with every upload path).
   const contentRefusal = await uploadContentRefusal(
-    { originalname: req.file.originalname, size: req.file.size, path: req.file.path, buffer: fileBuffer },
+    { originalname: req.file.originalname, size: req.file.size, path: stored, buffer: fileBuffer },
     { visitor: isDemoVisitor(req) },
   );
   if (contentRefusal) {
