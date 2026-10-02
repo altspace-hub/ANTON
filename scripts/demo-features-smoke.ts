@@ -119,10 +119,10 @@ async function workspaceFeatures(h: Headers, defaultModel: string): Promise<void
     let indexed = false;
     let lastStatus = '';
     for (let i = 0; i < 10 && !indexed; i++) {
-      const docs = await json<Array<{ status?: string }> | { documents?: Array<{ status?: string }> }>(await fetch(`${BASE}/api/documents/collection/${collectionId}`, { headers: h(false) }));
+      const docs = await json<Array<{ index_status?: string }> | { documents?: Array<{ index_status?: string }> }>(await fetch(`${BASE}/api/documents/collection/${collectionId}`, { headers: h(false) }));
       const list = Array.isArray(docs) ? docs : docs.documents ?? [];
-      lastStatus = list.map((d) => String(d.status ?? '?')).join(',');
-      indexed = list.some((d) => /indexed|ready|complete/i.test(String(d.status ?? '')));
+      lastStatus = list.map((d) => String(d.index_status ?? '?')).join(',');
+      indexed = list.some((d) => d.index_status === 'indexed');
       if (!indexed) await new Promise((r) => setTimeout(r, 2000));
     }
     check(indexed, 'Knowledge Base: the document is indexed', lastStatus);
