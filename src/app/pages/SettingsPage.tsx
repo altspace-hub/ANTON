@@ -20,15 +20,27 @@ import {
   getLogoSkin, setLogoSkin, onLogoSkinChange,
   LOGO_SKIN_LABELS, type LogoSkin,
 } from '../services/logo-skin';
+import { getAppVersion, type AppVersion } from '../services/about';
 
-interface Props { onBack: () => void; }
+interface Props {
+  onBack: () => void;
+  /** Opens the About screen (who made ANTON, the models, the version). */
+  onOpenAbout?: () => void;
+}
 
-export default function SettingsPage({ onBack }: Props) {
+export default function SettingsPage({ onBack, onOpenAbout }: Props) {
   const identity = getIdentity();
   const { accent, mode, setAccent, setMode } = usePersonalization();
   const [copied, setCopied] = useState(false);
   const [logoSkin, setLogoSkinState] = useState<LogoSkin>(getLogoSkin());
   useEffect(() => onLogoSkinChange(setLogoSkinState), []);
+  // The installed app's own version (was a hard-coded "v1.0"); none in a browser.
+  const [appVersion, setAppVersion] = useState<AppVersion | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void getAppVersion().then((v) => { if (!cancelled) setAppVersion(v); });
+    return () => { cancelled = true; };
+  }, []);
 
   function handleExportIdentity() {
     if (!identity) return;
@@ -318,28 +330,43 @@ export default function SettingsPage({ onBack }: Props) {
             </div>
           </section>
 
-          {/* About */}
+          {/* About — opens the About screen (the desktop's /about). */}
           <section>
             <SectionLabel className="mb-2.5">About</SectionLabel>
-            <div
-              className="rounded-[var(--radius-r2)] px-4 py-3.5"
+            <button
+              onClick={onOpenAbout}
+              aria-label="About ANTON"
+              className="flex w-full items-center gap-3 rounded-[var(--radius-r2)] px-4 py-3.5 text-left transition active:scale-[0.99]"
               style={{
                 background: 'var(--color-surface)',
                 border: '1px solid var(--color-border)',
               }}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+              <span
+                className="flex flex-shrink-0 items-center justify-center rounded-[var(--radius-r1)]"
+                style={{
+                  width: 34, height: 34,
+                  background: 'var(--color-accent-soft)',
+                  color: 'var(--color-accent)',
+                }}
+              >
+                <Ico name="info" size={17} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                   ANTON Companion
-                </span>
+                </div>
+                <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
+                  by openEXPERT · Created by Daniel Bardun
+                </div>
+              </div>
+              {appVersion && (
                 <span className="font-mono text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
-                  v1.0
+                  v{appVersion.version}
                 </span>
-              </div>
-              <div className="mt-1 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
-                by openEXPERT
-              </div>
-            </div>
+              )}
+              <Ico name="chevronRight" size={16} color="var(--color-text-faint)" />
+            </button>
           </section>
         </div>
       </div>

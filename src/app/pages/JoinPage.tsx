@@ -23,13 +23,16 @@ import { addInstance, listInstances, setActiveInstanceAsync } from '../services/
 import { tick, success, error as hapticError } from '../services/haptics';
 import { isBiometricAvailable, verifyBiometric } from '../services/biometric';
 import { Btn, Pill, SectionLabel, StatusDot, Ico, Spinner } from '../components/ui';
+import AboutLink from '../components/AboutLink';
 
 interface Props {
   onJoined: () => void;
   onBack: () => void;
+  /** Opens the About screen — readable before pairing. */
+  onAbout?: () => void;
 }
 
-export default function JoinPage({ onJoined, onBack }: Props) {
+export default function JoinPage({ onJoined, onBack, onAbout }: Props) {
   const [mode, setMode] = useState<'scan' | 'manual'>('scan');
   const [serverUrl, setServerUrl] = useState('');
   const [token, setToken] = useState('');
@@ -711,6 +714,8 @@ export default function JoinPage({ onJoined, onBack }: Props) {
             <li>All future calls are mutually authenticated with that certificate. No passwords, ever.</li>
           </ol>
         </div>
+
+        {onAbout && <AboutLink onClick={onAbout} className="mt-4" />}
       </div>
     </div>
   );

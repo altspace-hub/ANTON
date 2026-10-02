@@ -23,6 +23,8 @@ import { getActiveInstance } from '../services/instances';
 
 interface Props {
   onBack: () => void;
+  /** Opens the About screen (who made ANTON, the models, the version). */
+  onOpenAbout?: () => void;
 }
 
 const SETTINGS_ROWS = [
@@ -82,7 +84,7 @@ function ModeCard({
   );
 }
 
-export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Element {
+export default function StdSettingsScreen({ onBack: _onBack, onOpenAbout }: Props): JSX.Element {
   const { accent, mode, setAccent, setMode } = usePersonalization();
   const [expandAccent, setExpandAccent] = useState(false);
   const identity = getIdentity();
@@ -247,6 +249,22 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
             </div>
           );
         })}
+
+        {/* About — the one row here that opens something: who made ANTON,
+            the models this ANTON offers, the version (AboutScreen). */}
+        {onOpenAbout && (
+          <button
+            onClick={onOpenAbout}
+            className="flex w-full items-center gap-3.5 px-1 py-4 text-left"
+            style={{ borderTop: '1px solid var(--color-border-soft)' }}
+          >
+            <div className="flex-1">
+              <div className="text-base font-semibold text-[var(--color-text)]">About ANTON</div>
+              <div className="mt-0.5 text-sm text-[var(--color-text-muted)]">Created by Daniel Bardun</div>
+            </div>
+            <Ico name="chevronRight" color="var(--color-text-faint)" size={20} />
+          </button>
+        )}
       </div>
     </div>
   );

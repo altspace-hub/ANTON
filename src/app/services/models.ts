@@ -24,6 +24,19 @@ export interface ModelList {
   defaultModel: string | null;
 }
 
+/** Who makes a provider's models, as the model picker and the About screen name them. */
+export const PROVIDER_NAMES: Readonly<Record<string, string>> = {
+  anthropic: 'Anthropic',
+  openai:    'OpenAI',
+  mistral:   'Mistral',
+  google:    'Google',
+};
+
+/** A provider id the instance reported, named; an unknown one is shown as it came. */
+export function providerName(provider: string): string {
+  return PROVIDER_NAMES[provider] ?? provider;
+}
+
 export async function listModels(orgId: string): Promise<ModelList> {
   const headers = await activeAuthHeaders();
   const r = await clientFetch(`/org/${encodeURIComponent(orgId)}/models`, { headers });

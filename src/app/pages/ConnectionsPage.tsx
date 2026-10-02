@@ -12,11 +12,14 @@ import { useState, useEffect } from 'react';
 import { Btn, Pill, SectionLabel, Ico, Spinner, ErrorPill } from '../components/ui';
 import { getConnections } from '../services/api';
 import { getIdentity } from '../services/identity';
+import AboutLink from '../components/AboutLink';
 
 interface Props {
   onSelectOrg: (orgId: string, orgName?: string) => void;
   onJoinNew: () => void;
   onProfile: () => void;
+  /** Opens the About screen (no More menu here yet). */
+  onAbout?: () => void;
 }
 
 interface Connection {
@@ -69,7 +72,7 @@ function monogram(name: string): string {
     .slice(0, 2);
 }
 
-export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: Props) {
+export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile, onAbout }: Props) {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,6 +254,8 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
             })}
           </div>
         )}
+
+        {onAbout && <AboutLink onClick={onAbout} className="mt-6" />}
       </div>
     </div>
   );

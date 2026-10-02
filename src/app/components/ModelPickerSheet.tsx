@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import BottomSheet from './BottomSheet';
 import { Spinner, Ico } from './ui';
-import { listModels, type ModelOption } from '../services/models';
+import { listModels, providerName, type ModelOption } from '../services/models';
 
 interface Props {
   open: boolean;
@@ -24,13 +24,6 @@ const TIER_LABELS: Record<'fast' | 'balanced' | 'top', string> = {
   fast: 'Fast',
   balanced: 'Balanced',
   top: 'Most capable',
-};
-
-const PROVIDER_BADGE: Record<string, string> = {
-  anthropic: 'Anthropic',
-  openai:    'OpenAI',
-  mistral:   'Mistral',
-  google:    'Google',
 };
 
 export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose, onSelect }: Props): JSX.Element {
@@ -148,7 +141,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                             className="mt-0.5 text-xs"
                             style={{ color: 'var(--color-text-muted)' }}
                           >
-                            {PROVIDER_BADGE[m.provider] ?? m.provider} · {m.description}
+                            {providerName(m.provider)} · {m.description}
                           </div>
                         </div>
                         {selected && (
