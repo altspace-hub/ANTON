@@ -7,13 +7,16 @@
  * check of an import applies.
  *
  *   pnpm exec tsx scripts/install-bundled-packs.ts [--dry-run] [--user <id>]
- *     [--no-activate] [--skip-activate <slug prefix>]...
+ *     [--activate fcp|all|none] [--skip-activate <slug prefix>]...
  *
- * - A pack already installed (same name and version) is left as it is.
- * - Activation: every installed pack, except slugs starting with a
- *   --skip-activate prefix. The default prefix is "bop-": the BoP packs are
- *   AI-drafted Life-pillar grounding marked NOT validated (README), and an
- *   active pack can reach any run through relevance retrieval.
+ * - A pack already installed (same name and version) is left as it is, and
+ *   an active pack is never deactivated.
+ * - --activate fcp (the default): the FCP/AML packs (FCP_AML_PACK_SLUGS) —
+ *   compliance and FCP people test with these on.
+ * - --activate all: every pack except slugs starting with a --skip-activate
+ *   prefix (default "bop-": the BoP packs are AI-drafted Life-pillar
+ *   grounding marked NOT validated, and an active pack can reach any run
+ *   through relevance retrieval). --activate none (or --no-activate) installs only.
  * - --user names the account recorded as the importer; the default is the
  *   earliest admin.
  *
@@ -21,7 +24,7 @@
  */
 import 'dotenv/config';
 import { PostgresAdapter } from '../server/db/adapters/postgresql-adapter.js';
-import { createKnowledgePackService } from '../server/services/knowledge-pack-service.js';
+import { createKnowledgePackService, FCP_AML_PACK_SLUGS } from '../server/services/knowledge-pack-service.js';
 
 const args = process.argv.slice(2);
 const valueOf = (name: string): string | undefined => {
@@ -29,9 +32,16 @@ const valueOf = (name: string): string | undefined => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const DRY_RUN = args.includes('--dry-run');
-const ACTIVATE = !args.includes('--no-activate');
+const MODE = args.includes('--no-activate') ? 'none' : (valueOf('--activate') ?? 'fcp');
+if (!['fcp', 'all', 'none'].includes(MODE)) throw new Error('--activate takes fcp, all or none');
 const skipPrefixes = args.flatMap((a, i) => (a === '--skip-activate' && args[i + 1] ? [args[i + 1]] : []));
 const SKIP_ACTIVATE = skipPrefixes.length > 0 ? skipPrefixes : ['bop-'];
+/** Whether this run activates the pack. */
+function shouldActivate(slug: string): boolean {
+  if (MODE === 'fcp') return FCP_AML_PACK_SLUGS.includes(slug);
+  if (MODE === 'all') return !SKIP_ACTIVATE.some((p) => slug.startsWith(p));
+  return false;
+}
 
 async function main(): Promise<void> {
   const url = process.env.DATABASE_URL;
@@ -63,7 +73,7 @@ async function main(): Promise<void> {
           continue;
         }
       }
-      const activate = ACTIVATE && status !== 'active' && !SKIP_ACTIVATE.some((p) => pack.slug.startsWith(p));
+      const activate = status !== 'active' && shouldActivate(pack.slug);
       if (activate && !DRY_RUN) {
         await svc.activatePack(id);
         status = 'active';
@@ -71,7 +81,7 @@ async function main(): Promise<void> {
       }
       console.log(`[packs] ${pack.slug}: ${status}${activate && DRY_RUN ? ' (would activate)' : ''}`);
     }
-    console.log(`[packs] ${bundled.length} bundled; installed ${installed}, activated ${activated}, failed ${failed}${DRY_RUN ? ' (dry run)' : ''}`);
+    console.log(`[packs] ${bundled.length} bundled; installed ${installed}, activated ${activated} (mode ${MODE}), failed ${failed}${DRY_RUN ? ' (dry run)' : ''}`);
     if (failed > 0) process.exitCode = 1;
   } finally {
     await db.close();

@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
-import { KNOWLEDGE_PACK_ENTITY_TYPES } from '../../server/services/knowledge-pack-service.js';
+import { KNOWLEDGE_PACK_ENTITY_TYPES, FCP_AML_PACK_SLUGS } from '../../server/services/knowledge-pack-service.js';
 
 const PACKS = path.resolve(__dirname, '../../data/knowledge-packs');
 
@@ -64,6 +64,11 @@ describe('the bundled knowledge packs', () => {
   it('key every alias by a string ref_id, as the importer requires (uk-fca-aml used canonical_ref)', () => {
     const bad = packs.filter((p) => p.aliases.some((a) => typeof a.ref_id !== 'string')).map((p) => p.slug);
     expect(bad).toEqual([]);
+  });
+
+  it('every FCP/AML pack activated by default ships with a built bundle', () => {
+    const shipped = new Set(packs.map((p) => p.slug));
+    expect(FCP_AML_PACK_SLUGS.filter((s) => !shipped.has(s))).toEqual([]);
   });
 
   it('negative control: a type outside the list is refused', () => {

@@ -33,6 +33,19 @@ const BUNDLED_PACKS_DIR = path.resolve(__dirname, '../../data/knowledge-packs');
  * every instance, and a fresh server had none of them (2026-10-02).
  * tests/services/bundled-packs-valid.test.ts keeps the two in step.
  */
+/**
+ * The financial-crime-prevention packs (AML/CFT, sanctions, bribery, market
+ * abuse, and the industry and payment AML standards): active by default for
+ * the compliance and FCP people who test an instance (owner, 2026-10-02).
+ * scripts/install-bundled-packs.ts activates these unless told otherwise.
+ */
+export const FCP_AML_PACK_SLUGS: readonly string[] = [
+  'abc-anti-bribery', 'amla-amld6', 'amla-rts-tracker', 'amlr-2024', 'cbr-derisking',
+  'eba-aml-guidelines', 'eu-sanctions', 'fatf-recommendations', 'mar-csmad', 'nordic-aml-laws',
+  'nordic-supervisors', 'nydfs-part-500-2026', 'sanctions-ofac-ofsi-2026', 'solvency-ii-insurance-aml',
+  'swift-standards', 'uk-fca-aml', 'unscr-sanctions', 'us-bsa-aml-2026', 'wolfsberg-principles',
+];
+
 export const KNOWLEDGE_PACK_ENTITY_TYPES: ReadonlySet<string> = new Set([
   'client', 'regulation', 'control', 'risk', 'person',
   'system', 'product', 'geography', 'organization', 'process',
