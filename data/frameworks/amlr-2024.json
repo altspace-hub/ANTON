@@ -417,7 +417,7 @@
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
-      "requirement": "Life insurance/investment: determine if beneficiary or BO of beneficiary is PEP; notify senior management before payout; apply enhanced scrutiny to relationship"
+      "requirement": "UNCONDITIONAL: take reasonable measures to determine whether the beneficiary of a life or other investment-related insurance policy - or, where relevant, the beneficial owner of that beneficiary - is a PEP, no later than at payout or at assignment of the policy. CONDITIONAL, only \"where there are higher risks identified\", and in addition to the Art.20 CDD measures: (a) inform senior management before payout of policy proceeds; (b) conduct enhanced scrutiny of the entire business relationship with the policyholder. Escalation and enhanced scrutiny applied only to higher-risk cases is compliant."
     },
     {
       "id": "Art.45",
@@ -449,7 +449,7 @@
       "chapter": "III",
       "section": "Reliance on Customer Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
-      "requirement": "May rely on third-party obliged entities for CDD; ultimate responsibility remains with relying entity; immediate access to CDD information on request"
+      "requirement": "May rely on other obliged entities (in a Member State or a third country) for the CDD measures in Art.20(1)(a)-(c), provided they apply equivalent CDD and record-keeping requirements and are supervised for AML/CFT compliance. Ultimate responsibility always remains with the relying entity. PROHIBITION (Art.48(4)): obliged entities SHALL NOT rely on obliged entities established in high-risk third countries identified under Section 2 of this Chapter - except that a Union entity may rely on its OWN branches and subsidiaries in those countries where all the conditions in Art.48(3) are met."
     },
     {
       "id": "Art.49",
@@ -641,7 +641,7 @@
       "chapter": "V",
       "section": null,
       "theme": "Reporting Obligations & Information Sharing",
-      "requirement": "Obliged entities must cooperate fully with FIU and respond promptly to FIU requests for information; provide all necessary documents and information"
+      "requirement": "Liability shield, not a duty: disclosure of information to the FIU in good faith under Articles 69 and 70 does not breach any contractual, legislative, regulatory or administrative restriction on disclosure, and involves the obliged entity, its directors and its employees in no liability of any kind - even where they were not precisely aware of the underlying criminal activity and regardless of whether illegal activity actually occurred. What is assessed is whether the entity relies on this protection correctly: that staff know reporting in good faith carries no personal liability, and that internal policy does not impose disclosure restrictions the Regulation disapplies."
     },
     {
       "id": "Art.73",
@@ -769,7 +769,7 @@
       "chapter": "IX",
       "section": "Other Provisions",
       "theme": "Final Provisions",
-      "requirement": "AMLA and Commission publish periodic reports on ML/TF trends, typologies, and effectiveness of national frameworks"
+      "requirement": "Binds the COMMISSION, not obliged entities and not AMLA. By 10 July 2030 the Commission shall report to the European Parliament and the Council on the necessity and proportionality of: (a) lowering the 25% beneficial-ownership threshold; (b) extending high-value goods to high-value garments and accessories; (c) extending the Art.74 threshold-based disclosures to other goods, harmonised reporting formats, and extending the reporting obligation; (d) the cash-payment limit. Relevant to an obliged entity only as a change trigger to monitor."
     },
     {
       "id": "Art.89",
