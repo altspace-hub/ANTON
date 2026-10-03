@@ -8,9 +8,9 @@ import { describe, it, expect } from 'vitest';
  * A requirement summary is what a gap assessment is graded against
  * (`server/services/gap-assessment-engine.ts` loadFramework, and the frameworks
  * route), so a wrong one gives the same wrong verdict on every assessment.
- * Gap Assessor corrected these four on 2026-09-22 (commit 1fad7ef in
- * C:\Gap-Assessor, "eight requirement summaries that misstated the
- * regulation"), each checked against the Official Journal text it holds in
+ * The standalone Gap Assessor corrected these four on 2026-09-22 (its commit
+ * 1fad7ef, "eight requirement summaries that misstated the regulation"), each
+ * checked against the Official Journal text it holds in its
  * data/sources/amlr-2024-1624.articles.json. ANTON kept the old wording until
  * 2026-10-04 (expert review finding FAM-01), so the same article was graded
  * against two different requirements in two apps of the family.
