@@ -9,21 +9,14 @@ import { demoModelFacts } from '@/lib/demo-model-names';
 import { safeStorage } from '@/lib/safe-storage';
 import DemoBanner from '@/components/shared/DemoBanner';
 import { Eye, EyeOff, ArrowRight, Send, Building2, UserPlus } from 'lucide-react';
+import { SIGNIN_PICTURES, SIGNIN_PICTURE_ALT, pickSigninPicture } from '@/lib/signin-pictures';
 
 interface Props {
   /** Provided in solo mode — clicking "Enter Anton" calls this instead of logging in */
   onEnterWithoutLogin?: () => void;
 }
 
-const ROBOT_IMAGES = [
-  '/robots/pexels-kindelmedia-8566449.jpg', // front-facing (default)
-  '/robots/pexels-kindelmedia-8566428.jpg', // close-up face
-  '/robots/pexels-kindelmedia-8566454.jpg', // with desk/window
-  '/robots/pexels-kindelmedia-8566437.jpg', // plant background
-  '/robots/pexels-kindelmedia-8566456.jpg', // held in hand
-  '/robots/pexels-kindelmedia-8566423.jpg', // pens scene
-];
-
+/** One per picture; a caption goes with the picture at the same place. */
 const IMAGE_CAPTIONS = [
   'Clear thinking, every time.',
   'Eyes on every detail.',
@@ -57,7 +50,9 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   // locks the user out of the web UI.
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaToken, setMfaToken] = useState('');
-  const [activeImage] = useState(0); // Always show the default image
+  // A picture of Anton chosen at random on each visit (pictures 3 and up).
+  const [activeImage] = useState(() => pickSigninPicture());
+  const picture = SIGNIN_PICTURES[activeImage];
 
   const isSoloMode = !!onEnterWithoutLogin;
 
@@ -234,36 +229,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
 
-      {/* ── LEFT PANEL — robot image ──────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden select-none">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${ROBOT_IMAGES[activeImage]})` }}
-        />
-
-        {/* Top-left brand mark */}
-        <div className="absolute top-8 left-8 z-10">
-          <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-white drop-shadow-sm"
-            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-            openEXPERT
-          </span>
-        </div>
-
-        {/* Bottom-left caption */}
-        <div className="absolute bottom-8 left-8 right-16 z-10">
-          <p className="text-gray-800 text-xl font-semibold leading-snug">
-            {IMAGE_CAPTIONS[activeImage]}
-          </p>
-          <p className="mt-1 text-gray-500 text-sm">
-            AI-powered experts helping the world become a better place.
-          </p>
-        </div>
-      </div>
-
-      {/* ── RIGHT PANEL — white login panel ───────────────────────────── */}
-      <div className="flex-1 lg:w-1/2 flex flex-col bg-white">
+      {/* ── RIGHT PANEL — white login panel ───────────────────────────────
+          First in the document, so the form comes first in reading and tab
+          order; `order` puts the picture on the left (above it on a phone). */}
+      <div className="flex-1 lg:w-1/2 flex flex-col bg-white order-2">
         <DemoBanner variant="light" />
 
         {/* Top bar */}
@@ -742,6 +713,41 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
               </p>
             </>
           )}
+        </div>
+      </div>
+
+      {/* ── LEFT PANEL — a picture of Anton ─────────────────────────────
+          A short band above the form on a phone; from lg up the left half,
+          held in view while a long sign-up form scrolls. */}
+      <div className="order-1 relative h-44 sm:h-56 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:w-1/2 shrink-0 overflow-hidden select-none bg-[#0B1426]">
+        <img
+          src={picture.src}
+          srcSet={`${picture.srcSmall} 640w, ${picture.src} 1100w`}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          alt={SIGNIN_PICTURE_ALT}
+          className="absolute inset-0 h-full w-full object-cover object-[50%_16%] lg:object-[50%_30%]"
+          decoding="async"
+        />
+
+        {/* Shades behind the white text, so it reads on any picture */}
+        <div aria-hidden="true" className="hidden lg:block absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent" />
+        <div aria-hidden="true" className="hidden lg:block absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+
+        {/* Top-left brand mark */}
+        <div className="hidden lg:block absolute top-8 left-8 z-10">
+          <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+            openEXPERT
+          </span>
+        </div>
+
+        {/* Bottom-left caption */}
+        <div className="hidden lg:block absolute bottom-8 left-8 right-16 z-10">
+          <p className="text-white text-xl font-semibold leading-snug [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
+            {IMAGE_CAPTIONS[activeImage % IMAGE_CAPTIONS.length]}
+          </p>
+          <p className="mt-1 text-white/90 text-sm [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+            AI-powered experts helping the world become a better place.
+          </p>
         </div>
       </div>
     </div>
