@@ -190,6 +190,9 @@
     "fcp-expert",
     "finance-expert"
   ],
+  "recommendedSkills": [
+    "fcp-bp-model-validation-report"
+  ],
   "tags": [
     "audit",
     "model-risk",

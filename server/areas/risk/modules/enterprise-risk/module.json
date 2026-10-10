@@ -137,6 +137,10 @@
   "recommendedPersonas": [
     "risk-specialist"
   ],
+  "recommendedSkills": [
+    "fcp-bp-abc-risk-assessment",
+    "fcp-bp-fraud-risk-assessment"
+  ],
   "tags": [
     "risk",
     "erm",
