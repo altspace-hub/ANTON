@@ -1,0 +1,49 @@
+{
+  "id": "fcp-bp-proposal",
+  "label": "FCP blueprint: Proposal and RFP response",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "consulting",
+    "sales"
+  ],
+  "description": "Produces client proposals (offert, uppdragsförslag) for financial crime prevention engagements, such as AML/CTF model validation, business-wide risk assessments, AMLR readiness and maturity assessments, gap analyses, sanctions and fraud work, pre-studies and managed services. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "proposal",
+    "RFP",
+    "offer"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "proposal",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "engagement-proposal",
+      "proposal-generator",
+      "proposal-writing",
+      "proposal-generator-sales"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "proposal-inputs.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "method-modules.md",
+        "phrase-bank.md",
+        "pricing-structure.md",
+        "rfp-response.md"
+      ]
+    },
+    "sourceSha256": "faf5ec4c3bc43e3fbf2fa0614ac829d156728ccdb110ac0b6a6620bbcd4dfb7b"
+  }
+}

@@ -101,6 +101,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "fcp-bp-model-validation-report"
+  ],
   "tags": [
     "model-validation",
     "transaction-monitoring",

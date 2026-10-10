@@ -1,0 +1,50 @@
+{
+  "id": "fcp-bp-sanctions-risk-assessment",
+  "label": "FCP blueprint [DRAFT]: Sanctions risk assessment (SRA)",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk"
+  ],
+  "description": "DRAFT – needs team input: validate before client use. Produces a sanctions risk assessment (SRA; Swedish sanktionsriskbedömning, SRB) for a financial institution or other obliged entity. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "draft",
+    "sanctions",
+    "SRA",
+    "restrictive measures",
+    "risk assessment"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "sanctions-risk-assessment",
+    "version": "1.1",
+    "status": "draft",
+    "statusLabel": "draft – needs team input",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "sanctions-advisory"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "sra-workbook-layout.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "controls-and-screening.md",
+        "data-request-and-questions.md",
+        "exposure-matrix.md",
+        "kri-and-risk-appetite.md",
+        "regulatory-map.md",
+        "risk-scenarios-and-indicators.md",
+        "variant-layouts.md"
+      ]
+    },
+    "sourceSha256": "434e4495139e3fdf35914896c3a05ba289a243c79535727586e18087369c6654"
+  }
+}

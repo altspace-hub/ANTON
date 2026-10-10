@@ -1,0 +1,52 @@
+{
+  "id": "fcp-bp-model-validation-report",
+  "label": "FCP blueprint: Model validation report",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "audit",
+    "risk"
+  ],
+  "description": "Produces an independent validation report for AML/CTF models (transaction monitoring, PEP and sanctions screening, customer risk classification, and a business-wide risk assessment treated as a model), together with the documentation and data request, the validation work programme, the gap-analysis appendix (mapping against the business-wide risk assessment, national AML law and EBA guidelines) and the outcome-test appendix. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "model validation",
+    "model risk",
+    "transaction monitoring",
+    "screening"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "model-validation-report",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": "bp-model-validation-report",
+    "recommendedFor": [
+      "model-validation",
+      "model-risk-audit-framework"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "test-procedures-bwra.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "assessment-areas.md",
+        "data-request.md",
+        "interview-question-bank.md",
+        "rating-scale.md",
+        "test-procedures-crc.md",
+        "test-procedures-screening.md",
+        "test-procedures-tm.md",
+        "work-programme.md"
+      ]
+    },
+    "sourceSha256": "c3f8d229a966de0224a5d6e1dcccfea0c15500c66117d6f237e972784b3bf1fd"
+  }
+}

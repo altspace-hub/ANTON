@@ -74,6 +74,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "fcp-bp-proposal"
+  ],
   "tags": [
     "proposals",
     "rfp",

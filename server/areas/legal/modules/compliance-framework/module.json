@@ -147,6 +147,9 @@
   "recommendedPersonas": [
     "legal-expert"
   ],
+  "recommendedSkills": [
+    "fcp-bp-governing-documents"
+  ],
   "tags": [
     "compliance",
     "framework",

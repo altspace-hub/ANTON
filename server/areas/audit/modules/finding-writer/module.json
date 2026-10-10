@@ -78,6 +78,9 @@
   "recommendedPersonas": [
     "auditor"
   ],
+  "recommendedSkills": [
+    "fcp-bp-compliance-review-report"
+  ],
   "tags": [
     "audit",
     "findings",

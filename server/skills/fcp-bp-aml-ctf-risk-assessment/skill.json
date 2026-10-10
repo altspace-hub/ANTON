@@ -1,0 +1,51 @@
+{
+  "id": "fcp-bp-aml-ctf-risk-assessment",
+  "label": "FCP blueprint: AML/CTF business-wide risk assessment (BWRA)",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk"
+  ],
+  "description": "Produces the business-wide money laundering and terrorist financing risk assessment (BWRA or EWRA; Swedish allmän riskbedömning) as a board-ready report with a supporting Excel risk assessment tool. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "BWRA",
+    "AML",
+    "CTF",
+    "risk assessment"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "aml-ctf-risk-assessment",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": "bp-bwra-report",
+    "recommendedFor": [
+      "risk-assessment"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "data-request.md",
+        "general-controls.md",
+        "geographic-risk.md",
+        "industry-risk.md",
+        "method-and-instruction.md",
+        "risk-appetite.md",
+        "risk-factors.md",
+        "scales-and-scoring.md",
+        "specific-controls.md",
+        "typologies.md",
+        "workbook-layout.md"
+      ]
+    },
+    "sourceSha256": "8894de9df3556f67e69f5a563775be573494855b62ce212ffd94e23ff5d5759d"
+  }
+}

@@ -109,6 +109,9 @@
   "recommendedPersonas": [
     "risk-specialist"
   ],
+  "recommendedSkills": [
+    "fcp-bp-fraud-risk-assessment"
+  ],
   "tags": [
     "operational-risk",
     "rcsa",

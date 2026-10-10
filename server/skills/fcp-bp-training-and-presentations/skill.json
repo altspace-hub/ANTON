@@ -1,0 +1,58 @@
+{
+  "id": "fcp-bp-training-and-presentations",
+  "label": "FCP blueprint: Training and presentations",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "education"
+  ],
+  "description": "Produces trainings and talks on financial crime prevention (AML/CTF, sanctions, ABC, fraud, model risk, governance, FATCA/CRS and the EU AML package): the slide deck with speaker notes, cases and exercises with facilitator keys, knowledge checks, and the record that documents completed training as AML regulation requires. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "training",
+    "board session",
+    "workshop",
+    "presentation"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "training-and-presentations",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "training-content",
+      "training-needs-assessment",
+      "management-presentation"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "case-and-exercise-bank.md",
+        "design-brief-and-agendas.md",
+        "facilitation-and-speaker-notes.md",
+        "module-abc.md",
+        "module-aml-ctf-foundations.md",
+        "module-fraud.md",
+        "module-governance-and-roles.md",
+        "module-kyc-cdd-pep.md",
+        "module-model-risk-management.md",
+        "module-monitoring-and-reporting.md",
+        "module-other-topics.md",
+        "module-regulatory-outlook.md",
+        "module-risk-assessment-and-crc.md",
+        "module-sanctions.md",
+        "quiz-bank.md",
+        "training-records-and-evaluation.md"
+      ]
+    },
+    "sourceSha256": "e606ce41396a4f9bf7a47c6351e56960b680fdbaf08540890f62151b6bea6ff8"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "fcp-bp-house-standards",
+  "label": "FCP blueprint: house standards",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk",
+    "audit",
+    "consulting",
+    "sales",
+    "project-mgmt",
+    "legal",
+    "education"
+  ],
+  "description": "Shared quality bar, writing rules, English/Swedish terminology and gap markers ([DATA NEEDED], [TO CONFIRM], [ASSUMPTION], [VERIFY REFERENCE]) of the FCP blueprint library. Attach with any FCP blueprint skill. Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "house standards",
+    "glossary",
+    "Swedish",
+    "writing rules"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "_core",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [],
+    "companionSkills": [],
+    "references": {
+      "inlined": [],
+      "knowledgePack": null,
+      "inPack": []
+    },
+    "sourceSha256": "77f864c9424ece88b1bb7c5507e26fdaae2fbd9bdbcf044309af9147da1e1122"
+  }
+}

@@ -1,0 +1,5738 @@
+[
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-10",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS-11",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-10",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-11",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS-12",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-10",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING-11",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-10",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-11",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES-12",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-01",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-02",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-03",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-04",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-05",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-06",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-07",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-08",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT-09",
+    "to_ref": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-08",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-09",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-10",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING-11",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-08",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX-09",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-08",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-09",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-10",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-11",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP-12",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-08",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-09",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-10",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS-11",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-05",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-06",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-07",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-08",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-09",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-10",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT-11",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS-01",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS-02",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS-03",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS-04",
+    "to_ref": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-09",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-10",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-11",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-12",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-13",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-14",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-15",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-16",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-17",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-18",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-19",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-20",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS-21",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-09",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-10",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP-11",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS-09",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-09",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES-10",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-01",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-02",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-03",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-04",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-05",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-06",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-07",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-08",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST-09",
+    "to_ref": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-07",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-08",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-09",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-10",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-11",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-12",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-13",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-14",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-15",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-16",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-17",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-18",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-19",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-20",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-21",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-22",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS-23",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-07",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS-08",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-07",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-08",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES-09",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT-07",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-01",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-02",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-03",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-04",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-05",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-06",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-07",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST-08",
+    "to_ref": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-06",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-07",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING-08",
+    "to_ref": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-06",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-07",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-08",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-09",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-10",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS-11",
+    "to_ref": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-06",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-07",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES-08",
+    "to_ref": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-06",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-07",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES-08",
+    "to_ref": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-01",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-02",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-03",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-04",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-05",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-06",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES-07",
+    "to_ref": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-01",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-02",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-03",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-04",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-05",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-06",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING-07",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-01",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-02",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-03",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-04",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-05",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-06",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-07",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-08",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-09",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-10",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-11",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-12",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME-13",
+    "to_ref": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-06",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS-07",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS-06",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-06",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT-07",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING-06",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-01",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-02",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-03",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-04",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-05",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-06",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-07",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS-08",
+    "to_ref": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-10",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-11",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-12",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-13",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-14",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-15",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-16",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-17",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-18",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-19",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS-20",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST-10",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-10",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-11",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-12",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC-13",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-10",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-11",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM-12",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-01",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-02",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-03",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-04",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-05",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-06",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-07",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-08",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-09",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-10",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-11",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-12",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME-13",
+    "to_ref": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-09",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-10",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-11",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-12",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-13",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-14",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-15",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-16",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-17",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-18",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-19",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-20",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-21",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-22",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-23",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-24",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-25",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE-26",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-09",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-10",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-11",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-12",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-13",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-14",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES-15",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-09",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-10",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-11",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX-12",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-09",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK-10",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-01",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-02",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-03",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-04",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-05",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-06",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-07",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-08",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-09",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-10",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-11",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-12",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-13",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES-14",
+    "to_ref": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-01",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-02",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-03",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-04",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-05",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-06",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-07",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-08",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-09",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-10",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-11",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-12",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-13",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-14",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-15",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-16",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-17",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-18",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-METHOD-MODULES-19",
+    "to_ref": "BPREF-PROPOSAL-METHOD-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-01",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-02",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-03",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-04",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-05",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-06",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-07",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-08",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-09",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-10",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-11",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-12",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PHRASE-BANK-13",
+    "to_ref": "BPREF-PROPOSAL-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-01",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-02",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-03",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-04",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-05",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-06",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-07",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-08",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-09",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE-10",
+    "to_ref": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS-01",
+    "to_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS-02",
+    "to_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS-03",
+    "to_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS-04",
+    "to_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS-05",
+    "to_ref": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-01",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-02",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-03",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-04",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-05",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-06",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROPOSAL-RFP-RESPONSE-07",
+    "to_ref": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING-01",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING-02",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING-03",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING-04",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-01",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-02",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-03",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-04",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-05",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-06",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-07",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-08",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-09",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-10",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS-11",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-01",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-02",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-03",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-04",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-05",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-06",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-07",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-08",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-09",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-10",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS-11",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-01",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-02",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-03",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-04",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-05",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-06",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE-07",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-01",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-02",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-03",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-04",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-05",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-06",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-07",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-08",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-09",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-10",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES-11",
+    "to_ref": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-01",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-02",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-03",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-04",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-05",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST-06",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK-01",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK-02",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK-03",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK-04",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK-05",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-01",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-02",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-03",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-04",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-05",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-06",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-07",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG-08",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-01",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-02",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-03",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-04",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-05",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-06",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-07",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE-08",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-01",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-02",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-03",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-04",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-05",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-06",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-07",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK-08",
+    "to_ref": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-15",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-16",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-17",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-18",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-19",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-20",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-21",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-22",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-23",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-24",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-25",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-26",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK-27",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-15",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES-16",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-10",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-11",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-12",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-13",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-14",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-15",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-16",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK-17",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-01",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-02",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-03",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-04",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-05",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-06",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-07",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-08",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  },
+  {
+    "from_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION-09",
+    "to_ref": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "relationship_type": "part_of",
+    "strength": 1
+  }
+]

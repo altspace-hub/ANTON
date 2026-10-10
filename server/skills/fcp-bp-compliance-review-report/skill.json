@@ -1,0 +1,45 @@
+{
+  "id": "fcp-bp-compliance-review-report",
+  "label": "FCP blueprint [DRAFT]: Compliance review report",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "audit"
+  ],
+  "description": "DRAFT – needs team input: validate before client use. Produces a compliance review report (granskningsrapport) on a client's AML/CTF compliance or on a specific process, such as customer due diligence files, customer risk classification, transaction monitoring and alert handling, investigation and reporting to the FIU, sanctions screening or internal control. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "draft",
+    "review",
+    "audit",
+    "compliance monitoring"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "compliance-review-report",
+    "version": "1.1",
+    "status": "draft",
+    "statusLabel": "draft – needs team input",
+    "pairedOutputFormat": "bp-compliance-review-report",
+    "recommendedFor": [
+      "audit-report",
+      "finding-writer",
+      "compliance-monitoring-design"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "review-scales-and-sampling.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "test-programme.md"
+      ]
+    },
+    "sourceSha256": "d989071f6d29067aece39af2a3ab8cd68e04a527d565b9485f3978f0e0c98e7e"
+  }
+}

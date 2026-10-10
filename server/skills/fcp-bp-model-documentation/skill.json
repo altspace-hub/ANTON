@@ -1,0 +1,49 @@
+{
+  "id": "fcp-bp-model-documentation",
+  "label": "FCP blueprint: Model documentation (TM, screening, customer risk classification)",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk"
+  ],
+  "description": "Produces model documentation for AML/CTF models (customer risk classification, transaction monitoring, PEP and sanctions screening) under model risk management principles, written in the client's voice for adoption by the model owner. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "model documentation",
+    "transaction monitoring",
+    "screening",
+    "CRC"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "model-documentation",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "document-creation"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "change-management.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "crc-risk-factors.md",
+        "data-request-and-workshops.md",
+        "evaluation-metrics.md",
+        "model-inventory.md",
+        "model-risk-assessment.md",
+        "screening.md",
+        "tm-scenarios.md"
+      ]
+    },
+    "sourceSha256": "ecab3196b63d899e94f813229e864d67f88ad60c144737c81d47e0df428bf2fa"
+  }
+}

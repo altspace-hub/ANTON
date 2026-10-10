@@ -63,6 +63,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "fcp-bp-project-plans-and-governance"
+  ],
   "tags": [
     "engagement",
     "execution",

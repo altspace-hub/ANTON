@@ -1,0 +1,48 @@
+{
+  "id": "fcp-bp-fraud-risk-assessment",
+  "label": "FCP blueprint [DRAFT]: Fraud risk assessment",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk"
+  ],
+  "description": "DRAFT – needs team input: validate before client use. Produces a business-wide fraud risk assessment for a financial institution: a report and a supporting workbook covering external fraud against customers and against the institution, internal fraud and infiltration, fraud typologies per product and channel, inherent risk, general and specific preventive and detective controls including detection rules and models, residual risk, quantified fraud exposure and a prioritised action plan. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "draft",
+    "fraud",
+    "risk assessment"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "fraud-risk-assessment",
+    "version": "1.1",
+    "status": "draft",
+    "statusLabel": "draft – needs team input",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "enterprise-risk",
+      "operational-risk"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "fraud-pilot.md",
+        "fraud-workbook-layout.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "fraud-controls.md",
+        "fraud-regulatory-map.md",
+        "fraud-risk-factors.md",
+        "fraud-typologies.md",
+        "fraud-workshop-and-data-request.md"
+      ]
+    },
+    "sourceSha256": "cc6d637d5674e0ab0bd18fc75cca888e8359c4daed435f91d48d27c6d1e5b242"
+  }
+}

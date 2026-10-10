@@ -95,7 +95,9 @@
     "legal-expert"
   ],
   "recommendedSkills": [
-    "amlr-article-reference"
+    "amlr-article-reference",
+    "fcp-bp-governing-documents",
+    "fcp-bp-model-documentation"
   ],
   "tags": [
     "documents",
