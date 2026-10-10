@@ -82,7 +82,8 @@ function readSkill(id: string): { json: Record<string, unknown>; content: string
   const dir = path.join(SKILLS_DIR, id);
   return {
     json: JSON.parse(fs.readFileSync(path.join(dir, 'skill.json'), 'utf8')) as Record<string, unknown>,
-    content: fs.readFileSync(path.join(dir, 'skill-content.md'), 'utf8'),
+    // A Windows checkout (core.autocrlf) gives CRLF; the checks below search for '\n'.
+    content: fs.readFileSync(path.join(dir, 'skill-content.md'), 'utf8').replace(/\r\n/g, '\n'),
   };
 }
 
