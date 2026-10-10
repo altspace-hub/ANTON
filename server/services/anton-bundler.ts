@@ -84,7 +84,7 @@ export type {
   BundleTypeEntry,
 } from './anton-bundle-registry.js';
 
-interface ModuleExportData {
+export interface ModuleExportData {
   id: string;
   name: string;
   description: string;
@@ -512,6 +512,17 @@ export async function bundleBuiltinModuleToAnton(
     governance: metadata.governance,
   };
 
+  return buildModuleAntonArchive(exportData);
+}
+
+/**
+ * Build a module bundle from a definition kept in code rather than in
+ * custom_modules — the FCP blueprint skill bundles
+ * (server/services/blueprint-skill-bundles.ts). Same archive builder as every
+ * other module export, so the result goes through anton-validator and the
+ * importer's embedded-file and injection checks unchanged.
+ */
+export function bundleModuleDefinitionToAnton(exportData: ModuleExportData): Buffer {
   return buildModuleAntonArchive(exportData);
 }
 
