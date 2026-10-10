@@ -50,7 +50,84 @@ export interface Skill {
   prompt: string;  // Injected as Layer 5 in PromptComposer
   /** 'installed' = a row of the `skills` table (e.g. arrived inside a .anton module bundle). */
   source?: 'builtin' | 'disk' | 'installed';
+  /** Disk skills built from the FCP blueprint library (server/skills/fcp-bp-*) carry this; absent elsewhere. */
+  blueprint?: SkillBlueprintMeta;
 }
+
+/**
+ * Optional `blueprint` block of a disk skill.json (FCP blueprint skills,
+ * 2026-10-10). Metadata only: nothing in it changes what the skill injects.
+ * A skill.json without it loads exactly as before; a malformed block is
+ * dropped with a warning and the skill still loads.
+ */
+export interface SkillBlueprintMeta {
+  library: string;
+  /** The blueprint's folder name in the library, or '_core' for the house standards. */
+  slug: string;
+  version: string;
+  status: 'stable' | 'draft';
+  statusLabel: string;
+  /** The output format that carries this blueprint's layout, if any. */
+  pairedOutputFormat: string | null;
+  /** Module ids whose module.json `recommendedSkills` suggests this skill. */
+  recommendedFor: string[];
+  /** Skills meant to be attached alongside (the house standards). */
+  companionSkills: string[];
+  references: { inlined: string[]; knowledgePack: string | null; inPack: string[] };
+  /** SHA-256 of the library files the skill was generated from. */
+  sourceSha256?: string;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === 'string');
+}
+
+/** The `blueprint` block of a skill.json, or null when absent or malformed. */
+export function parseSkillBlueprintMeta(raw: unknown): SkillBlueprintMeta | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const b = raw as Record<string, unknown>;
+  const refs = (b.references && typeof b.references === 'object' && !Array.isArray(b.references))
+    ? (b.references as Record<string, unknown>)
+    : null;
+  if (
+    typeof b.library !== 'string' || typeof b.slug !== 'string' || typeof b.version !== 'string'
+    || (b.status !== 'stable' && b.status !== 'draft') || typeof b.statusLabel !== 'string'
+    || !(b.pairedOutputFormat === null || typeof b.pairedOutputFormat === 'string')
+    || !isStringArray(b.recommendedFor) || !isStringArray(b.companionSkills)
+    || !refs || !isStringArray(refs.inlined) || !isStringArray(refs.inPack)
+    || !(refs.knowledgePack === null || typeof refs.knowledgePack === 'string')
+    || (b.sourceSha256 !== undefined && typeof b.sourceSha256 !== 'string')
+  ) {
+    return null;
+  }
+  return {
+    library: b.library,
+    slug: b.slug,
+    version: b.version,
+    status: b.status,
+    statusLabel: b.statusLabel,
+    pairedOutputFormat: b.pairedOutputFormat,
+    recommendedFor: b.recommendedFor,
+    companionSkills: b.companionSkills,
+    references: { inlined: refs.inlined, knowledgePack: refs.knowledgePack, inPack: refs.inPack },
+    ...(typeof b.sourceSha256 === 'string' ? { sourceSha256: b.sourceSha256 } : {}),
+  };
+}
+
+/**
+ * Output formats that carry an FCP blueprint's layout, and the skills they
+ * attach when the USER selects them (the existing format → skill auto-attach
+ * below). No module lists these formats as a default, so a default run is
+ * unchanged. tests/services/blueprint-skills.test.ts keeps this map and the
+ * skills' `blueprint.pairedOutputFormat` in step.
+ */
+export const BLUEPRINT_FORMAT_SKILLS: Readonly<Record<string, readonly string[]>> = {
+  'bp-bwra-report': ['fcp-bp-aml-ctf-risk-assessment', 'fcp-bp-house-standards'],
+  'bp-gap-report': ['fcp-bp-gap-analysis', 'fcp-bp-house-standards'],
+  'bp-model-validation-report': ['fcp-bp-model-validation-report', 'fcp-bp-house-standards'],
+  'bp-compliance-review-report': ['fcp-bp-compliance-review-report', 'fcp-bp-house-standards'],
+  'bp-governing-document': ['fcp-bp-governing-documents', 'fcp-bp-house-standards'],
+};
 
 // ── Built-in Skill Library ────────────────────────────────────
 
@@ -1145,6 +1222,12 @@ export function getAutoAttachSkillIds(outputFormats: string[]): string[] {
     autoAttach.push('data-storytelling');
   }
 
+  // FCP blueprint layouts → the blueprint's method + the house standards
+  for (const f of outputFormats) {
+    const ids = BLUEPRINT_FORMAT_SKILLS[f];
+    if (ids) autoAttach.push(...ids);
+  }
+
   // De-duplicate in case multiple formats triggered the same skill
   return [...new Set(autoAttach)];
 }
@@ -1188,6 +1271,7 @@ async function loadDiskSkills(): Promise<Skill[]> {
         applicableAreas?: string[];
         version?: string;
         author?: string;
+        blueprint?: unknown;
       };
 
       const prompt = await fs.pathExists(contentPath)
@@ -1203,6 +1287,12 @@ async function loadDiskSkills(): Promise<Skill[]> {
         console.warn(`[skills-manager] ${entry.name}/skill.json declares unknown category '${raw.category}' — loaded as 'domain' (known: ${SKILL_CATEGORIES.join(', ')})`);
       }
 
+      let blueprint: SkillBlueprintMeta | null = null;
+      if (raw.blueprint !== undefined) {
+        blueprint = parseSkillBlueprintMeta(raw.blueprint);
+        if (!blueprint) console.warn(`[skills-manager] ${entry.name}/skill.json has a malformed 'blueprint' block — ignored, skill loaded without it`);
+      }
+
       diskSkills.push({
         id: raw.id,
         name: raw.label ?? raw.name ?? raw.id,
@@ -1214,6 +1304,7 @@ async function loadDiskSkills(): Promise<Skill[]> {
         applicableAreas: raw.applicableAreas,
         prompt,
         source: 'disk',
+        ...(blueprint ? { blueprint } : {}),
       });
     } catch (err) {
       console.error(`[skills-manager] Failed to load disk skill at ${skillDir}:`, err);
