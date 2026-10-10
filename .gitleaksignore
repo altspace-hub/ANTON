@@ -12,3 +12,14 @@ dd7eb38f0119dc71ff0432b8c35962f106185ce0:.gitleaksignore:generic-api-key:4
 # test proves the stored key is never sent back. Not a credential; the generic-api-key
 # rule matches on the variable name.
 f3d8160e848c65f8ed2d09463ecc6882c6814d66:tests/routes/custom-models-key-redaction.test.ts:generic-api-key:46
+
+# SHA-256 hashes of each module's system prompt (the no-skill prompt-equality baseline, blueprint skills PR #88).
+# Not credentials; the generic-api-key rule matches on module names such as "api-design" beside a 64-hex hash.
+7c5639b6c528091dbf0c52dcb06759fa4e2e6a16:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:19
+7c5639b6c528091dbf0c52dcb06759fa4e2e6a16:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:176
+7c5639b6c528091dbf0c52dcb06759fa4e2e6a16:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:309
+7c5639b6c528091dbf0c52dcb06759fa4e2e6a16:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:374
+34300c177d1692b4675ca63543949ebca627449c:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:19
+34300c177d1692b4675ca63543949ebca627449c:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:176
+34300c177d1692b4675ca63543949ebca627449c:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:309
+34300c177d1692b4675ca63543949ebca627449c:tests/fixtures/no-skill-prompt-baseline.json:generic-api-key:374
