@@ -1,0 +1,48 @@
+{
+  "id": "fcp-bp-abc-risk-assessment",
+  "label": "FCP blueprint [DRAFT]: ABC (bribery and corruption) risk assessment",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk",
+    "legal"
+  ],
+  "description": "DRAFT – needs team input: validate before client use. Produces a business-wide bribery and corruption risk assessment (ABC risk assessment): a report and a supporting workbook with corruption typologies, inherent risk per risk area, assessment of general and specific anti-bribery controls, residual risk, a risk register and a prioritised action plan. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "draft",
+    "ABC",
+    "anti-bribery",
+    "corruption",
+    "risk assessment"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "abc-risk-assessment",
+    "version": "1.1",
+    "status": "draft",
+    "statusLabel": "draft – needs team input",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "enterprise-risk"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "abc-controls.md",
+        "abc-regulatory-map.md",
+        "abc-risk-factors.md",
+        "abc-typologies.md",
+        "abc-workbook-layout.md",
+        "abc-workshop-and-data-request.md"
+      ]
+    },
+    "sourceSha256": "85d16e3359024bb692e80b3f83c58a36658f3479ff90f1659d0d0453cd2c7e1d"
+  }
+}

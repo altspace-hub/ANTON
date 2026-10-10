@@ -1,0 +1,46 @@
+{
+  "id": "fcp-bp-firm-and-team-presentation",
+  "label": "FCP blueprint: Firm and team presentation",
+  "category": "methodology",
+  "applicableAreas": [
+    "consulting",
+    "sales"
+  ],
+  "description": "Produces presentations of the issuing firm, its financial crime prevention (FCP) team and its services. Method, deliverable template and quality bar from the FCP blueprint library (v1.0). Never changes how a score is computed.",
+  "version": "1.0",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "presentation",
+    "pitch",
+    "one-pager",
+    "CV"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "firm-and-team-presentation",
+    "version": "1.0",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "client-presentation"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "claims-and-messaging.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "one-pager-and-cv-formats.md",
+        "profile-fields.md",
+        "service-catalogue.md",
+        "topic-insight-modules.md"
+      ]
+    },
+    "sourceSha256": "5d82f892a0aa3923c010ae90786761234f71dcac074734c70ee18e9a854acad0"
+  }
+}

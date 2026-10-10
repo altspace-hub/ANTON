@@ -1,0 +1,770 @@
+[
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-DATA-REQUEST",
+    "aliases": [
+      "Data request and document request",
+      "aml-ctf-risk-assessment data-request",
+      "data request"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-GENERAL-CONTROLS",
+    "aliases": [
+      "Assessment of general controls",
+      "aml-ctf-risk-assessment general-controls",
+      "general controls"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-GEOGRAPHIC-RISK",
+    "aliases": [
+      "Geographic (country) risk: sources and method",
+      "aml-ctf-risk-assessment geographic-risk",
+      "geographic risk"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-INDUSTRY-RISK",
+    "aliases": [
+      "Industry risk list: method and categories",
+      "aml-ctf-risk-assessment industry-risk",
+      "industry risk"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-METHOD-AND-INSTRUCTION",
+    "aliases": [
+      "Method in practice and the BWRA instruction",
+      "aml-ctf-risk-assessment method-and-instruction",
+      "method and instruction"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-APPETITE",
+    "aliases": [
+      "ML/TF risk appetite statement",
+      "aml-ctf-risk-assessment risk-appetite",
+      "risk appetite"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-RISK-FACTORS",
+    "aliases": [
+      "Risk factor catalogue",
+      "aml-ctf-risk-assessment risk-factors",
+      "risk factors"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-SCALES-AND-SCORING",
+    "aliases": [
+      "Scales, scoring and weighting",
+      "aml-ctf-risk-assessment scales-and-scoring",
+      "scales and scoring"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-SPECIFIC-CONTROLS",
+    "aliases": [
+      "Specific controls: evaluation format and catalogue",
+      "aml-ctf-risk-assessment specific-controls",
+      "specific controls"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-TYPOLOGIES",
+    "aliases": [
+      "Typology catalogue",
+      "aml-ctf-risk-assessment typologies",
+      "typologies"
+    ]
+  },
+  {
+    "ref_id": "BPREF-AML-CTF-RISK-ASSESSMENT-WORKBOOK-LAYOUT",
+    "aliases": [
+      "BWRA workbook layout",
+      "aml-ctf-risk-assessment workbook-layout",
+      "workbook layout"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-CONTROLS-AND-SCREENING",
+    "aliases": [
+      "Controls, screening and maturity grid",
+      "sanctions-risk-assessment controls-and-screening",
+      "controls and screening"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-DATA-REQUEST-AND-QUESTIONS",
+    "aliases": [
+      "Data request, interview and workshop questions",
+      "sanctions-risk-assessment data-request-and-questions",
+      "data request and questions"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-EXPOSURE-MATRIX",
+    "aliases": [
+      "Exposure matrix (OFAC-based) with controls and actions",
+      "sanctions-risk-assessment exposure-matrix",
+      "exposure matrix"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-KRI-AND-RISK-APPETITE",
+    "aliases": [
+      "Risk indicators (KRI/RI) and risk appetite",
+      "sanctions-risk-assessment kri-and-risk-appetite",
+      "kri and risk appetite"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-REGULATORY-MAP",
+    "aliases": [
+      "Regulatory map for the SRA",
+      "sanctions-risk-assessment regulatory-map",
+      "regulatory map"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-RISK-SCENARIOS-AND-INDICATORS",
+    "aliases": [
+      "Risk scenarios, circumvention typologies and red flags",
+      "sanctions-risk-assessment risk-scenarios-and-indicators",
+      "risk scenarios and indicators"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-SRA-WORKBOOK-LAYOUT",
+    "aliases": [
+      "SRA workbook layout (Excel)",
+      "sanctions-risk-assessment sra-workbook-layout",
+      "sra workbook layout"
+    ]
+  },
+  {
+    "ref_id": "BPREF-SANCTIONS-RISK-ASSESSMENT-VARIANT-LAYOUTS",
+    "aliases": [
+      "Variant layouts: SRA review and periodic sanctions risk report",
+      "sanctions-risk-assessment variant-layouts",
+      "variant layouts"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-CONTROLS",
+    "aliases": [
+      "ABC controls catalogue",
+      "abc-risk-assessment abc-controls",
+      "abc controls"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-REGULATORY-MAP",
+    "aliases": [
+      "ABC regulatory and professional anchors (detailed map)",
+      "abc-risk-assessment abc-regulatory-map",
+      "abc regulatory map"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-RISK-FACTORS",
+    "aliases": [
+      "ABC risk factors by risk area",
+      "abc-risk-assessment abc-risk-factors",
+      "abc risk factors"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-TYPOLOGIES",
+    "aliases": [
+      "ABC typology catalogue (corruption scenarios)",
+      "abc-risk-assessment abc-typologies",
+      "abc typologies"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKBOOK-LAYOUT",
+    "aliases": [
+      "ABC risk assessment workbook: layout",
+      "abc-risk-assessment abc-workbook-layout",
+      "abc workbook layout"
+    ]
+  },
+  {
+    "ref_id": "BPREF-ABC-RISK-ASSESSMENT-ABC-WORKSHOP-AND-DATA-REQUEST",
+    "aliases": [
+      "ABC workshops, interviews and data request",
+      "abc-risk-assessment abc-workshop-and-data-request",
+      "abc workshop and data request"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-CONTROLS",
+    "aliases": [
+      "Fraud controls catalogue",
+      "fraud-risk-assessment fraud-controls",
+      "fraud controls"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-PILOT",
+    "aliases": [
+      "Pilot variant: focused and scalable fraud analysis in three steps",
+      "fraud-risk-assessment fraud-pilot",
+      "fraud pilot"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-REGULATORY-MAP",
+    "aliases": [
+      "Fraud regulatory and professional anchors (detailed map)",
+      "fraud-risk-assessment fraud-regulatory-map",
+      "fraud regulatory map"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-RISK-FACTORS",
+    "aliases": [
+      "Fraud risk factors by risk area",
+      "fraud-risk-assessment fraud-risk-factors",
+      "fraud risk factors"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-TYPOLOGIES",
+    "aliases": [
+      "Fraud typology catalogue",
+      "fraud-risk-assessment fraud-typologies",
+      "fraud typologies"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKBOOK-LAYOUT",
+    "aliases": [
+      "Fraud risk assessment workbook: layout",
+      "fraud-risk-assessment fraud-workbook-layout",
+      "fraud workbook layout"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FRAUD-RISK-ASSESSMENT-FRAUD-WORKSHOP-AND-DATA-REQUEST",
+    "aliases": [
+      "Fraud workshops, interviews and data request",
+      "fraud-risk-assessment fraud-workshop-and-data-request",
+      "fraud workshop and data request"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-AMLR-NATIONAL-MAPPING",
+    "aliases": [
+      "AMLR to national law: mapping guide (Sweden as worked example)",
+      "gap-analysis amlr-national-mapping",
+      "amlr national mapping"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-DATA-REQUEST-LIST",
+    "aliases": [
+      "Data request list: gap analysis",
+      "gap-analysis data-request-list",
+      "data request list"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-GAP-LOG-LAYOUTS",
+    "aliases": [
+      "Gap log layouts (Excel)",
+      "gap-analysis gap-log-layouts",
+      "gap log layouts"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-OTHER-FRAMEWORK-TEMPLATES",
+    "aliases": [
+      "Gap templates for other frameworks",
+      "gap-analysis other-framework-templates",
+      "other framework templates"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-RATING-SCALES",
+    "aliases": [
+      "Rating scales for gap analyses",
+      "gap-analysis rating-scales",
+      "rating scales"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-THEMATIC-CONTROL-POINTS",
+    "aliases": [
+      "Thematic control points (quick scan and review checklist)",
+      "gap-analysis thematic-control-points",
+      "thematic control points"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GAP-ANALYSIS-WORDING-EXAMPLES",
+    "aliases": [
+      "Wording examples (English with Swedish equivalents)",
+      "gap-analysis wording-examples",
+      "wording examples"
+    ]
+  },
+  {
+    "ref_id": "BPREF-COMPLIANCE-REVIEW-REPORT-REVIEW-SCALES-AND-SAMPLING",
+    "aliases": [
+      "Review scales, sampling and workbook layout",
+      "compliance-review-report review-scales-and-sampling",
+      "review scales and sampling"
+    ]
+  },
+  {
+    "ref_id": "BPREF-COMPLIANCE-REVIEW-REPORT-TEST-PROGRAMME",
+    "aliases": [
+      "Test programme by review area",
+      "compliance-review-report test-programme",
+      "test programme"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-CHANGE-MANAGEMENT",
+    "aliases": [
+      "Change management for AML/CTF models",
+      "model-documentation change-management",
+      "change management"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-CRC-RISK-FACTORS",
+    "aliases": [
+      "Customer risk classification: design and risk factor catalogue",
+      "model-documentation crc-risk-factors",
+      "crc risk factors"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-DATA-REQUEST-AND-WORKSHOPS",
+    "aliases": [
+      "Data request, interviews and workshops",
+      "model-documentation data-request-and-workshops",
+      "data request and workshops"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-EVALUATION-METRICS",
+    "aliases": [
+      "Evaluation metrics (KPI/KRI) for AML/CTF models",
+      "model-documentation evaluation-metrics",
+      "evaluation metrics"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-MODEL-INVENTORY",
+    "aliases": [
+      "Model inventory (model register)",
+      "model-documentation model-inventory",
+      "model inventory"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-MODEL-RISK-ASSESSMENT",
+    "aliases": [
+      "Model risk assessment (tiering)",
+      "model-documentation model-risk-assessment",
+      "model risk assessment"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-SCREENING",
+    "aliases": [
+      "PEP and sanctions screening: documentation and testing",
+      "model-documentation screening",
+      "screening"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-DOCUMENTATION-TM-SCENARIOS",
+    "aliases": [
+      "Transaction monitoring: methods, scenario catalogue and documentation fields",
+      "model-documentation tm-scenarios",
+      "tm scenarios"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-ASSESSMENT-AREAS",
+    "aliases": [
+      "Assessment areas, sub-areas and expectations",
+      "model-validation-report assessment-areas",
+      "assessment areas"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-DATA-REQUEST",
+    "aliases": [
+      "Documentation and data request",
+      "model-validation-report data-request",
+      "data request"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-INTERVIEW-QUESTION-BANK",
+    "aliases": [
+      "Interview question bank",
+      "model-validation-report interview-question-bank",
+      "interview question bank"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-RATING-SCALE",
+    "aliases": [
+      "Rating scale and scoring rules",
+      "model-validation-report rating-scale",
+      "rating scale"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-BWRA",
+    "aliases": [
+      "Test procedures – business-wide risk assessment (BWRA) treated as a model",
+      "model-validation-report test-procedures-bwra",
+      "test procedures bwra"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-CRC",
+    "aliases": [
+      "Test procedures – customer risk classification (CRC) models",
+      "model-validation-report test-procedures-crc",
+      "test procedures crc"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-SCREENING",
+    "aliases": [
+      "Test procedures – PEP and sanctions screening models",
+      "model-validation-report test-procedures-screening",
+      "test procedures screening"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-TEST-PROCEDURES-TM",
+    "aliases": [
+      "Test procedures – transaction monitoring (TM) models",
+      "model-validation-report test-procedures-tm",
+      "test procedures tm"
+    ]
+  },
+  {
+    "ref_id": "BPREF-MODEL-VALIDATION-REPORT-WORK-PROGRAMME",
+    "aliases": [
+      "Validation work programme and outcome-ratio workbook",
+      "model-validation-report work-programme",
+      "work programme"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-CONTENT-MAPPING-BY-DOCUMENT-TYPE",
+    "aliases": [
+      "Content mapping by document type",
+      "governing-documents content-mapping-by-document-type",
+      "content mapping by document type"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-DATA-REQUEST-AND-WORKSHOPS",
+    "aliases": [
+      "Data request and workshops",
+      "governing-documents data-request-and-workshops",
+      "data request and workshops"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-DOCUMENT-CONTROL-AND-ANNUAL-REVIEW",
+    "aliases": [
+      "Document control and annual review",
+      "governing-documents document-control-and-annual-review",
+      "document control and annual review"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-MODEL-CLAUSES",
+    "aliases": [
+      "Model clauses (English and Swedish)",
+      "governing-documents model-clauses",
+      "model clauses"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-REQUIREMENTS-TO-DOCUMENT-MATRIX",
+    "aliases": [
+      "Requirements-to-document matrix",
+      "governing-documents requirements-to-document-matrix",
+      "requirements to document matrix"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-RISK-APPETITE-AND-CUSTOMER-RISK",
+    "aliases": [
+      "Risk appetite and customer risk catalogue",
+      "governing-documents risk-appetite-and-customer-risk",
+      "risk appetite and customer risk"
+    ]
+  },
+  {
+    "ref_id": "BPREF-GOVERNING-DOCUMENTS-ROLES-AND-MANDATES",
+    "aliases": [
+      "Roles and mandates catalogue",
+      "governing-documents roles-and-mandates",
+      "roles and mandates"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROPOSAL-METHOD-MODULES",
+    "aliases": [
+      "Method modules for proposals",
+      "proposal method-modules",
+      "method modules"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROPOSAL-PHRASE-BANK",
+    "aliases": [
+      "Phrase bank for proposals",
+      "proposal phrase-bank",
+      "phrase bank"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROPOSAL-PRICING-STRUCTURE",
+    "aliases": [
+      "Pricing structure for proposals",
+      "proposal pricing-structure",
+      "pricing structure"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROPOSAL-PROPOSAL-INPUTS",
+    "aliases": [
+      "Proposal inputs: brief extension and profile fields",
+      "proposal proposal-inputs",
+      "proposal inputs"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROPOSAL-RFP-RESPONSE",
+    "aliases": [
+      "Responding to an RFP or procurement questionnaire",
+      "proposal rfp-response",
+      "rfp response"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FIRM-AND-TEAM-PRESENTATION-CLAIMS-AND-MESSAGING",
+    "aliases": [
+      "Claims and messaging",
+      "firm-and-team-presentation claims-and-messaging",
+      "claims and messaging"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FIRM-AND-TEAM-PRESENTATION-ONE-PAGER-AND-CV-FORMATS",
+    "aliases": [
+      "One-pager, invitation, CV and reference formats",
+      "firm-and-team-presentation one-pager-and-cv-formats",
+      "one pager and cv formats"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FIRM-AND-TEAM-PRESENTATION-PROFILE-FIELDS",
+    "aliases": [
+      "Firm profile: content fields (master list)",
+      "firm-and-team-presentation profile-fields",
+      "profile fields"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FIRM-AND-TEAM-PRESENTATION-SERVICE-CATALOGUE",
+    "aliases": [
+      "FCP service catalogue: structure and standard descriptions",
+      "firm-and-team-presentation service-catalogue",
+      "service catalogue"
+    ]
+  },
+  {
+    "ref_id": "BPREF-FIRM-AND-TEAM-PRESENTATION-TOPIC-INSIGHT-MODULES",
+    "aliases": [
+      "Topic insight modules for client presentations",
+      "firm-and-team-presentation topic-insight-modules",
+      "topic insight modules"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-MOBILISATION-CHECKLIST",
+    "aliases": [
+      "Mobilisation checklist and initial document request",
+      "project-plans-and-governance mobilisation-checklist",
+      "mobilisation checklist"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-PROGRAMME-TRACKER-WORKBOOK",
+    "aliases": [
+      "Programme tracker workbook (Excel)",
+      "project-plans-and-governance programme-tracker-workbook",
+      "programme tracker workbook"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-RAID-LOG-AND-RAG",
+    "aliases": [
+      "RAID log and RAG status",
+      "project-plans-and-governance raid-log-and-rag",
+      "raid log and rag"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-REMEDIATION-WORKSTREAM-CATALOGUE",
+    "aliases": [
+      "Remediation workstream catalogue",
+      "project-plans-and-governance remediation-workstream-catalogue",
+      "remediation workstream catalogue"
+    ]
+  },
+  {
+    "ref_id": "BPREF-PROJECT-PLANS-AND-GOVERNANCE-STATUS-PHRASE-BANK",
+    "aliases": [
+      "Status phrase bank",
+      "project-plans-and-governance status-phrase-bank",
+      "status phrase bank"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-CASE-AND-EXERCISE-BANK",
+    "aliases": [
+      "Case and exercise bank",
+      "training-and-presentations case-and-exercise-bank",
+      "case and exercise bank"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-DESIGN-BRIEF-AND-AGENDAS",
+    "aliases": [
+      "Design brief, agenda blueprints, handout and workshop memo",
+      "training-and-presentations design-brief-and-agendas",
+      "design brief and agendas"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-FACILITATION-AND-SPEAKER-NOTES",
+    "aliases": [
+      "Facilitation and speaker notes",
+      "training-and-presentations facilitation-and-speaker-notes",
+      "facilitation and speaker notes"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-ABC",
+    "aliases": [
+      "Module: Anti-bribery and corruption (ABC)",
+      "training-and-presentations module-abc",
+      "module abc"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-AML-CTF-FOUNDATIONS",
+    "aliases": [
+      "Module: AML/CTF foundations",
+      "training-and-presentations module-aml-ctf-foundations",
+      "module aml ctf foundations"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-FRAUD",
+    "aliases": [
+      "Module: Fraud management and fraud as a predicate offence",
+      "training-and-presentations module-fraud",
+      "module fraud"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-GOVERNANCE-AND-ROLES",
+    "aliases": [
+      "Module: Governance, roles, risk appetite and reporting",
+      "training-and-presentations module-governance-and-roles",
+      "module governance and roles"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-KYC-CDD-PEP",
+    "aliases": [
+      "Module: KYC, beneficial ownership and PEP/RCA",
+      "training-and-presentations module-kyc-cdd-pep",
+      "module kyc cdd pep"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MODEL-RISK-MANAGEMENT",
+    "aliases": [
+      "Module: Model risk management and validation (AML/CTF models)",
+      "training-and-presentations module-model-risk-management",
+      "module model risk management"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-MONITORING-AND-REPORTING",
+    "aliases": [
+      "Module: Transaction monitoring, investigation and reporting",
+      "training-and-presentations module-monitoring-and-reporting",
+      "module monitoring and reporting"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-OTHER-TOPICS",
+    "aliases": [
+      "Module: Other topics – FATCA/CRS, other AML rules, compliance basics for licensed firms, AI in FCP",
+      "training-and-presentations module-other-topics",
+      "module other topics"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-REGULATORY-OUTLOOK",
+    "aliases": [
+      "Module: Regulatory outlook – the EU AML package (AMLR, AMLA, AMLD6)",
+      "training-and-presentations module-regulatory-outlook",
+      "module regulatory outlook"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-RISK-ASSESSMENT-AND-CRC",
+    "aliases": [
+      "Module: Business-wide risk assessment and customer risk classification",
+      "training-and-presentations module-risk-assessment-and-crc",
+      "module risk assessment and crc"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-MODULE-SANCTIONS",
+    "aliases": [
+      "Module: International sanctions",
+      "training-and-presentations module-sanctions",
+      "module sanctions"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-QUIZ-BANK",
+    "aliases": [
+      "Quiz and knowledge-check bank",
+      "training-and-presentations quiz-bank",
+      "quiz bank"
+    ]
+  },
+  {
+    "ref_id": "BPREF-TRAINING-AND-PRESENTATIONS-TRAINING-RECORDS-AND-EVALUATION",
+    "aliases": [
+      "Training records and evaluation",
+      "training-and-presentations training-records-and-evaluation",
+      "training records and evaluation"
+    ]
+  }
+]

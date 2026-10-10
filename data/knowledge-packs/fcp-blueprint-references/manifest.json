@@ -1,0 +1,17 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "fcp-blueprint-references",
+  "display_name": "FCP blueprint reference catalogues",
+  "version": "1.0.0",
+  "description": "The reference catalogues of the FCP blueprint library (risk factors, typologies, controls, test procedures, scales, data requests, workbook layouts, phrase banks, model clauses, training modules) that the fcp-bp-* skills point to. Method and practice material written by FCP practitioners, not regulatory text: every regulatory reference in it must be checked against the current consolidated version, and items marked [VERIFY REFERENCE] are unverified. Install and activate it only when you want the catalogues retrieved into module runs.",
+  "author": "FCP blueprint library",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "EU baseline with Sweden as the worked national example",
+  "regulatory_area": "Financial crime prevention — method catalogues",
+  "regulation_ids": [],
+  "tier": 3,
+  "content_confirmed": false,
+  "entity_count": 1052,
+  "relationship_count": 956,
+  "alias_entry_count": 96
+}

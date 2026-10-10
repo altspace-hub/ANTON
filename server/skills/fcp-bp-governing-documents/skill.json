@@ -1,0 +1,49 @@
+{
+  "id": "fcp-bp-governing-documents",
+  "label": "FCP blueprint: Governing documents (policies, instructions, routines)",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "legal"
+  ],
+  "description": "Produces AML/CTF and financial sanctions governing documents written in the client's name: the board-adopted policy, the CEO instruction, manuals and routines, role mandates for the specially appointed executive (SAE) and the central function officer (CFA), plus a requirements traceability matrix, a governing document register and an annual review cycle. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "policy",
+    "instruction",
+    "procedure",
+    "governing documents"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "governing-documents",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": "bp-governing-document",
+    "recommendedFor": [
+      "document-creation",
+      "compliance-framework"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "data-request-and-workshops.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "content-mapping-by-document-type.md",
+        "document-control-and-annual-review.md",
+        "model-clauses.md",
+        "requirements-to-document-matrix.md",
+        "risk-appetite-and-customer-risk.md",
+        "roles-and-mandates.md"
+      ]
+    },
+    "sourceSha256": "4b4ebfeea34403cc6f3b1ad610ab198ed6dc204b4d9484ae2be8ead326f505fa"
+  }
+}

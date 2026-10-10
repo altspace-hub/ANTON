@@ -1,0 +1,50 @@
+{
+  "id": "fcp-bp-project-plans-and-governance",
+  "label": "FCP blueprint: Project plans and programme governance",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "project-mgmt",
+    "consulting"
+  ],
+  "description": "Produces the governance and reporting pack for compliance and remediation programmes in financial crime prevention (AML/CTF, sanctions, fraud, model risk). Method, deliverable template and quality bar from the FCP blueprint library (v1.0). Never changes how a score is computed.",
+  "version": "1.0",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "project plan",
+    "steering",
+    "programme governance",
+    "status report"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "project-plans-and-governance",
+    "version": "1.0",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": null,
+    "recommendedFor": [
+      "project-planning",
+      "status-reporting",
+      "engagement-execution",
+      "engagement-delivery"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "mobilisation-checklist.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "programme-tracker-workbook.md",
+        "raid-log-and-rag.md",
+        "remediation-workstream-catalogue.md",
+        "status-phrase-bank.md"
+      ]
+    },
+    "sourceSha256": "0f3c95e85fd1e31603b6cdeec7d7b9584c707cbc14d3f61f9b76855997be26db"
+  }
+}

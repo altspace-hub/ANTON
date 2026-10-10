@@ -1,0 +1,49 @@
+{
+  "id": "fcp-bp-gap-analysis",
+  "label": "FCP blueprint: Gap analysis (gap log and gap report)",
+  "category": "methodology",
+  "applicableAreas": [
+    "fcp",
+    "risk",
+    "audit"
+  ],
+  "description": "Produces a regulatory gap analysis of an obliged entity's AML/CTF framework, or of a sanctions, anti-bribery or guideline-specific framework. Method, deliverable template and quality bar from the FCP blueprint library (v1.1). Never changes how a score is computed.",
+  "version": "1.1",
+  "author": "FCP blueprint library",
+  "tags": [
+    "fcp-blueprint",
+    "gap analysis",
+    "AMLR",
+    "gap log"
+  ],
+  "blueprint": {
+    "library": "fcp-blueprint-library",
+    "slug": "gap-analysis",
+    "version": "1.1",
+    "status": "stable",
+    "statusLabel": "stable",
+    "pairedOutputFormat": "bp-gap-report",
+    "recommendedFor": [
+      "gap-analysis",
+      "amlr-readiness-risk-assessment"
+    ],
+    "companionSkills": [
+      "fcp-bp-house-standards"
+    ],
+    "references": {
+      "inlined": [
+        "data-request-list.md"
+      ],
+      "knowledgePack": "fcp-blueprint-references",
+      "inPack": [
+        "amlr-national-mapping.md",
+        "gap-log-layouts.md",
+        "other-framework-templates.md",
+        "rating-scales.md",
+        "thematic-control-points.md",
+        "wording-examples.md"
+      ]
+    },
+    "sourceSha256": "b1c8fa332dcc6b202da27ad112abb75dd6cc4d5f52e0667dd9fed3ef04ee2e7b"
+  }
+}
