@@ -1591,6 +1591,144 @@ Begin with FADE IN: and end with FADE OUT. / THE END.
 Number scenes if requested (Scene headings as INT./EXT.).
 Include a title page block at the top with Title, Written by, and Draft date if details are provided.`,
   },
+
+  // ── FCP BLUEPRINT LAYOUTS (2026-10-10) ─────────────────────
+  // The section order of the FCP blueprint library's main deliverables. Each
+  // one attaches its blueprint skill and the house standards when the user
+  // selects it (BLUEPRINT_FORMAT_SKILLS in server/services/skills-manager.ts);
+  // no module lists them as a default, so default runs are unchanged. They
+  // follow the blueprint rules, not the older formats': no averaged scores,
+  // no "fully compliant", and a rating ANTON or the module supplies is used as
+  // given — a layout never changes how a score is computed.
+  {
+    id: 'bp-gap-report',
+    label: 'Gap report and gap log (blueprint)',
+    icon: 'ClipboardList',
+    description: 'FCP blueprint layout: gap report with the 5-level deficiency scale, consolidated findings, sequenced action plan and the gap log as Appendix 1',
+    category: 'analytical',
+    exportFormats: ['docx', 'xlsx', 'pdf'],
+    estimatedLength: '8-15 pages + log',
+    audience: 'Compliance officer, management, board',
+    promptInstruction: `## OUTPUT FORMAT: GAP REPORT AND GAP LOG (FCP BLUEPRINT)
+Produce a gap report in this section order, with the gap log as Appendix 1.
+
+- **Cover** — "Gap analysis", a scope subtitle, client, date, version, author, confidentiality.
+- **Document control** — Version | Date | Author | Change. State "Regulatory status as of [date]".
+- **Executive summary** — only when the board is the audience or the report runs beyond about 12 pages: overall conclusion, number of gaps per level, the 3–5 themes, the first actions, the decision required.
+1. **Introduction** — 1.1 Background and assignment (the rules assessed "in the wording in force on [date]", evidence requested); 1.2 Scale for assessing deficiencies (the scale table and its basis: risk level, sanction risk if examined, importance of the process — a forecast, not a statement of fact); 1.3 Regulatory mapping approach (change analyses only).
+2. **Summary of significant findings** — 2.1 Critical deficiencies (always present; if none, say "We do not assess that there are any critical deficiencies."); 2.2 Extensive deficiencies, one subsection per area: requirement and supervisory expectation, strengths observed, what was found with evidence, why it matters, conclusion with its rating; 2.3 Other deficiencies in summary, cross-cutting patterns, reference to Appendix 1.
+3. **Action plan** — by area, mirroring chapter 2, foundations first (the business-wide risk assessment usually first): concrete actions with content requirements, suggested owner (a function), priority from the rating, qualitative effort, options with trade-offs. Optionally end with a table: A-ID | Area | Action | Linked log rows | Priority | Suggested owner | Effort | Dependency | Target date | Status.
+4. **Concluding remarks** — order of work, how the minor items are absorbed, follow-up.
+- **Appendix 1 Gap log** — one table per chapter of the reference instrument: Article | Description | National reference | Extent of GAP | Initial assessment | Descriptions in internal regulations | Procedure description | GAP (YES / NO / N/A) | GAP classification | Action | Responsible. Every N/A row has a one-line reason; rows are never deleted.
+- **Appendix 2 Documents reviewed** (optional) — title, version, date, approving body.
+
+Rating scale — five levels, always printed as labels: Critical gaps | Extensive gaps | Significant gaps | Minor gaps | No gaps, plus N/A and "Cannot be assessed" (evidence not obtained; state what is needed). Missing evidence is never rated "No gaps".
+Rules: do not calculate averages, percentages-as-scores or total scores — the summary counts rows by area and classification and states the conclusion in words from the highest level present. Never write "fully compliant"; write "no apparent deficiencies identified". State strengths before weaknesses in each area. A rating that ANTON or the module supplies is used exactly as given. Mark gaps [DATA NEEDED: …], [TO CONFIRM: …], [ASSUMPTION: …], [VERIFY REFERENCE].`,
+  },
+  {
+    id: 'bp-bwra-report',
+    label: 'BWRA report — house structure (blueprint)',
+    icon: 'ShieldAlert',
+    description: 'FCP blueprint layout: AML/CTF business-wide risk assessment report — typologies, the four risk areas, controls, residual risk, action plan',
+    category: 'analytical',
+    exportFormats: ['docx', 'pdf'],
+    estimatedLength: '12-60 pages',
+    audience: 'Board, CEO, AML/CTF compliance officer',
+    promptInstruction: `## OUTPUT FORMAT: BWRA REPORT — HOUSE STRUCTURE (FCP BLUEPRINT)
+Produce the business-wide AML/CTF risk assessment report in this section order. Write in the client's voice ("the Company has assessed…") when the client adopts it; in a review, write as the firm.
+
+- **Decision and change log** — version, decided by, date, document owner, changes.
+- **Executive summary** — conclusion first; one paragraph each on products, customers, geography and channels; the general controls level; residual risks outside appetite; three to five key actions; one heat-map table.
+1. **Introduction** — background and purpose (legal basis, the two objectives), roles and responsibilities, scope.
+2. **Methodology** — the method (or a reference to the client's instruction), the rating criteria and scales, sources of information, sources of data and their limitations, review and update cycle, assessment period.
+3. **Typologies and threats** — ML (placement, layering, integration) and TF (collection, concealment, transfer, use); only typologies relevant to this client, with red flags and sources.
+4. **Products and services** — summary table (ML and TF), then per product: about, risk description and red flags, risk assessment.
+5. **Customers** — who the customers are, numbers, data limitations, how customer risk rating works; per risk factor: description, red flags, rating sentence.
+6. **Geography** — exposure by country group, the country-risk method, high-risk third countries.
+7. **Distribution channels** — channels, risks and vulnerabilities, rating.
+8. **Controls** — general controls (summary and one paragraph per subarea); specific controls per product and risk factor (red flag, controls, effectiveness and the evidence for it).
+9. **Residual risk** — summary table (inherent, general/specific/combined controls, residual; ML and TF shown separately), the "so what", findings, actions and KRIs.
+- **Sources; Appendices** — A General controls, B Exposure data, C Typology and red-flag register, D Country-risk method, E Industry list, F Action plan.
+
+Rating sentence for each risk factor: "Based on a qualitative assessment of the above, [risk factor] typically represents a [customer/product/…] risk factor for [the Company] that is [Very high / High / Normal / Low] with regard to ML and [..] with regard to TF."
+Scores: when ANTON (for example the Risk Atlas), the module or the client's methodology supplies inherent, control, residual or appetite ratings, report them exactly as given — do not recompute, average, re-band or override them, and name the method that produced them in chapter 2. Where no rating is supplied, a level you propose is an expert judgement that states its basis and is marked [TO CONFIRM: …]. Risk-level labels are Low / Normal / High / Very high (+ Unacceptable, reported separately and never averaged). Controls earn credit only on evidence. Mark gaps [DATA NEEDED: …], [TO CONFIRM: …], [ASSUMPTION: …], [VERIFY REFERENCE].`,
+  },
+  {
+    id: 'bp-model-validation-report',
+    label: 'Model validation report (blueprint)',
+    icon: 'CheckCircle',
+    description: 'FCP blueprint layout: independent validation of a TM, screening or customer risk classification model — four risk areas, traffic-light grades, worst-of aggregation',
+    category: 'analytical',
+    exportFormats: ['docx', 'pdf'],
+    estimatedLength: '10-25 pages',
+    audience: 'Model owner, SAE, board',
+    promptInstruction: `## OUTPUT FORMAT: MODEL VALIDATION REPORT (FCP BLUEPRINT)
+Produce an independent model validation report in this section order.
+
+- **Cover and document control** — client, "Validation report", "Model for [type]", recipient, date, author, version, confidentiality; version table.
+- **Summary** — who validated what for whom; the overall conclusion in two to four sentences ("Our overall assessment is that…"); the method paragraph; table Key area | Overall result; a note that each key area takes its worst sub-result; three to five key recommendations.
+1. **Introduction** — 1.1 Background; 1.2 About model validation (model definition, model risk, legal basis); 1.3 Purpose; 1.4 Sources and reference material; 1.5 Method and implementation (the four areas, documents, interviews, tests, the traffic-light table); 1.6 Limitations.
+2. **Conceptual design and method** — brief overview; overall assessment table; tests performed (gap analysis against the BWRA, national law and EBA guidelines, with count tables); detailed results; discussion.
+3. **Observations and assessments: implementation risk** — brief overview; table; tests performed; discussion.
+4. **Input data risk** — brief overview; table; tests performed; discussion (name the controls found).
+5. **Output data risk** — brief overview; table; tests with key numbers; detailed results; discussion (numbers first).
+6. **Received documentation** — numbered document list.
+- **Appendix 1 Tests**, **Appendix 2 Outcome tests**, **Appendix 3 Consolidated recommendations** (ID | Area | Recommendation | Grade | Priority | Owner).
+
+Each overall assessment uses the table Area | Assessment | Expectation/requirement | Status | Recommendation. A detailed finding is a numbered block "Observation N – [topic]": Observations, Assessment, Suggested actions. Each area closes with a three-to-six-sentence discussion.
+Grades — four traffic lights plus N/A, always printed as labels: Green "No/insignificant improvements needed", Yellow "Minor improvements needed", Orange "Major improvements needed", Red "Not approved, unsatisfactory". A key area takes the worst result among its sub-areas: no averaging, and no single overall model score unless the client's framework requires one. Outcome ratios (alert-to-report and the like) are reported as computed from the data supplied — never estimated. A grade, ratio or score that ANTON, the module or the user supplies is used exactly as given. The opinion is independent of the first line; disclose it if the issuing firm built or documented the model. Mark gaps [DATA NEEDED: …], [TO CONFIRM: …], [ASSUMPTION: …], [VERIFY REFERENCE].`,
+  },
+  {
+    id: 'bp-compliance-review-report',
+    label: 'Compliance review report (blueprint, draft)',
+    icon: 'Search',
+    description: 'FCP blueprint layout (DRAFT – needs team input): review of whether an AML/CTF framework or process works in practice — scope, tests, findings per area, action plan',
+    category: 'analytical',
+    exportFormats: ['docx', 'pdf'],
+    estimatedLength: '10-25 pages',
+    audience: 'Board, management, compliance function',
+    promptInstruction: `## OUTPUT FORMAT: COMPLIANCE REVIEW REPORT (FCP BLUEPRINT — DRAFT, NEEDS TEAM INPUT)
+This layout comes from a blueprint still marked "draft – needs team input": say so in the covering note, and treat the overall-conclusion scale and the sampling guidance as proposals.
+Produce a review report in this section order.
+
+- **Cover** — "Compliance review" with a subtitle naming the object; client, period, date, version, author, confidentiality.
+- **Document control and table of contents.**
+- **Executive summary** (required) — overall conclusion per area (table), 3–5 key findings, priority actions, decision required, main limitation.
+1. **Introduction** — 1.1 Background and assignment (if acting as the independent audit function, say so); 1.2 Scope, criteria and limitations (object, entities, review period, regulation "in the wording in force on [date]", procedures by title and version, exclusions, sample sizes, evidence not obtained); 1.3 Method and evidence (steps, interviews by role, walkthroughs, a table of tests: area | population | sample | method); 1.4 Scale for assessing deficiencies.
+2. **Summary of significant findings** — 2.1 Overall assessment per area (table: area | design | operating effectiveness | highest finding | overall conclusion); 2.2 Critical deficiencies (always present; "none" stated explicitly); 2.3 Extensive deficiencies; 2.4 Other deficiencies and cross-cutting patterns.
+3. **Observations per review area** — for each area: criteria; what we did (tests, samples); what we found as "x of n", with strengths; assessment (risk, root cause, design or operation); rating; recommendation.
+4. **Action plan** — action | finding reference | priority | suggested owner | target date | management response.
+5. **Concluding remarks** — order of work; follow-up proposal.
+- **Appendix A Findings log** (ID | Area | Requirement | Observation | Assessment | Severity | Recommendation | Priority/timing | Owner), **Appendix B Documents reviewed and interviews**, **Appendix C Sample testing results** (pseudonymised item IDs).
+
+Finding rating — five levels, printed as labels: Critical | Extensive | Significant | Minor deficiencies | No deficiencies. The overall conclusion per area is derived from the highest finding (Effective / Largely effective / Partially effective / Not effective); judgement may lower it one level with a reason, never raise it. Report sample results as "x of n"; "evidence not provided" counts as an exception and is flagged. Do not extrapolate rates from small samples, do not average ratings, never write "fully compliant". A rating ANTON or the module supplies is used as given. Mark gaps [DATA NEEDED: …], [TO CONFIRM: …], [ASSUMPTION: …], [VERIFY REFERENCE].`,
+  },
+  {
+    id: 'bp-governing-document',
+    label: 'Governing document (blueprint)',
+    icon: 'BookOpen',
+    description: 'FCP blueprint layout: policy, instruction, routine, manual or mandate written in the client\'s voice, with information block and change log',
+    category: 'operational',
+    exportFormats: ['docx', 'pdf'],
+    estimatedLength: '2-20 pages',
+    audience: 'Board, CEO, function heads, staff',
+    promptInstruction: `## OUTPUT FORMAT: GOVERNING DOCUMENT (FCP BLUEPRINT)
+Produce a governing document written in the client's voice ("the Company shall…"), for adoption by the competent body. First decide the document type from the request (policy, instruction, routine/SOP, manual or mandate) and say which; ask if it is unclear.
+
+Every type opens with:
+- **Document information block** — document type and title; entity; adopted by and adoption date; document owner; responsible for implementation; supersedes; appendices; next review; information class; version.
+- **Change log** — Version | Date | Decided or changed by | Change (what, where and why — never just "Updated"). A table of contents above about six pages.
+- No executive summary: the purpose section does that job.
+
+Section order by type:
+- **Policy** (board; principle-level, no systems or step lists): 1 Introduction (the board's governance role, the document hierarchy, scope including outsourced activities, annual review); 2 Background (legal basis by name); 3 Purpose (minimum standard, risk-based approach, sanctions in scope); 4 Internal control and governance (three lines: board, CEO, designated executive, central function officer, independent audit, managers and employees); 5 Management of ML/TF risks (risk appetite and unacceptable activities, risk-based approach, control measures, follow-up against appetite, customer risk classification); 6 CDD process; 7 Monitoring and reporting; 8 Record keeping; 9 Training; 10 Protection of employees; 11 Suitability; 12 Personal data; 13 Confidentiality; 14 Model risk management and validation; Appendix 1 Financial sanctions.
+- **Instruction** (CEO; operational and specific): 1 Purpose; 2 Definitions; 3 Responsibilities; 4 Risk assessment; 5 CDD (general incl. sanctions screening, basic, simplified, enhanced, ongoing follow-up); 6 Transactions; 7 Reporting; 8 Record keeping; 9 Training and suitability; 10 Protection of employees.
+- **Routine / SOP** (function head): header; background and scope; steps with role, system and output; controls and evidence.
+- **Manual**: introduction (parent documents, users, owner, adopted annually even if unchanged); definitions; process chapters written as the questions staff ask; steps, accepted evidence and standard texts; documentation requirements; appendices.
+- **Mandate**: purpose line; the position; main responsibility with its legal anchor; tasks; reporting with minimum frequency; staff responsibility; powers; signature.
+
+Rules: "shall" for binding requirements, "should" only for recommendations; roles, never names; say how, not only what (who does what, when, with which tool and documentation); customer risk classes use the labels Low / Normal / High (/ Very high); detection logic and thresholds go in a restricted appendix. A risk rating the user, ANTON or the module supplies is used as given. Mark gaps [DATA NEEDED: …], [TO CONFIRM: …], [ASSUMPTION: …], [VERIFY REFERENCE].`,
+  },
 ];
 
 // ── Helper functions ───────────────────────────────────────

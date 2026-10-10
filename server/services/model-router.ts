@@ -63,6 +63,11 @@ const LARGE_OUTPUT_FORMATS = new Set([
   'decision-memo',
   'maturity-assessment',
   'impact-assessment',
+  // FCP blueprint layouts (2026-10-10): full reports, same tier as detailed-findings
+  'bp-gap-report',
+  'bp-bwra-report',
+  'bp-model-validation-report',
+  'bp-compliance-review-report',
 ]);
 
 // Output formats well-served by the medium tier
@@ -79,6 +84,7 @@ const MEDIUM_OUTPUT_FORMATS = new Set([
   'client-proposal',
   'stakeholder-presentation',
   'training-material',
+  'bp-governing-document',
 ]);
 
 // Output formats appropriate for the small tier
