@@ -52,7 +52,9 @@ async function defaultRunPromptHashes(): Promise<Record<string, string>> {
       selectedSkills: autoAttach.length > 0 ? autoAttach : undefined,
       now: NOW,
     });
-    out[mod.id] = crypto.createHash('sha256').update(prompt, 'utf8').digest('hex');
+    // Line endings follow the checkout (CRLF on a Windows clone with autocrlf,
+    // LF in CI), so they are normalised before hashing.
+    out[mod.id] = crypto.createHash('sha256').update(prompt.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
   }
   return out;
 }
